@@ -4,10 +4,10 @@ describe Gush::Workflow do
   subject { TestWorkflow.new("test-workflow") }
 
   describe "#initialize" do
-    context "when run_configure is true" do
+    context "when configure option is true" do
       it "runs #configure method " do
         expect_any_instance_of(TestWorkflow).to receive(:configure)
-        TestWorkflow.new("name", false, false, true)
+        TestWorkflow.new("name", configure: true)
       end
     end
   end

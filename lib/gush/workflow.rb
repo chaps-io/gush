@@ -6,9 +6,9 @@ module Gush
 
     attr_accessor :last_node
 
-    def initialize(name, finished = false, enqueued = false, failed = false, run_configure = true)
+    def initialize(name, options = {})
       super(name, nil)
-      configure if run_configure
+      configure unless options[:configure] == false
     end
 
     def self.metadata(params = {})

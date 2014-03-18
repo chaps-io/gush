@@ -17,7 +17,11 @@ module Gush
   end
 
   def self.tree_from_hash(hash)
-    node = hash["json_class"].constantize.new(hash["name"], hash["finished"], hash["enqueued"], hash["failed"], false)
+    node = hash["json_class"].constantize.new(hash["name"],
+      finished: hash["finished"],
+      enqueued: hash["enqueued"],
+      failed: hash["failed"],
+      configure: false)
 
     if hash["children"]
       hash["children"].each do |child|

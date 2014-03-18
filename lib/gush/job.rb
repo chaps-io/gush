@@ -4,14 +4,20 @@ require 'yajl'
 module Gush
   class Job < Tree::TreeNode
     include ::Sidekiq::Worker
+    DEFAULTS = {
+      finished: false,
+      enqueued: false,
+      failed: false
+    }
 
     attr_accessor :finished, :enqueued, :failed, :workflow_id
 
-    def initialize(name = SecureRandom.uuid, finished = false, enqueued = false, failed = false, configure = true)
+    def initialize(name = SecureRandom.uuid, opts = {})
       super(name, nil)
-      @finished = finished
-      @enqueued = enqueued
-      @failed   = failed
+      options = DEFAULTS.dup.merge(opts)
+      @finished = options[:finished]
+      @enqueued = options[:enqueued]
+      @failed   = options[:failed]
     end
 
     def perform(workflow_id, name, *args)
