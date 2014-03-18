@@ -71,7 +71,7 @@ module Gush
     end
 
     def concurrently(custom_name = nil, &block)
-      name = (custom_name || "concurrent-#{SecureRandom.uuid[0..6]}").to_s
+      name = (custom_name || "concurrent-#{SecureRandom.uuid}").to_s
       flow = Gush::ConcurrentWorkflow.new(name)
       flow.eval_in_context(block)
 
