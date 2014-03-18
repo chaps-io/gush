@@ -49,13 +49,11 @@ module Gush
     end
 
     def finished?
-      jobs
-        .all? { |n| n.finished }
+      jobs.all?(&:finished)
     end
 
     def running?
-      jobs
-        .any? { |n| n.enqueued }
+      jobs.any?(&:enqueued)
     end
 
     def run(klass, attach_to_self = false)
