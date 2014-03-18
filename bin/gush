@@ -1,0 +1,84 @@
+#!/usr/bin/env ruby
+require "pathname"
+
+bin_file = Pathname.new(__FILE__).realpath
+# add self to libpath
+$:.unshift File.expand_path("../../lib", bin_file)
+
+require 'gush'
+
+type = ARGV.first
+
+redis = Redis.new
+
+if type == "server"
+  `ruby #{Gush.root.join('lib/gush/server.rb')}`
+end
+
+require_relative '../workflows/workflows'
+if type == "create"
+  id = SecureRandom.uuid.split("-").first
+  workflow = LodgingsWorkflow.new(id)
+  redis.set("gush.workflows.#{id}", workflow.to_json)
+  puts "Workflow created with id: #{id}"
+end
+
+if type == "start"
+  Gush.start_workflow(ARGV[1], redis)
+end
+
+if type == "list"
+  keys = redis.keys("gush.workflows.*")
+  if keys.empty?
+    puts "No workflows registered."
+    exit
+  end
+
+  workflows = redis.mget(*keys).map {|json| Gush.tree_from_hash(JSON.parse(json)) }
+  workflows.each do |workflow|
+    if workflow.running?
+      status = "running - #{workflow.jobs.count {|job| job.finished }}/#{workflow.jobs.count}"
+    elsif workflow.finished?
+      status = "done"
+    else
+      status = "pending"
+    end
+    puts "[#{workflow.name}][#{status}] #{workflow.class}"
+  end
+end
+
+
+
+if type == "redis"
+  redis.psubscribe("gush.*") do |on|
+    on.psubscribe do |channel, subscriptions|
+      puts "Subscribed to ##{channel} (#{subscriptions} subscriptions)"
+    end
+
+    on.pmessage do |pattern, channel, message|
+      puts "[#{pattern}] => #{channel}: #{message}"
+      redis.unsubscribe if message == "exit"
+      if message == "gush.start.job-1"
+        Sidekiq::Client.push('class' => 'SampleJob', 'args' => [SecureRandom.uuid, 1])
+      end
+
+      if message == "gush.start.failing"
+        Sidekiq::Client.push('class' => 'FailingJob', 'args' => [SecureRandom.uuid, 1])
+      end
+
+      if message == "gush.queue.clear"
+        Sidekiq::Queue.new.clear
+      end
+    end
+
+    on.unsubscribe do |channel, subscriptions|
+      puts "Unsubscribed from ##{channel} (#{subscriptions} subscriptions)"
+    end
+  end
+end
+
+if type == "worker"
+
+end
+
+trap(:INT) { redis.quit; puts; exit }

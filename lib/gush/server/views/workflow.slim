@@ -1,0 +1,11 @@
+script type="text/javascript" src="/javascripts/controls.js"
+
+.row
+  .large-8.columns
+    h1
+      = workflow["json_class"]
+  .large-4.columns
+    button#workflow-start data-workflow-id=workflow["name"] start
+
+.row
+  ul.side-nav#jobs-list data-workflow-id=workflow["name"]

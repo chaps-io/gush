@@ -1,0 +1,11 @@
+*{
+    font-family: "Trebuchet MS", Helvetica, sans-serif;
+}
+.link {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 1.5px;
+}
+.link.warning{
+    stroke: orange;
+}
