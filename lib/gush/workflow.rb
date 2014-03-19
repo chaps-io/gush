@@ -60,9 +60,9 @@ module Gush
       jobs.any?(&:failed)
     end
 
-    def run(klass, attach_to_self = false)
+    def run(klass, attach_concurrently = false)
       node = klass.new(klass.to_s)
-      if attach_to_self || @last_node.nil?
+      if attach_concurrently || @last_node.nil?
         self << node
       else
         @last_node << node

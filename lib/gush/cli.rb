@@ -36,12 +36,12 @@ module Gush
     end
 
     def show(*args)
-      json = redis.get("gush.workflows.#{args.first}")
-      if json.nil?
+      workflow = Gush.find_workflow(args.first, redis)
+
+      if workflow.nil?
         puts "Workflow not found."
         return
       end
-      workflow = Gush.tree_from_hash(JSON.parse(json))
 
       rows = []
       progress = ""

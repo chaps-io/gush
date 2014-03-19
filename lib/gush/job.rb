@@ -54,8 +54,7 @@ module Gush
     end
 
     def find_workflow
-      hash = JSON.parse(redis.get("gush.workflows.#{@workflow_id}"))
-      Gush.tree_from_hash(hash)
+      Gush.find_workflow(@workflow_id, redis)
     end
 
     def persist_workflow(workflow)

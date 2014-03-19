@@ -33,13 +33,12 @@ module Gush
   end
 
   def self.start_workflow(id, redis)
-    json = redis.get("gush.workflows.#{id}")
-    if json.nil?
+    workflow = find_workflow(id, redis)
+
+    if workflow.nil?
       puts "Workflow not found."
       return
     end
-    hash = JSON.parse(json)
-    workflow = Gush.tree_from_hash(hash)
 
     workflow.next_jobs.each do |job|
       job.class.perform_async(workflow.name, job.name)
@@ -47,5 +46,11 @@ module Gush
     end
 
     redis.set("gush.workflows.#{id}", workflow.to_json)
+  end
+
+  def self.find_workflow(id, redis)
+    json = redis.get("gush.workflows.#{id}")
+    return nil if json.nil?
+    Gush.tree_from_hash(JSON.parse(json))
   end
 end
