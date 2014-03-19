@@ -1,9 +1,12 @@
 require 'sidekiq'
 require 'yajl'
+require 'gush/printable'
 
 module Gush
   class Job < Tree::TreeNode
     include ::Sidekiq::Worker
+    include Gush::Printable
+
     DEFAULTS = {
       finished: false,
       enqueued: false,
@@ -83,6 +86,18 @@ module Gush
       @finished = true
       @failed = true
       @enqueued = false
+    end
+
+    def finished?
+      !!finished
+    end
+
+    def failed?
+      !!failed
+    end
+
+    def running?
+      !!enqueued
     end
 
     private

@@ -24,7 +24,7 @@ module Gush
 
     def create(*args)
       id = SecureRandom.uuid.split("-").first
-      workflow = LodgingsWorkflow.new(id)
+      workflow = args.first.constantize.new(id)
       Gush.persist_workflow(workflow, redis)
       puts "Workflow created with id: #{id}"
       puts "Start it with command: gush start #{id}"
@@ -32,7 +32,12 @@ module Gush
 
 
     def start(*args)
-      Gush.start_workflow(args.first, redis: redis)
+      options = {redis: redis}
+      id = args.shift
+      if args.length > 0
+        options[:jobs] = args
+      end
+      Gush.start_workflow(id, options)
     end
 
     def show(*args)
@@ -66,12 +71,12 @@ module Gush
       rows << :separator
       rows << [{alignment: :center, value: "jobs"}, workflow.jobs.count]
       rows << :separator
-      rows << [{alignment: :center, value: "failed jobs"}, workflow.jobs.count(&:failed)]
+      rows << [{alignment: :center, value: "failed jobs"}, workflow.jobs.count(&:failed).to_s.red]
       rows << :separator
       rows << [{alignment: :center, value: "succeeded jobs"},
-        workflow.jobs.count { |j| j.finished && !j.failed }]
+        workflow.jobs.count { |j| j.finished && !j.failed }.to_s.green]
       rows << :separator
-      rows << [{alignment: :center, value: "enqueued jobs"}, workflow.jobs.count(&:enqueued)]
+      rows << [{alignment: :center, value: "enqueued jobs"}, workflow.jobs.count(&:enqueued).to_s.yellow]
       rows << :separator
       rows << [{alignment: :center, value: "remaining jobs"},
         workflow.jobs.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} }]
@@ -83,6 +88,10 @@ module Gush
       end
       table = Terminal::Table.new(rows: rows)
       puts table
+      puts
+      puts "Workflow tree:"
+      puts
+      workflow.print_tree
     end
 
     def list(*args)

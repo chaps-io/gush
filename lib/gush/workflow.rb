@@ -1,9 +1,11 @@
 require 'tree'
 require 'securerandom'
 require 'gush/concurrent_workflow'
+require 'gush/printable'
+
 module Gush
   class Workflow < Tree::TreeNode
-
+    include Gush::Printable
     attr_accessor :last_node
 
     def initialize(name, options = {})

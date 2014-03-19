@@ -3,6 +3,7 @@ require "securerandom"
 require "gush/version"
 require "gush/concurrent_workflow"
 require "gush/workflow"
+require "gush/printable"
 require "gush/job"
 require "gush/cli"
 require "hiredis"
@@ -43,13 +44,19 @@ module Gush
       return
     end
 
-    workflow.next_jobs.each do |job|
+    if options[:jobs]
+      jobs = options[:jobs].map { |name| workflow.find_job(name) }
+    else
+      jobs = workflow.next_jobs
+    end
+
+    jobs.each do |job|
       job.class.perform_async(workflow.name, job.name)
       job.enqueue!
     end
 
     persist_workflow(workflow, options[:redis])
-    workflow
+    jobs
   end
 
   def self.find_workflow(id, redis)
