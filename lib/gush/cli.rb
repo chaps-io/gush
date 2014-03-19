@@ -25,14 +25,14 @@ module Gush
     def create(*args)
       id = SecureRandom.uuid.split("-").first
       workflow = LodgingsWorkflow.new(id)
-      redis.set("gush.workflows.#{id}", workflow.to_json)
+      Gush.persist_workflow(workflow, redis)
       puts "Workflow created with id: #{id}"
       puts "Start it with command: gush start #{id}"
     end
 
 
     def start(*args)
-      Gush.start_workflow(args.first, redis)
+      Gush.start_workflow(args.first, redis: redis)
     end
 
     def show(*args)

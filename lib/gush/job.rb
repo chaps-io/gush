@@ -38,27 +38,23 @@ module Gush
       workflow = find_workflow
       job = workflow.find_job(self.class.to_s)
       job.finish!
-      persist_workflow(workflow)
+      Gush.persist_workflow(workflow, redis)
     end
 
     def mark_as_failed
       workflow = find_workflow
       job = workflow.find_job(self.class.to_s)
       job.fail!
-      persist_workflow(workflow)
+      Gush.persist_workflow(workflow, redis)
     end
 
     def continue_workflow
       workflow = find_workflow
-      Gush.start_workflow(@workflow_id, redis)
+      Gush.start_workflow(@workflow_id, redis: redis)
     end
 
     def find_workflow
       Gush.find_workflow(@workflow_id, redis)
-    end
-
-    def persist_workflow(workflow)
-      redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
     end
 
     def as_json(options = {})

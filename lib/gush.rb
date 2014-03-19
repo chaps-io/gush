@@ -28,12 +28,15 @@ module Gush
         node << tree_from_hash(child)
       end
     end
-
     node
   end
 
-  def self.start_workflow(id, redis)
-    workflow = find_workflow(id, redis)
+  def self.start_workflow(id, options = {})
+    if options[:redis].nil?
+      raise "Provide Redis connection object through options[:redis]"
+    end
+
+    workflow = find_workflow(id, options[:redis])
 
     if workflow.nil?
       puts "Workflow not found."
@@ -45,12 +48,17 @@ module Gush
       job.enqueue!
     end
 
-    redis.set("gush.workflows.#{id}", workflow.to_json)
+    persist_workflow(workflow, options[:redis])
+    workflow
   end
 
   def self.find_workflow(id, redis)
     json = redis.get("gush.workflows.#{id}")
     return nil if json.nil?
     Gush.tree_from_hash(JSON.parse(json))
+  end
+
+  def self.persist_workflow(workflow, redis)
+    redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
   end
 end

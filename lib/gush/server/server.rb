@@ -35,13 +35,11 @@ module Gush
       elsif msg == "workflows.add"
         id = SecureRandom.uuid
         workflow = LodgingsWorkflow.new(id)
-        config['redis'].multi do
-          config['redis'].set("gush.workflows.#{id}", workflow.to_json)
-        end
+        Gush.persist_workflow(workflow, config['redis'])
         env.channel << {type: 'workflows.add', id: id, status: true }.to_json
       elsif msg.index("workflows.start.") == 0
         id = msg.split(".").last
-        Gush.start_workflow(id, config['redis'])
+        Gush.start_workflow(id, redis: config['redis'])
         send_jobs_list(id)
       elsif msg.index("jobs.list.") == 0
         id = msg.split(".").last
