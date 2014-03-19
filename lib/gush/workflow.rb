@@ -26,10 +26,7 @@ module Gush
     end
 
     def find_job(name)
-      self.breadth_each do |node|
-        return node if node.name == name
-      end
-      nil
+      jobs.find { |node| node if node.name == name }
     end
 
     def next_jobs
