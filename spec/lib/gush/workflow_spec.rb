@@ -94,6 +94,21 @@ describe Gush::Workflow do
     end
   end
 
+  describe "#failed?" do
+    context "when one of the jobs failed" do
+      it "returns true" do
+        subject.children.first.failed = true
+        expect(subject.failed?).to be_true
+      end
+    end
+
+    context "when no jobs failed" do
+      it "returns true" do
+        expect(subject.failed?).to be_false
+      end
+    end
+  end
+
   describe "#running?" do
     context "when no enqueued jobs" do
       it "returns false" do

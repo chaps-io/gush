@@ -1,6 +1,6 @@
 # Gush
 
-Gush is a parallel workflow runner.
+Gush is a parallel workflow runner using only Redis as its message broker and Sidekiq for workers.
 
 ## Installation
 

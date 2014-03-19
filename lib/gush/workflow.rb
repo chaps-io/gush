@@ -56,6 +56,10 @@ module Gush
       jobs.any?(&:enqueued)
     end
 
+    def failed?
+      jobs.any?(&:failed)
+    end
+
     def run(klass, attach_to_self = false)
       node = klass.new(klass.to_s)
       if attach_to_self || @last_node.nil?
