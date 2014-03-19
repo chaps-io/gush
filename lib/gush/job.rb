@@ -7,6 +7,8 @@ module Gush
     include ::Sidekiq::Worker
     include Gush::Printable
 
+    sidekiq_options retry: false
+
     DEFAULTS = {
       finished: false,
       enqueued: false,

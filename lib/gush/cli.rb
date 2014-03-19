@@ -16,6 +16,8 @@ module Gush
         list(*args)
       when "help"
         print_help
+      when "workers"
+        start_workers(*args)
       else
         print_help
       end
@@ -129,6 +131,10 @@ module Gush
       puts table
     end
 
+    def start_workers(*args)
+      Kernel.exec "bundle exec sidekiq -r #{Gush.root.join("lib/gush/bootstrap.rb")} -v"
+    end
+
     def print_help
       puts "Usage:"
       puts
@@ -140,6 +146,7 @@ module Gush
       puts "gush start [workflow_id]    - starts a workflow with the given id. id is returned from `gush create`"
       puts "gush show [workflow_id]     - shows details about the given workflow"
       puts "gush list                   - lists all registered workflows and their statuses"
+      puts "gush workers                - starts Sidekiq workers"
       puts "gush help                   - prints help"
       puts
     end

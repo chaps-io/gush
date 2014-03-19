@@ -2,7 +2,6 @@ require 'tilt'
 require 'slim'
 require 'goliath'
 require 'goliath/rack/templates'
-require 'pry'
 
 Tilt.register :slim, Slim::Template
 

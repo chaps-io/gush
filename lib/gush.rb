@@ -1,6 +1,7 @@
 require "bundler/setup"
 require "securerandom"
 require "gush/version"
+require "gush/configuration"
 require "gush/concurrent_workflow"
 require "gush/workflow"
 require "gush/printable"
@@ -15,6 +16,14 @@ require "pathname"
 module Gush
   def self.root
     Pathname.new(FileUtils.pwd)
+  end
+
+  def self.configuration
+    @configuration ||= Configuration.new
+  end
+
+  def self.configure
+    yield(configuration) if block_given?
   end
 
   def self.tree_from_hash(hash)
