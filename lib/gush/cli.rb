@@ -129,6 +129,7 @@ module Gush
       puts
       puts "gush create [WorkflowClass] - registers a new workflow"
       puts "gush start [workflow_id]    - starts a workflow with the given id. id is returned from `gush create`"
+      puts "gush show [workflow_id]     - shows details about the given workflow"
       puts "gush list                   - lists all registered workflows and their statuses"
       puts "gush help                   - prints help"
       puts
