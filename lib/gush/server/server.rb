@@ -51,7 +51,6 @@ module Gush
         run_workflow_job(options[2], options[3])
         send_jobs_list(options[2])
       end
-      #env.channel << msg
     end
 
     def on_close(env)
