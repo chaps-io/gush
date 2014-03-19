@@ -1,10 +1,12 @@
 require 'sidekiq'
 require 'yajl'
 require 'gush/printable'
+require 'gush/metadata'
 
 module Gush
   class Job < Tree::TreeNode
     include ::Sidekiq::Worker
+    include Gush::Metadata
     include Gush::Printable
 
     sidekiq_options retry: false

@@ -39,7 +39,7 @@ describe Gush::Workflow do
 
   describe "#find_job" do
     it "finds job by its name" do
-      expect(TestWorkflow.new("test").find_job("PersistAllJob")).to be_instance_of(PersistAllJob)
+      expect(TestWorkflow.new("test").find_job("PersistFirstJob")).to be_instance_of(PersistFirstJob)
     end
   end
 
@@ -168,7 +168,40 @@ describe Gush::Workflow do
       subject.children.first.finished = true
       subject.children.first.children.first.children.first.finished = true
       subject.children.first.children.first.children.last.finished = true
-      expect(subject.next_jobs.map(&:name)).to match_array(["PersistAllJob"])
+      expect(subject.next_jobs.map(&:name)).to match_array(["PersistFirstJob"])
+    end
+
+    context "when nesting synchronous workflows in concurrent flows" do
+      it "properly orders nested synchronous flows inside concurrent" do
+        tree = Gush::Workflow.new("workflow")
+
+        tree.run Prepare
+
+        tree.concurrently :first_conc do
+          synchronously :first_sync do
+            run FetchFirstJob
+            run PersistFirstJob
+          end
+
+          synchronously :second_sync do
+            run FetchSecondJob
+            run PersistSecondJob
+          end
+        end
+
+        tree.run NormalizeJob
+        expect(tree.next_jobs.map(&:name)).to match_array(["Prepare"])
+        tree.find_job("Prepare").finished = true
+        expect(tree.next_jobs.map(&:name)).to match_array(["FetchFirstJob", "FetchSecondJob"])
+        tree.find_job("FetchFirstJob").finished = true
+        expect(tree.next_jobs.map(&:name)).to match_array(["FetchSecondJob"])
+        tree.find_job("FetchSecondJob").finished = true
+        expect(tree.next_jobs.map(&:name)).to match_array(["PersistFirstJob", "PersistSecondJob"])
+        tree.find_job("PersistFirstJob").finished = true
+        expect(tree.next_jobs.map(&:name)).to match_array(["PersistSecondJob"])
+        tree.find_job("PersistSecondJob").finished = true
+        expect(tree.next_jobs.map(&:name)).to match_array(["NormalizeJob"])
+      end
     end
   end
 end

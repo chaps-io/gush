@@ -7,8 +7,6 @@ $:.unshift File.expand_path("../../lib", bin_file)
 
 require 'gush'
 
-require_relative '../workflows/workflows'
-
 cli = Gush::CLI.new
 
 cli.command(*ARGV)

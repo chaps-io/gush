@@ -5,6 +5,7 @@ require "gush/configuration"
 require "gush/concurrent_workflow"
 require "gush/workflow"
 require "gush/printable"
+require "gush/metadata"
 require "gush/job"
 require "gush/cli"
 require "hiredis"
@@ -15,7 +16,7 @@ require "pathname"
 
 module Gush
   def self.root
-    Pathname.new(FileUtils.pwd)
+    Pathname.new(__FILE__).parent.parent
   end
 
   def self.configuration

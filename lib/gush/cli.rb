@@ -18,6 +18,10 @@ module Gush
         print_help
       when "workers"
         start_workers(*args)
+      when "clear"
+        Sidekiq::Queue.new.clear
+      when "viz"
+        graph_workflow(*args)
       else
         print_help
       end
@@ -25,6 +29,7 @@ module Gush
 
 
     def create(*args)
+      require gushfile
       id = SecureRandom.uuid.split("-").first
       workflow = args.first.constantize.new(id)
       Gush.persist_workflow(workflow, redis)
@@ -34,6 +39,7 @@ module Gush
 
 
     def start(*args)
+      require gushfile
       options = {redis: redis}
       id = args.shift
       if args.length > 0
@@ -43,6 +49,7 @@ module Gush
     end
 
     def show(*args)
+      require gushfile
       workflow = Gush.find_workflow(args.first, redis)
 
       if workflow.nil?
@@ -97,6 +104,7 @@ module Gush
     end
 
     def list(*args)
+      require gushfile
       keys = redis.keys("gush.workflows.*")
       if keys.empty?
         puts "No workflows registered."
@@ -132,7 +140,75 @@ module Gush
     end
 
     def start_workers(*args)
-      Kernel.exec "bundle exec sidekiq -r #{Gush.root.join("lib/gush/bootstrap.rb")} -v"
+      if gushfile.exist?
+        Kernel.exec "bundle exec sidekiq -r #{gushfile} -v"
+      else
+        puts "Gushfile not found, please add it to your project"
+      end
+    end
+
+    def graph_workflow(*args)
+      require gushfile
+      workflow = args.first.constantize.new("graph-tree")
+      GraphViz.new( :G, :type => :digraph, dpi: 200, compound: true ) do |g|
+      g[:compound] = true
+      g[:rankdir] = "LR"
+      g[:center] = true
+      g.node[:shape] = "record"
+
+      start = g.start(shape: 'diamond')
+      end_node = g.end(shape: 'diamond')
+
+
+      nodes = workflow.map { |n| n }
+      nodes.shift
+
+
+      g.add_edges(start, nodes.first.name)
+
+      last_node = nil
+      nodes.each do |node|
+        if node.class <= Gush::Job
+          node.children.each do |child|
+            last_node = g.add_nodes(child.name) if node.class <= Gush::Job
+            if child.class <= Gush::Job
+              if node.parent.class.superclass == Gush::Workflow
+                g.add_edges(node.name, child.name, ltail: "cluster_#{node.parent.name}")
+              else
+                g.add_edges(node.name, child.name)
+              end
+            end
+            if child.class.superclass == Gush::Workflow
+              if node.parent.class.superclass == Gush::Workflow
+                g.add_edges(node.name, child.name, ltail: "cluster_#{node.parent.name}", lhead: "cluster_#{child.name}")
+              else
+                g.add_edges(node.name, child.name, lhead: "cluster_#{child.name}")
+              end
+            end
+          end
+        elsif node.class.superclass == Gush::ConcurrentWorkflow
+          cluster = g.add_graph("cluster_#{node.name}")
+          cluster[:style] = "dashed,filled"
+          cluster[:fillcolor] = "lightgray"
+          last_node = g.add_nodes(node.name, style: 'none', color: 'none')
+          node.children.each do |child|
+            last_node = cluster.add_nodes(child.name)
+            if child.class <= Gush::Job
+              cluster.add_edges(node.name, child.name, ltail: "cluster_#{node.name}", style: 'invis')
+            end
+            if child.class.superclass == Gush::Workflow
+              cluster.add_edges(node.name, child.name, lhead: "cluster_#{node.name}", ltail: "cluster_#{child.name}")
+            end
+          end
+        end
+      end
+
+      g.add_edges(last_node, end_node)
+
+      g.output( :png => "/tmp/graph.png" )
+      end
+
+      `shotwell /tmp/graph.png`
     end
 
     def print_help
@@ -151,6 +227,10 @@ module Gush
       puts
     end
     private
+
+    def gushfile
+      gushfile = Pathname.new(FileUtils.pwd).join("Gushfile.rb")
+    end
 
     def redis
       @redis ||= Redis.new

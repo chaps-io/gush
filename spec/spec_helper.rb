@@ -5,7 +5,8 @@ require 'pry'
 class Prepare < Gush::Job;  end
 class FetchFirstJob < Gush::Job; end
 class FetchSecondJob < Gush::Job; end
-class PersistAllJob < Gush::Job; end
+class PersistFirstJob < Gush::Job; end
+class PersistSecondJob < Gush::Job; end
 class NormalizeJob < Gush::Job; end
 
 
@@ -17,7 +18,7 @@ class TestWorkflow < Gush::Workflow
       run FetchFirstJob
       run FetchSecondJob
     end
-    run PersistAllJob
+    run PersistFirstJob
 
     run NormalizeJob
   end

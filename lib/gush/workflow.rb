@@ -2,23 +2,18 @@ require 'tree'
 require 'securerandom'
 require 'gush/concurrent_workflow'
 require 'gush/printable'
+require 'gush/metadata'
 
 module Gush
   class Workflow < Tree::TreeNode
     include Gush::Printable
+    include Gush::Metadata
+
     attr_accessor :last_node
 
     def initialize(name, options = {})
       super(name, nil)
       configure unless options[:configure] == false
-    end
-
-    def self.metadata(params = {})
-      @metadata = (@metadata || {}).merge(params)
-    end
-
-    def name
-      metadata[:name] || @name
     end
 
     def start
@@ -28,19 +23,21 @@ module Gush
     end
 
     def find_job(name)
-      jobs.find { |node| node if node.name == name }
+      breadth_each.find { |node| node.name == name || node.class.to_s == name }
     end
 
     def next_jobs
-      jobs = []
-      self.breadth_each do |node|
-        next if node.class <= Gush::Workflow
-        break if ([node] + node.siblings).any? { |n| n.enqueued || n.failed }
-        if !node.finished && !node.enqueued && (jobs.empty? || node.level <= jobs.last.level)
-          jobs << node
-        end
+      return [] if failed?
+
+      by_level = jobs
+        .group_by(&:node_depth)
+
+      by_level.each do |level, jobs|
+        break if jobs.any?(&:running?)
+        filtered_jobs = jobs.reject(&:finished?)
+        return filtered_jobs if filtered_jobs.any?
       end
-      jobs
+      []
     end
 
     def jobs
@@ -61,15 +58,10 @@ module Gush
 
     def run(klass, attach_concurrently = false)
       node = klass.new(klass.to_s)
-      if attach_concurrently || @last_node.nil?
+      if attach_concurrently
         self << node
       else
-        @last_node << node
-      end
-      if klass <= Gush::Workflow
-        @last_node = node.children.first
-      elsif klass <= Gush::Job
-        @last_node = node
+        deepest_node << node
       end
     end
 
@@ -78,12 +70,19 @@ module Gush
       flow = Gush::ConcurrentWorkflow.new(name)
       flow.eval_in_context(block)
 
-      if @last_node.nil?
+      deepest_node << flow
+    end
+
+    def synchronously(custom_name = nil, attach_concurrently = false, &block)
+      name = (custom_name || "sync-#{SecureRandom.uuid}").to_s
+      flow = Gush::Workflow.new(name)
+      flow.eval_in_context(block)
+
+      if attach_concurrently
         self << flow
       else
-        @last_node << flow
+        deepest_node << flow
       end
-      @last_node = flow.children.first
     end
 
     def as_json(options = {})
@@ -96,9 +95,8 @@ module Gush
       instance_eval(&block)
     end
 
-    private
-    def metadata
-      self.class.metadata
+    def deepest_node
+      each_leaf.sort_by{|n| -n.node_depth }.first
     end
   end
 end

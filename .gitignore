@@ -17,3 +17,4 @@ test/version_tmp
 workflows/
 tmp
 test.rb
+Gushfile.rb
