@@ -1,15 +1,15 @@
-require 'bundler/setup'
-require 'securerandom'
+require "bundler/setup"
+require "securerandom"
 require "gush/version"
 require "gush/concurrent_workflow"
 require "gush/workflow"
 require "gush/job"
-
-require 'hiredis'
-require 'redis'
-require 'sidekiq'
-require 'graphviz'
-require 'pathname'
+require "gush/cli"
+require "hiredis"
+require "redis"
+require "sidekiq"
+require "graphviz"
+require "pathname"
 
 module Gush
   def self.root
@@ -33,7 +33,12 @@ module Gush
   end
 
   def self.start_workflow(id, redis)
-    hash = JSON.parse(redis.get("gush.workflows.#{id}"))
+    json = redis.get("gush.workflows.#{id}")
+    if json.nil?
+      puts "Workflow not found."
+      return
+    end
+    hash = JSON.parse(json)
     workflow = Gush.tree_from_hash(hash)
 
     workflow.next_jobs.each do |job|
