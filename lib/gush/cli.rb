@@ -141,7 +141,7 @@ module Gush
 
     def start_workers(*args)
       if gushfile.exist?
-        Kernel.exec "bundle exec sidekiq -r #{gushfile} -v"
+        Kernel.exec "bundle exec sidekiq -r #{gushfile} -c #{Gush.configuration.concurrency} -v"
       else
         puts "Gushfile not found, please add it to your project"
       end
