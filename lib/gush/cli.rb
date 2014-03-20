@@ -149,66 +149,40 @@ module Gush
 
     def graph_workflow(*args)
       require gushfile
-      workflow = args.first.constantize.new("graph-tree")
-      GraphViz.new( :G, :type => :digraph, dpi: 200, compound: true ) do |g|
-      g[:compound] = true
-      g[:rankdir] = "LR"
-      g[:center] = true
-      g.node[:shape] = "record"
+      workflow = args.first.constantize.new("start")
+      # constant seed to keep colors from changing
+      r = Random.new(1235)
+      level_color = Hash[(1..workflow.deepest_node.node_depth)
+        .map {|level| [level, "#" + (0..2).map{"%0x" % (r.rand * 0x80 + 0x80)}.join] }]
+      GraphViz.new(:G, type: :digraph, dpi: 200, compound: true) do |g|
+        g[:compound] = true
+        g[:rankdir] = "LR"
+        g[:center] = true
+        g.node[:shape] = "box"
+        g.node[:style] = "filled"
+        g.edge[:dir] = "forward"
+        g.edge[:penwidth] = 2
+        start = g.start(shape: 'diamond', fillcolor: 'green')
+        end_node = g.end(shape: 'diamond', fillcolor: 'red')
 
-      start = g.start(shape: 'diamond')
-      end_node = g.end(shape: 'diamond')
 
+        nodes = workflow.breadth_each.map { |n| n }
+        nodes.shift
 
-      nodes = workflow.map { |n| n }
-      nodes.shift
+        g.add_edges(workflow.deepest_node.name, end_node)
 
-
-      g.add_edges(start, nodes.first.name)
-
-      last_node = nil
-      nodes.each do |node|
-        if node.class <= Gush::Job
-          node.children.each do |child|
-            last_node = g.add_nodes(child.name) if node.class <= Gush::Job
-            if child.class <= Gush::Job
-              if node.parent.class.superclass == Gush::Workflow
-                g.add_edges(node.name, child.name, ltail: "cluster_#{node.parent.name}")
-              else
-                g.add_edges(node.name, child.name)
-              end
-            end
-            if child.class.superclass == Gush::Workflow
-              if node.parent.class.superclass == Gush::Workflow
-                g.add_edges(node.name, child.name, ltail: "cluster_#{node.parent.name}", lhead: "cluster_#{child.name}")
-              else
-                g.add_edges(node.name, child.name, lhead: "cluster_#{child.name}")
-              end
-            end
+        nodes.each do |node|
+          if node.class <= Gush::Workflow
+            g.add_nodes(node.name, style: 'none', color: 'none')
+          else
+            g.add_nodes(node.name, fillcolor: level_color[node.node_depth])
           end
-        elsif node.class.superclass == Gush::ConcurrentWorkflow
-          cluster = g.add_graph("cluster_#{node.name}")
-          cluster[:style] = "dashed,filled"
-          cluster[:fillcolor] = "lightgray"
-          last_node = g.add_nodes(node.name, style: 'none', color: 'none')
-          node.children.each do |child|
-            last_node = cluster.add_nodes(child.name)
-            if child.class <= Gush::Job
-              cluster.add_edges(node.name, child.name, ltail: "cluster_#{node.name}", style: 'invis')
-            end
-            if child.class.superclass == Gush::Workflow
-              cluster.add_edges(node.name, child.name, lhead: "cluster_#{node.name}", ltail: "cluster_#{child.name}")
-            end
-          end
+          g.add_edges(node.parent.name, node.name)
         end
+        g.output( :png => "/tmp/graph.png" )
       end
 
-      g.add_edges(last_node, end_node)
-
-      g.output( :png => "/tmp/graph.png" )
-      end
-
-      `shotwell /tmp/graph.png`
+      `xdg-open /tmp/graph.png`
     end
 
     def print_help
