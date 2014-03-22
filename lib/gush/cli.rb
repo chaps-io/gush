@@ -152,8 +152,6 @@ module Gush
       workflow = args.first.constantize.new("start")
       # constant seed to keep colors from changing
       r = Random.new(1235)
-      level_color = Hash[(1..workflow.deepest_node.node_depth)
-        .map {|level| [level, "#" + (0..2).map{"%0x" % (r.rand * 0x80 + 0x80)}.join] }]
       GraphViz.new(:G, type: :digraph, dpi: 200, compound: true) do |g|
         g[:compound] = true
         g[:rankdir] = "LR"
@@ -166,18 +164,23 @@ module Gush
         end_node = g.end(shape: 'diamond', fillcolor: 'red')
 
 
-        nodes = workflow.breadth_each.map { |n| n }
-        nodes.shift
-
-        g.add_edges(workflow.deepest_node.name, end_node)
-
-        nodes.each do |node|
-          if node.class <= Gush::Workflow
-            g.add_nodes(node.name, style: 'none', color: 'none')
-          else
-            g.add_nodes(node.name, fillcolor: level_color[node.node_depth])
+        workflow.nodes.each do |job|
+          if job.incoming_edges.empty?
+            g.add_edges(start, job.name)
           end
-          g.add_edges(node.parent.name, node.name)
+        end
+
+        workflow.last_nodes.each do |job|
+          if job.outgoing_edges.empty?
+            g.add_edges(job.name, end_node)
+          end
+        end
+
+        workflow.nodes.each do |node|
+          g.add_nodes(node.name)
+        end
+        workflow.edges.each do |edge|
+          g.add_edges(edge.from.name, edge.to.name)
         end
         g.output( :png => "/tmp/graph.png" )
       end

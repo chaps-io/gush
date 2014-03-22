@@ -6,11 +6,11 @@ describe Gush::Job do
       it "returns correct hash" do
         job = described_class.new("a-job", finished: true, enqueued: true)
         expected = {
-          "name"=>"a-job",
-          "json_class"=>"Gush::Job",
-          "finished"=>true,
-          "enqueued"=>true,
-          "failed"=>false
+          name: "a-job",
+          klass: "Gush::Job",
+          finished: true,
+          enqueued: true,
+          failed: false
         }
         expect(job.as_json).to eq(expected)
       end

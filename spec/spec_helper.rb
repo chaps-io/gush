@@ -14,12 +14,13 @@ class TestWorkflow < Gush::Workflow
   def configure
     run Prepare
 
-    concurrently do
-      run FetchFirstJob
-      run FetchSecondJob
-    end
-    run PersistFirstJob
-
     run NormalizeJob
+
+    run FetchFirstJob, after: Prepare
+    run PersistFirstJob, after: FetchFirstJob, before: NormalizeJob
+
+    run FetchSecondJob, after: Prepare, before: NormalizeJob
+
+
   end
 end

@@ -2,9 +2,10 @@ require 'sidekiq'
 require 'yajl'
 require 'gush/printable'
 require 'gush/metadata'
+require 'gush/node'
 
 module Gush
-  class Job < Tree::TreeNode
+  class Job < Node
     include ::Sidekiq::Worker
     include Gush::Metadata
     include Gush::Printable
@@ -19,9 +20,10 @@ module Gush
 
     attr_accessor :finished, :enqueued, :failed, :workflow_id
 
-    def initialize(name = SecureRandom.uuid, opts = {})
-      super(name, nil)
+    def initialize(name, opts = {})
+      super(name)
       options = DEFAULTS.dup.merge(opts)
+      @name = name
       @finished = options[:finished]
       @enqueued = options[:enqueued]
       @failed   = options[:failed]
@@ -43,14 +45,14 @@ module Gush
 
     def mark_as_finished
       workflow = find_workflow
-      job = workflow.find_job(self.class.to_s)
+      job = workflow.find_job(@name)
       job.finish!
       Gush.persist_workflow(workflow, redis)
     end
 
     def mark_as_failed
       workflow = find_workflow
-      job = workflow.find_job(self.class.to_s)
+      job = workflow.find_job(@name)
       job.fail!
       Gush.persist_workflow(workflow, redis)
     end
@@ -64,12 +66,14 @@ module Gush
       Gush.find_workflow(@workflow_id, redis)
     end
 
-    def as_json(options = {})
-      hash = super(options)
-      hash["finished"] = @finished
-      hash["enqueued"] = @enqueued
-      hash["failed"] = @failed
-      hash.delete("content")
+    def as_json
+      hash = {
+        name: name,
+        klass: self.class.to_s,
+        finished: @finished,
+        enqueued: @enqueued,
+        failed: @failed
+      }
       hash
     end
 
@@ -104,10 +108,21 @@ module Gush
       !!enqueued
     end
 
+    def can_be_started?
+      !running? &&
+        !finished? &&
+          !failed? &&
+            dependencies_satisfied?
+    end
+
     private
 
+    def dependencies_satisfied?
+      dependencies.all? { |dep| !dep.running? && dep.finished? && !dep.failed? }
+    end
+
     def report(status, start, error = nil)
-      response = {status: status, workflow_id: workflow_id, job: self.class.to_s, duration: elapsed(start)}
+      response = {status: status, workflow_id: workflow_id, job: @name, duration: elapsed(start)}
       response[:error] = error if error
       redis.publish("gush.workers.status", encoder.encode(response))
     end

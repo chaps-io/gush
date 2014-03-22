@@ -1,102 +1,86 @@
 require 'tree'
 require 'securerandom'
-require 'gush/concurrent_workflow'
 require 'gush/printable'
 require 'gush/metadata'
+require 'gush/edge'
+require 'gush/node'
 
 module Gush
-  class Workflow < Tree::TreeNode
+  class Workflow < Node
     include Gush::Printable
     include Gush::Metadata
 
-    attr_accessor :last_node
+    attr_accessor :nodes, :edges
 
     def initialize(name, options = {})
-      super(name, nil)
+      @name = name
+      @nodes = []
+      @edges = []
       configure unless options[:configure] == false
-    end
-
-    def start
     end
 
     def configure
     end
 
     def find_job(name)
-      breadth_each.find { |node| node.name == name || node.class.to_s == name }
-    end
-
-    def next_jobs
-      return [] if failed?
-
-      by_level = jobs
-        .group_by(&:node_depth)
-
-      by_level.each do |level, jobs|
-        break if jobs.any?(&:running?)
-        filtered_jobs = jobs.reject(&:finished?)
-        return filtered_jobs if filtered_jobs.any?
-      end
-      []
-    end
-
-    def jobs
-      breadth_each.select { |n| n.class <= Gush::Job }
+      @nodes.find { |node| node.name == name.to_s || node.class.to_s == name.to_s }
     end
 
     def finished?
-      jobs.all?(&:finished)
+      nodes.all?(&:finished)
     end
 
     def running?
-      jobs.any?(&:enqueued)
+      nodes.any?(&:enqueued)
     end
 
     def failed?
-      jobs.any?(&:failed)
+      nodes.any?(&:failed)
     end
 
-    def run(klass, attach_concurrently = false)
+    def run(klass, deps = {})
       node = klass.new(klass.to_s)
-      if attach_concurrently
-        self << node
-      else
-        deepest_node << node
+
+      if deps[:after]
+        parent = find_job(deps[:after])
+        if parent.nil?
+          raise "Job #{deps[:after]} does not exist in the graph. Register it first."
+        end
+        edge = Edge.new(parent, node)
+        parent.connect_to(node)
+        node.connect_from(parent)
+        @edges << edge
       end
-    end
 
-    def concurrently(custom_name = nil, &block)
-      name = (custom_name || "concurrent-#{SecureRandom.uuid}").to_s
-      flow = Gush::ConcurrentWorkflow.new(name)
-      flow.eval_in_context(block)
+      if deps[:before]
+        child = find_job(deps[:before])
+        if child.nil?
+          raise "Job #{deps[:before]} does not exist in the graph. Register it first."
+        end
 
-      deepest_node << flow
-    end
-
-    def synchronously(custom_name = nil, attach_concurrently = false, &block)
-      name = (custom_name || "sync-#{SecureRandom.uuid}").to_s
-      flow = Gush::Workflow.new(name)
-      flow.eval_in_context(block)
-
-      if attach_concurrently
-        self << flow
-      else
-        deepest_node << flow
+        edge = Edge.new(node, child)
+        node.connect_to(child)
+        child.connect_from(node)
+        @edges << edge
       end
+
+      @nodes << node
     end
 
-    def as_json(options = {})
-      hash = super(options)
-      hash.delete("content")
-      hash
+
+    def to_json
+      hash = {
+        name: @name,
+        klass: self.class.to_s,
+        nodes: @nodes.map(&:as_json),
+        edges: @edges.map(&:as_json)
+      }
+
+      JSON.dump(hash)
     end
 
-    def eval_in_context(block)
-      instance_eval(&block)
-    end
-
-    def deepest_node
-      each_leaf.sort_by{|n| -n.node_depth }.first
+    def next_jobs
+      @nodes.select(&:can_be_started?)
     end
   end
 end
