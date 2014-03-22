@@ -40,20 +40,22 @@ module Gush
     def run(klass, deps = {})
       node = klass.new(klass.to_s)
 
-      if deps[:after]
-        parent = find_job(deps[:after])
+      deps_after = [*deps[:after]]
+      deps_after.each do |dep|
+        parent = find_job(dep)
         if parent.nil?
-          raise "Job #{deps[:after]} does not exist in the graph. Register it first."
+          raise "Job #{dep} does not exist in the graph. Register it first."
         end
         edge = Edge.new(parent, node)
         parent.connect_to(node)
         node.connect_from(parent)
       end
 
-      if deps[:before]
-        child = find_job(deps[:before])
+      deps_before = [*deps[:before]]
+      deps_before.each do |dep|
+        child = find_job(dep)
         if child.nil?
-          raise "Job #{deps[:before]} does not exist in the graph. Register it first."
+          raise "Job #{dep} does not exist in the graph. Register it first."
         end
 
         edge = Edge.new(node, child)
