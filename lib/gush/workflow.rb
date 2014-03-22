@@ -10,12 +10,11 @@ module Gush
     include Gush::Printable
     include Gush::Metadata
 
-    attr_accessor :nodes, :edges
+    attr_accessor :nodes
 
     def initialize(name, options = {})
       @name = name
       @nodes = []
-      @edges = []
       configure unless options[:configure] == false
     end
 
@@ -49,7 +48,6 @@ module Gush
         edge = Edge.new(parent, node)
         parent.connect_to(node)
         node.connect_from(parent)
-        @edges << edge
       end
 
       if deps[:before]
@@ -61,7 +59,6 @@ module Gush
         edge = Edge.new(node, child)
         node.connect_to(child)
         child.connect_from(node)
-        @edges << edge
       end
 
       @nodes << node
@@ -72,8 +69,7 @@ module Gush
       hash = {
         name: @name,
         klass: self.class.to_s,
-        nodes: @nodes.map(&:as_json),
-        edges: @edges.map(&:as_json)
+        nodes: @nodes.map(&:as_json)
       }
 
       JSON.dump(hash)

@@ -9,9 +9,9 @@ describe Gush::Node do
       bb = described_class.new("second-parallel")
       c = described_class.new("third")
 
-      a.connect_to(b)
-      b.connect_to(c)
-      bb.connect_to(c)
+      b.connect_from(a)
+      c.connect_from(b)
+      c.connect_from(bb)
 
       expect(c.dependencies.map(&:name)).to match_array(["first", "second", "second-parallel"])
     end

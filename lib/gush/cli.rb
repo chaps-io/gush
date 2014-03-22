@@ -165,23 +165,22 @@ module Gush
 
 
         workflow.nodes.each do |job|
+          g.add_nodes(job.name)
+
           if job.incoming_edges.empty?
             g.add_edges(start, job.name)
           end
-        end
 
-        workflow.last_nodes.each do |job|
+
           if job.outgoing_edges.empty?
             g.add_edges(job.name, end_node)
+          else
+            job.outgoing_edges.each do |edge|
+              g.add_edges(edge.from.name, edge.to.name)
+            end
           end
         end
 
-        workflow.nodes.each do |node|
-          g.add_nodes(node.name)
-        end
-        workflow.edges.each do |edge|
-          g.add_edges(edge.from.name, edge.to.name)
-        end
         g.output( :png => "/tmp/graph.png" )
       end
 

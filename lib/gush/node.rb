@@ -12,13 +12,11 @@ module Gush
     def connect_to(node)
       edge = Edge.new(self, node)
       @edges << edge
-      node.edges << edge
     end
 
     def connect_from(node)
       edge = Edge.new(node, self)
       @edges << edge
-      node.edges << edge
     end
 
     def outgoing_edges
