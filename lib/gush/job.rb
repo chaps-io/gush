@@ -43,14 +43,14 @@ module Gush
 
     def mark_as_finished
       workflow = find_workflow
-      job = workflow.find_job(@name)
+      job = workflow.find_job(self.class.to_s)
       job.finish!
       Gush.persist_workflow(workflow, redis)
     end
 
     def mark_as_failed
       workflow = find_workflow
-      job = workflow.find_job(@name)
+      job = workflow.find_job(self.class.to_s)
       job.fail!
       Gush.persist_workflow(workflow, redis)
     end
