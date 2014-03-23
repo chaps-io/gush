@@ -18,7 +18,7 @@ module Gush
 
     attr_accessor :finished, :enqueued, :failed, :workflow_id
 
-    def initialize(name, opts = {})
+    def initialize(name = nil, opts = {})
       super(name)
       options = DEFAULTS.dup.merge(opts)
       @name = name

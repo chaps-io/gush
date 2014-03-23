@@ -4,7 +4,7 @@ module Gush
   class Node
     attr_accessor :edges, :name, :job_class
 
-    def initialize(name)
+    def initialize(name = nil)
       @name = name
       @edges = []
     end
