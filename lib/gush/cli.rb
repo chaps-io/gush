@@ -62,11 +62,11 @@ module Gush
       if workflow.failed?
         status = "failed".red
         status += "\n"
-        status += "#{workflow.jobs.find(&:failed).name} failed".red
+        status += "#{workflow.nodes.find(&:failed).name} failed".red
       elsif workflow.running?
         status = "running".yellow
-        finished = workflow.jobs.count {|job| job.finished }
-        total = workflow.jobs.count
+        finished = workflow.nodes.count {|job| job.finished }
+        total = workflow.nodes.count
         progress = "#{finished}/#{total} [#{(finished*100)/total}%]"
       elsif workflow.finished?
         status = "done".green
@@ -78,17 +78,17 @@ module Gush
       rows << :separator
       rows << [{alignment: :center, value: "name"}, workflow.class.to_s]
       rows << :separator
-      rows << [{alignment: :center, value: "jobs"}, workflow.jobs.count]
+      rows << [{alignment: :center, value: "jobs"}, workflow.nodes.count]
       rows << :separator
-      rows << [{alignment: :center, value: "failed jobs"}, workflow.jobs.count(&:failed).to_s.red]
+      rows << [{alignment: :center, value: "failed jobs"}, workflow.nodes.count(&:failed).to_s.red]
       rows << :separator
       rows << [{alignment: :center, value: "succeeded jobs"},
-        workflow.jobs.count { |j| j.finished && !j.failed }.to_s.green]
+        workflow.nodes.count { |j| j.finished && !j.failed }.to_s.green]
       rows << :separator
-      rows << [{alignment: :center, value: "enqueued jobs"}, workflow.jobs.count(&:enqueued).to_s.yellow]
+      rows << [{alignment: :center, value: "enqueued jobs"}, workflow.nodes.count(&:enqueued).to_s.yellow]
       rows << :separator
       rows << [{alignment: :center, value: "remaining jobs"},
-        workflow.jobs.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} }]
+        workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} }]
       rows << :separator
       rows << [{alignment: :center, value: "status"}, status]
       if !progress.empty?
@@ -112,11 +112,11 @@ module Gush
         progress = ""
         if workflow.failed?
           status = "failed".red
-          progress = "#{workflow.jobs.find(&:failed).name} failed"
+          progress = "#{workflow.nodes.find(&:failed).name} failed"
         elsif workflow.running?
           status = "running".yellow
-          finished = workflow.jobs.count {|job| job.finished }
-          total = workflow.jobs.count
+          finished = workflow.nodes.count {|job| job.finished }
+          total = workflow.nodes.count
           progress = "#{finished}/#{total} [#{(finished*100)/total}%]"
         elsif workflow.finished?
           status = "done".green
