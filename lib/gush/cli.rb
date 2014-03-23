@@ -97,10 +97,6 @@ module Gush
       end
       table = Terminal::Table.new(rows: rows)
       puts table
-      puts
-      puts "Workflow tree:"
-      puts
-      workflow.print_tree
     end
 
     def list(*args)

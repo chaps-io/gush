@@ -1,6 +1,5 @@
 require 'sidekiq'
 require 'yajl'
-require 'gush/printable'
 require 'gush/metadata'
 require 'gush/node'
 
@@ -8,7 +7,6 @@ module Gush
   class Job < Node
     include ::Sidekiq::Worker
     include Gush::Metadata
-    include Gush::Printable
 
     sidekiq_options retry: false
 

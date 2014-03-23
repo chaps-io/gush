@@ -1,13 +1,11 @@
 require 'tree'
 require 'securerandom'
-require 'gush/printable'
 require 'gush/metadata'
 require 'gush/edge'
 require 'gush/node'
 
 module Gush
   class Workflow < Node
-    include Gush::Printable
     include Gush::Metadata
 
     attr_accessor :nodes
