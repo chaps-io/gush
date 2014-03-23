@@ -87,7 +87,7 @@ module Gush
 
     def load_workflow(id)
       hash = JSON.parse(config['redis'].get("gush.workflows.#{id}"))
-      workflow = Gush.tree_from_hash(hash)
+      workflow = Gush.workflow_from_hash(hash)
     end
   end
 end

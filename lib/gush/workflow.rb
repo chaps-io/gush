@@ -46,7 +46,7 @@ module Gush
         if parent.nil?
           raise "Job #{dep} does not exist in the graph. Register it first."
         end
-        edge = Edge.new(parent, node)
+
         parent.connect_to(node)
         node.connect_from(parent)
       end
@@ -58,7 +58,6 @@ module Gush
           raise "Job #{dep} does not exist in the graph. Register it first."
         end
 
-        edge = Edge.new(node, child)
         node.connect_to(child)
         child.connect_from(node)
       end
@@ -71,7 +70,8 @@ module Gush
       hash = {
         name: @name,
         klass: self.class.to_s,
-        nodes: @nodes.map(&:as_json)
+        nodes: @nodes.map(&:as_json),
+        edges: @nodes.flat_map { |node| node.edges.map(&:as_json) }.uniq
       }
 
       JSON.dump(hash)

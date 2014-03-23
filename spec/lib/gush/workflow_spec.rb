@@ -27,7 +27,8 @@ describe Gush::Workflow do
         "name"=>"workflow",
         "klass" => klass.to_s,
         "nodes" => [{"name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false},
-          {"name"=>"PersistFirstJob", "klass"=>"PersistFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false}]
+          {"name"=>"PersistFirstJob", "klass"=>"PersistFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false}],
+        "edges" => [{"from"=>"FetchFirstJob", "to"=>"PersistFirstJob"}]
 
       }
       expect(result).to eq(expected)

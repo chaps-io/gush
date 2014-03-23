@@ -16,11 +16,9 @@ class TestWorkflow < Gush::Workflow
 
     run NormalizeJob
 
-    run FetchFirstJob, after: Prepare
+    run FetchFirstJob,   after: Prepare
     run PersistFirstJob, after: FetchFirstJob, before: NormalizeJob
 
-    run FetchSecondJob, after: Prepare, before: NormalizeJob
-
-
+    run FetchSecondJob,  after: Prepare, before: NormalizeJob
   end
 end

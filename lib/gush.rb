@@ -28,19 +28,22 @@ module Gush
     yield(configuration) if block_given?
   end
 
-  def self.tree_from_hash(hash)
-    node = hash["json_class"].constantize.new(hash["name"],
-      finished: hash["finished"],
-      enqueued: hash["enqueued"],
-      failed: hash["failed"],
-      configure: false)
+  def self.workflow_from_hash(hash)
+    flow = hash["klass"].constantize.new(hash["name"], configure: false)
 
-    if hash["children"]
-      hash["children"].each do |child|
-        node << tree_from_hash(child)
-      end
+    hash["nodes"].each do |node|
+      flow.nodes << Gush::Job.from_hash(node)
     end
-    node
+
+    hash["edges"].each do |edge|
+      from = flow.find_job(edge["from"])
+      to = flow.find_job(edge["to"])
+
+      from.connect_to(to)
+      to.connect_from(from)
+    end
+
+    flow
   end
 
   def self.start_workflow(id, options = {})
@@ -73,7 +76,7 @@ module Gush
   def self.find_workflow(id, redis)
     json = redis.get("gush.workflows.#{id}")
     return nil if json.nil?
-    Gush.tree_from_hash(JSON.parse(json))
+    Gush.workflow_from_hash(JSON.parse(json))
   end
 
   def self.persist_workflow(workflow, redis)

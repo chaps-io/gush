@@ -77,6 +77,11 @@ module Gush
       hash
     end
 
+    def self.from_hash(hash)
+      job = hash["klass"].constantize.new(hash["name"], finished: hash["finished"],
+        enqueued: hash["enqueued"], failed: hash["failed"])
+    end
+
     def work
     end
 
