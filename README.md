@@ -54,8 +54,18 @@ gush start <workflow_id>
 
 ### 5. Check the status
 
-```
-gush show <workflow_id>
+- of a specific workflow:
+
+  ```
+  gush show <workflow_id>
+  ```
+
+- of all created workflows:
+  
+  ```
+  gush list
+  ```
+
 
 ## Contributing
 
