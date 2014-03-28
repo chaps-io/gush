@@ -7,6 +7,4 @@ $:.unshift File.expand_path("../../lib", bin_file)
 
 require 'gush'
 
-cli = Gush::CLI.new
-
-cli.command(*ARGV)
+Gush::CLI.start(ARGV)
