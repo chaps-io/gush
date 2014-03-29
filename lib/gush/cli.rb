@@ -1,6 +1,7 @@
 require 'terminal-table'
 require 'colorize'
 require 'thor'
+require 'launchy'
 
 module Gush
   class CLI < Thor
@@ -160,10 +161,10 @@ module Gush
           end
         end
 
-        g.output( :png => "/tmp/graph.png" )
+        g.output(png: Pathname.new(Dir.tmpdir).join("graph.png"))
       end
 
-      `xdg-open /tmp/graph.png`
+      Launchy.open(Pathname.new(Dir.tmpdir).join("graph.png").to_s)
     end
 
     private
