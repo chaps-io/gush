@@ -1,43 +1,21 @@
 require 'terminal-table'
 require 'colorize'
+require 'thor'
 
 module Gush
-  class CLI
+  class CLI < Thor
 
-    def command(type, *args)
-      case type
-      when "create"
-        create(*args)
-      when "start"
-        start(*args)
-      when "show"
-        show(*args)
-      when "list"
-        list(*args)
-      when "help"
-        print_help
-      when "workers"
-        start_workers(*args)
-      when "clear"
-        Sidekiq::Queue.new.clear
-      when "viz"
-        graph_workflow(*args)
-      else
-        print_help
-      end
-    end
-
-
-    def create(*args)
+    desc "create [WorkflowClass]", "Registers new workflow"
+    def create(name)
       require gushfile
       id = SecureRandom.uuid.split("-").first
-      workflow = args.first.constantize.new(id)
+      workflow = name.constantize.new(id)
       Gush.persist_workflow(workflow, redis)
       puts "Workflow created with id: #{id}"
       puts "Start it with command: gush start #{id}"
     end
 
-
+    desc "start [workflow_id]", "Starts Workflow with given ID"
     def start(*args)
       require gushfile
       options = {redis: redis}
@@ -48,9 +26,10 @@ module Gush
       Gush.start_workflow(id, options)
     end
 
-    def show(*args)
+    desc "show [workflow_id]", "Shows details about workflow with given ID"
+    def show(workflow_id)
       require gushfile
-      workflow = Gush.find_workflow(args.first, redis)
+      workflow = Gush.find_workflow(workflow_id, redis)
 
       if workflow.nil?
         puts "Workflow not found."
@@ -99,7 +78,9 @@ module Gush
       puts table
     end
 
-    def list(*args)
+
+    desc "list", "Lists all workflows with their statuses"
+    def list
       require gushfile
       keys = redis.keys("gush.workflows.*")
       if keys.empty?
@@ -135,7 +116,8 @@ module Gush
       puts table
     end
 
-    def start_workers(*args)
+    desc "workers", "Starts Sidekiq workers"
+    def workers
       if gushfile.exist?
         Kernel.exec "bundle exec sidekiq -r #{gushfile} -c #{Gush.configuration.concurrency} -v"
       else
@@ -143,9 +125,10 @@ module Gush
       end
     end
 
-    def graph_workflow(*args)
+    desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
+    def viz(name)
       require gushfile
-      workflow = args.first.constantize.new("start")
+      workflow = name.constantize.new("start")
       # constant seed to keep colors from changing
       r = Random.new(1235)
       GraphViz.new(:G, type: :digraph, dpi: 200, compound: true) do |g|
@@ -183,25 +166,11 @@ module Gush
       `xdg-open /tmp/graph.png`
     end
 
-    def print_help
-      puts "Usage:"
-      puts
-      puts "gush [command] [args]"
-      puts
-      puts "Available commands:"
-      puts
-      puts "gush create [WorkflowClass] - registers a new workflow"
-      puts "gush start [workflow_id]    - starts a workflow with the given id. id is returned from `gush create`"
-      puts "gush show [workflow_id]     - shows details about the given workflow"
-      puts "gush list                   - lists all registered workflows and their statuses"
-      puts "gush workers                - starts Sidekiq workers"
-      puts "gush help                   - prints help"
-      puts
-    end
     private
-
     def gushfile
       gushfile = Pathname.new(FileUtils.pwd).join("Gushfile.rb")
+      raise Thor::Error, "Gushfile not found, please add it to your project".colorize(:red) unless gushfile.exist?
+      gushfile
     end
 
     def redis
