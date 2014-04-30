@@ -101,13 +101,13 @@ module Gush
         name = job.name
         puts case
         when job.failed?
-          name.red
+          "[✗] #{name.red}"
         when job.finished?
-          name.green
+          "[✓] #{name.green}"
         when job.running?
-          name.yellow
+          "[•] #{name.yellow}"
         else
-          name
+          "[ ] #{name}"
         end
       end
     end
