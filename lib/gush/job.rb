@@ -85,6 +85,7 @@ module Gush
 
     def enqueue!
       @enqueued = true
+      @failed = false
     end
 
     def finish!

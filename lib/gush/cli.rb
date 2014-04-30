@@ -2,6 +2,7 @@ require 'terminal-table'
 require 'colorize'
 require 'thor'
 require 'launchy'
+require 'sidekiq'
 
 module Gush
   class CLI < Thor
@@ -25,6 +26,11 @@ module Gush
         options[:jobs] = args
       end
       Gush.start_workflow(id, options)
+    end
+
+    desc "clear", "Clears all jobs from Sidekiq queue"
+    def clear
+      Sidekiq::Queue.new.clear
     end
 
     desc "show [workflow_id]", "Shows details about workflow with given ID"
@@ -60,12 +66,12 @@ module Gush
       rows << :separator
       rows << [{alignment: :center, value: "jobs"}, workflow.nodes.count]
       rows << :separator
-      rows << [{alignment: :center, value: "failed jobs"}, workflow.nodes.count(&:failed).to_s.red]
+      rows << [{alignment: :center, value: "failed jobs"}, workflow.nodes.count(&:failed?).to_s.red]
       rows << :separator
       rows << [{alignment: :center, value: "succeeded jobs"},
         workflow.nodes.count { |j| j.finished && !j.failed }.to_s.green]
       rows << :separator
-      rows << [{alignment: :center, value: "enqueued jobs"}, workflow.nodes.count(&:enqueued).to_s.yellow]
+      rows << [{alignment: :center, value: "enqueued jobs"}, workflow.nodes.count(&:running?).to_s.yellow]
       rows << :separator
       rows << [{alignment: :center, value: "remaining jobs"},
         workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} }]
@@ -77,6 +83,33 @@ module Gush
       end
       table = Terminal::Table.new(rows: rows)
       puts table
+
+      puts "\nJobs list:\n"
+
+      workflow.nodes.sort_by do |job|
+        case
+        when job.failed?
+          0
+        when job.finished?
+          1
+        when job.running?
+          2
+        else
+          3
+        end
+      end.each do |job|
+        name = job.name
+        puts case
+        when job.failed?
+          name.red
+        when job.finished?
+          name.green
+        when job.running?
+          name.yellow
+        else
+          name
+        end
+      end
     end
 
 
