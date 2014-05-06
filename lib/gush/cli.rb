@@ -9,23 +9,28 @@ module Gush
 
     desc "create [WorkflowClass]", "Registers new workflow"
     def create(name)
-      require gushfile
       id = SecureRandom.uuid.split("-").first
       workflow = name.constantize.new(id)
       Gush.persist_workflow(workflow, redis)
       puts "Workflow created with id: #{id}"
       puts "Start it with command: gush start #{id}"
+      return id
     end
 
     desc "start [workflow_id]", "Starts Workflow with given ID"
     def start(*args)
-      require gushfile
       options = {redis: redis}
       id = args.shift
       if args.length > 0
         options[:jobs] = args
       end
       Gush.start_workflow(id, options)
+    end
+
+    desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
+    def create_and_start(name)
+      id = create(name)
+      start(id)
     end
 
     desc "clear", "Clears all jobs from Sidekiq queue"
@@ -38,7 +43,6 @@ module Gush
     option :skip_jobs, type: :boolean
     option :jobs, default: :all
     def show(workflow_id)
-      require gushfile
       workflow = Gush.find_workflow(workflow_id, redis)
 
       if workflow.nil?
@@ -54,7 +58,6 @@ module Gush
 
     desc "list", "Lists all workflows with their statuses"
     def list
-      require gushfile
       keys = redis.keys("gush.workflows.*")
       if keys.empty?
         puts "No workflows registered."
@@ -91,16 +94,11 @@ module Gush
 
     desc "workers", "Starts Sidekiq workers"
     def workers
-      if gushfile.exist?
-        Kernel.exec "bundle exec sidekiq -r #{gushfile} -c #{Gush.configuration.concurrency} -v"
-      else
-        puts "Gushfile not found, please add it to your project"
-      end
+      Kernel.exec "bundle exec sidekiq -r #{Gush.gushfile} -c #{Gush.configuration.concurrency} -v"
     end
 
     desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
     def viz(name)
-      require gushfile
       workflow = name.constantize.new("start")
       # constant seed to keep colors from changing
       r = Random.new(1235)
@@ -140,11 +138,6 @@ module Gush
     end
 
     private
-    def gushfile
-      gushfile = Pathname.new(FileUtils.pwd).join("Gushfile.rb")
-      raise Thor::Error, "Gushfile not found, please add it to your project".colorize(:red) unless gushfile.exist?
-      gushfile
-    end
 
     def redis
       @redis ||= Redis.new

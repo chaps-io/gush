@@ -10,11 +10,20 @@ require "gush/edge"
 require "gush/cli"
 require "hiredis"
 require "redis"
+require "redis-mutex"
 require "sidekiq"
 require "graphviz"
 require "pathname"
 
+Redis::Classy.db = Redis.new(url: Gush.configuration.redis_url)
+
 module Gush
+  def self.gushfile
+    gushfile = Pathname.new(FileUtils.pwd).join("Gushfile.rb")
+    raise Thor::Error, "Gushfile not found, please add it to your project".colorize(:red) unless gushfile.exist?
+    gushfile
+  end
+
   def self.root
     Pathname.new(__FILE__).parent.parent
   end
@@ -46,39 +55,45 @@ module Gush
   end
 
   def self.start_workflow(id, options = {})
-    if options[:redis].nil?
-      raise "Provide Redis connection object through options[:redis]"
+    Redis::Mutex.with_lock("gush.semaphores.start_workflow.#{id}") do
+      if options[:redis].nil?
+        raise "Provide Redis connection object through options[:redis]"
+      end
+
+      workflow = find_workflow(id, options[:redis])
+
+      if workflow.nil?
+        puts "Workflow not found."
+        return
+      end
+
+      if options[:jobs]
+        jobs = options[:jobs].map { |name| workflow.find_job(name) }
+      else
+        jobs = workflow.next_jobs
+      end
+
+      jobs.each do |job|
+        job.class.perform_async(workflow.name, job.name)
+        job.enqueue!
+      end
+
+      persist_workflow(workflow, options[:redis])
+      jobs
     end
-
-    workflow = find_workflow(id, options[:redis])
-
-    if workflow.nil?
-      puts "Workflow not found."
-      return
-    end
-
-    if options[:jobs]
-      jobs = options[:jobs].map { |name| workflow.find_job(name) }
-    else
-      jobs = workflow.next_jobs
-    end
-
-    jobs.each do |job|
-      job.class.perform_async(workflow.name, job.name)
-      job.enqueue!
-    end
-
-    persist_workflow(workflow, options[:redis])
-    jobs
   end
 
   def self.find_workflow(id, redis)
-    json = redis.get("gush.workflows.#{id}")
-    return nil if json.nil?
-    Gush.workflow_from_hash(JSON.parse(json))
+    Redis::Mutex.with_lock("gush.semaphores.find.#{id}") do
+      json = redis.get("gush.workflows.#{id}")
+      workflow = nil if json.nil?
+      Gush.workflow_from_hash(JSON.parse(json))
+    end
   end
 
   def self.persist_workflow(workflow, redis)
-    redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
+    Redis::Mutex.with_lock("gush.semaphores.persist.#{workflow.name}") do
+      redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
+    end
   end
 end

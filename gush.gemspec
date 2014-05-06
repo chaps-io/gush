@@ -20,6 +20,8 @@ Gem::Specification.new do |spec|
   spec.add_dependency "sidekiq", "~> 2.17.7"
   spec.add_dependency "yajl-ruby"
   spec.add_dependency "redis"
+  spec.add_dependency "hiredis"
+  spec.add_dependency "redis-mutex"
   spec.add_dependency "ruby-graphviz"
   spec.add_dependency "rubytree", "~> 0.9.3"
   spec.add_dependency "terminal-table"
