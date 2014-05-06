@@ -15,7 +15,6 @@ require "sidekiq"
 require "graphviz"
 require "pathname"
 
-Redis::Classy.db = Redis.new(url: Gush.configuration.redis_url)
 
 module Gush
   def self.gushfile
@@ -97,3 +96,5 @@ module Gush
     end
   end
 end
+
+Redis::Classy.db = Redis.new(url: Gush.configuration.redis_url)
