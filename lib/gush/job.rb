@@ -42,22 +42,28 @@ module Gush
     end
 
     def mark_as_finished
-      workflow = find_workflow
-      job = workflow.find_job(self.class.to_s)
-      job.finish!
-      Gush.persist_workflow(workflow, redis)
+      Redis::Mutex.with_lock("gush.mutex.mark_as_finished.#{@workflow_id}", Gush.configuration.mutex) do
+        workflow = find_workflow
+        job = workflow.find_job(self.class.to_s)
+        job.finish!
+        Gush.persist_workflow(workflow, redis)
+      end
     end
 
     def mark_as_failed
-      workflow = find_workflow
-      job = workflow.find_job(self.class.to_s)
-      job.fail!
-      Gush.persist_workflow(workflow, redis)
+      Redis::Mutex.with_lock("gush.mutex.mark_as_failed.#{@workflow_id}", Gush.configuration.mutex) do
+        workflow = find_workflow
+        job = workflow.find_job(self.class.to_s)
+        job.fail!
+        Gush.persist_workflow(workflow, redis)
+      end
     end
 
     def continue_workflow
-      workflow = find_workflow
-      Gush.start_workflow(@workflow_id, redis: redis)
+      Redis::Mutex.with_lock("gush.mutex.continue_workflow.#{@workflow_id}", Gush.configuration.mutex) do
+        workflow = find_workflow
+        Gush.start_workflow(@workflow_id, redis: redis)
+      end
     end
 
     def find_workflow

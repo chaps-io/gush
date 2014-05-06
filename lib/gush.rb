@@ -54,7 +54,7 @@ module Gush
   end
 
   def self.start_workflow(id, options = {})
-    Redis::Mutex.with_lock("gush.semaphores.start_workflow.#{id}") do
+    Redis::Mutex.with_lock("gush.mutex.start_workflow.#{id}", Gush.configuration.mutex) do
       if options[:redis].nil?
         raise "Provide Redis connection object through options[:redis]"
       end
@@ -83,7 +83,7 @@ module Gush
   end
 
   def self.find_workflow(id, redis)
-    Redis::Mutex.with_lock("gush.semaphores.find.#{id}") do
+    Redis::Mutex.with_lock("gush.mutex.find.#{id}", Gush.configuration.mutex) do
       json = redis.get("gush.workflows.#{id}")
       workflow = nil if json.nil?
       Gush.workflow_from_hash(JSON.parse(json))
@@ -91,7 +91,7 @@ module Gush
   end
 
   def self.persist_workflow(workflow, redis)
-    Redis::Mutex.with_lock("gush.semaphores.persist.#{workflow.name}") do
+    Redis::Mutex.with_lock("gush.mutex.persist.#{workflow.name}", Gush.configuration.mutex) do
       redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
     end
   end
