@@ -26,10 +26,16 @@ describe Gush::Workflow do
       expected = {
         "name"=>"workflow",
         "klass" => klass.to_s,
-        "nodes" => [{"name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false},
-          {"name"=>"PersistFirstJob", "klass"=>"PersistFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false}],
-        "edges" => [{"from"=>"FetchFirstJob", "to"=>"PersistFirstJob"}]
-
+        "nodes" => [
+          {
+            "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
+          "incoming"=>[], "outgoing"=>["PersistFirstJob"]
+          },
+          {
+            "name"=>"PersistFirstJob", "klass"=>"PersistFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
+            "incoming"=>["FetchFirstJob"], "outgoing"=>[]
+          }
+        ]
       }
       expect(result).to eq(expected)
     end
@@ -57,8 +63,9 @@ describe Gush::Workflow do
         klass2 = Class.new(Gush::Job)
         tree.run(klass1)
         tree.run(klass2, after: klass1)
+        tree.create_dependencies
         expect(tree.nodes.first).to be_an_instance_of(klass1)
-        expect(tree.nodes.first.outgoing.first).to be_an_instance_of(klass2)
+        expect(tree.nodes.first.outgoing.first).to eq(klass2.to_s)
       end
     end
   end
@@ -153,6 +160,7 @@ describe Gush::Workflow do
         flow.run FetchSecondJob, after: Prepare
         flow.run PersistSecondJob, after: FetchSecondJob, before: NormalizeJob
 
+        flow.create_dependencies
         expect(flow.next_jobs.map(&:name)).to match_array(["Prepare"])
         flow.find_job("Prepare").finished = true
         expect(flow.next_jobs.map(&:name)).to match_array(["FetchFirstJob", "FetchSecondJob"])

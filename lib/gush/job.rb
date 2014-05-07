@@ -1,10 +1,9 @@
 require 'sidekiq'
 require 'yajl'
 require 'gush/metadata'
-require 'gush/node'
 
 module Gush
-  class Job < Node
+  class Job
     include ::Sidekiq::Worker
     include Gush::Metadata
 
@@ -16,15 +15,16 @@ module Gush
       failed: false
     }
 
-    attr_accessor :finished, :enqueued, :failed, :workflow_id
+    attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing
 
     def initialize(name = nil, opts = {})
-      super(name)
       options = DEFAULTS.dup.merge(opts)
       @name = name
       @finished = options[:finished]
       @enqueued = options[:enqueued]
       @failed   = options[:failed]
+      @incoming = options[:incoming] || []
+      @outgoing = options[:outgoing] || []
     end
 
     def perform(workflow_id, name, *args)
@@ -33,29 +33,25 @@ module Gush
         start = Time.now
         work(*args)
         mark_as_finished
-        report(:finished, start)
+        #report(:finished, start)
         continue_workflow
       rescue Exception => e
         mark_as_failed
-        report(:failed, start, e.message)
+        #report(:failed, start, e.message)
       end
     end
 
     def mark_as_finished
       Redis::Mutex.with_lock("gush.mutex.mark_as_finished.#{@workflow_id}", Gush.configuration.mutex) do
-        workflow = find_workflow
-        job = workflow.find_job(self.class.to_s)
-        job.finish!
-        Gush.persist_workflow(workflow, redis)
+        self.finish!
+        Gush.persist_job(@workflow_id, self, redis)
       end
     end
 
     def mark_as_failed
       Redis::Mutex.with_lock("gush.mutex.mark_as_failed.#{@workflow_id}", Gush.configuration.mutex) do
-        workflow = find_workflow
-        job = workflow.find_job(self.class.to_s)
-        job.fail!
-        Gush.persist_workflow(workflow, redis)
+        self.fail!
+        Gush.persist_job(@workflow_id, self, redis)
       end
     end
 
@@ -67,7 +63,9 @@ module Gush
     end
 
     def find_workflow
-      Gush.find_workflow(@workflow_id, redis)
+      Redis::Mutex.with_lock("gush.mutex.find_workflow.#{@workflow_id}", Gush.configuration.mutex) do
+        Gush.find_workflow(@workflow_id, redis)
+      end
     end
 
     def as_json
@@ -76,14 +74,25 @@ module Gush
         klass: self.class.to_s,
         finished: @finished,
         enqueued: @enqueued,
-        failed: @failed
+        failed: @failed,
+        incoming: incoming,
+        outgoing: outgoing
       }
       hash
     end
 
+    def to_json
+      as_json.to_json
+    end
+
     def self.from_hash(hash)
-      job = hash["klass"].constantize.new(hash["name"], finished: hash["finished"],
-        enqueued: hash["enqueued"], failed: hash["failed"])
+      job = hash["klass"].constantize.new(hash["name"],
+        finished: hash["finished"],
+        enqueued: hash["enqueued"],
+        failed: hash["failed"],
+        incoming: hash["incoming"],
+        outgoing: hash["outgoing"]
+      )
     end
 
     def work
@@ -91,18 +100,18 @@ module Gush
 
     def enqueue!
       @enqueued = true
-      @failed = false
+      @failed   = false
     end
 
     def finish!
       @finished = true
       @enqueued = false
-      @failed = false
+      @failed   = false
     end
 
     def fail!
       @finished = true
-      @failed = true
+      @failed   = true
       @enqueued = false
     end
 
@@ -118,17 +127,21 @@ module Gush
       !!enqueued
     end
 
-    def can_be_started?
+    def can_be_started?(flow)
       !running? &&
         !finished? &&
           !failed? &&
-            dependencies_satisfied?
+            dependencies_satisfied?(flow)
+    end
+
+    def dependencies(flow)
+      (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow) }).uniq
     end
 
     private
 
-    def dependencies_satisfied?
-      dependencies.all? { |dep| !dep.running? && dep.finished? && !dep.failed? }
+    def dependencies_satisfied?(flow)
+      dependencies(flow).all? { |dep| !dep.running? && dep.finished? && !dep.failed? }
     end
 
     def report(status, start, error = nil)

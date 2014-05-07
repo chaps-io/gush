@@ -10,7 +10,9 @@ describe Gush::Job do
           klass: "Gush::Job",
           finished: true,
           enqueued: true,
-          failed: false
+          failed: false,
+          incoming: [],
+          outgoing: []
         }
         expect(job.as_json).to eq(expected)
       end

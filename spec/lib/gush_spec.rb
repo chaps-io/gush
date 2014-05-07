@@ -13,10 +13,9 @@ describe Gush do
       expect(hash_parsed["name"]).to eq(hash["name"])
       expect(hash_parsed["klass"]).to eq(hash["klass"])
       expect(hash_parsed["nodes"]).to match_array(hash["nodes"])
-      expect(hash_parsed["edges"]).to match_array(hash["edges"])
 
-      path = flow_parsed.find_job('NormalizeJob').dependencies.map(&:name)
-      path_expected = flow.find_job('NormalizeJob').dependencies.map(&:name)
+      path = flow_parsed.find_job('NormalizeJob').dependencies(flow).map(&:name)
+      path_expected = flow.find_job('NormalizeJob').dependencies(flow).map(&:name)
 
       expect(path).to match_array(path_expected)
     end

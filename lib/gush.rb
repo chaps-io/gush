@@ -5,8 +5,6 @@ require "gush/configuration"
 require "gush/workflow"
 require "gush/metadata"
 require "gush/job"
-require "gush/node"
-require "gush/edge"
 require "gush/cli"
 require "hiredis"
 require "redis"
@@ -14,7 +12,6 @@ require "redis-mutex"
 require "sidekiq"
 require "graphviz"
 require "pathname"
-
 
 module Gush
   def self.gushfile
@@ -35,26 +32,18 @@ module Gush
     yield(configuration) if block_given?
   end
 
-  def self.workflow_from_hash(hash)
+  def self.workflow_from_hash(hash, nodes = nil)
     flow = hash["klass"].constantize.new(hash["name"], configure: false)
 
-    hash["nodes"].each do |node|
+    (nodes || hash["nodes"]).each do |node|
       flow.nodes << Gush::Job.from_hash(node)
-    end
-
-    hash["edges"].each do |edge|
-      from = flow.find_job(edge["from"])
-      to = flow.find_job(edge["to"])
-
-      from.connect_to(to)
-      to.connect_from(from)
     end
 
     flow
   end
 
   def self.start_workflow(id, options = {})
-    Redis::Mutex.with_lock("gush.mutex.start_workflow.#{id}", Gush.configuration.mutex) do
+    #Redis::Mutex.with_lock("gush.mutex.start_workflow.#{id}", Gush.configuration.mutex) do
       if options[:redis].nil?
         raise "Provide Redis connection object through options[:redis]"
       end
@@ -73,27 +62,42 @@ module Gush
       end
 
       jobs.each do |job|
-        job.class.perform_async(workflow.name, job.name)
         job.enqueue!
+        persist_job(workflow.name, job, options[:redis])
+        job.class.perform_async(workflow.name, job.name)
       end
 
-      persist_workflow(workflow, options[:redis])
       jobs
-    end
+    #end
   end
 
   def self.find_workflow(id, redis)
     Redis::Mutex.with_lock("gush.mutex.find.#{id}", Gush.configuration.mutex) do
       json = redis.get("gush.workflows.#{id}")
-      workflow = nil if json.nil?
-      Gush.workflow_from_hash(JSON.parse(json))
+      if json.nil?
+        workflow = nil
+      else
+        hash = JSON.parse(json)
+        keys = redis.keys("gush.workflows.#{id}.*")
+        nodes = redis.mget(*keys).map { |json| JSON.parse(json) }
+        workflow = Gush.workflow_from_hash(hash, nodes)
+      end
+      workflow
     end
   end
 
   def self.persist_workflow(workflow, redis)
     Redis::Mutex.with_lock("gush.mutex.persist.#{workflow.name}", Gush.configuration.mutex) do
       redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
+
+      workflow.nodes.each do |job|
+        persist_job(workflow.name, job, redis)
+      end
     end
+  end
+
+  def self.persist_job(workflow_id, job, redis)
+    redis.set("gush.workflows.#{workflow_id}.#{job.name}", job.to_json)
   end
 end
 

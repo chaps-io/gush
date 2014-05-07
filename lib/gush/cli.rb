@@ -117,16 +117,16 @@ module Gush
         workflow.nodes.each do |job|
           g.add_nodes(job.name)
 
-          if job.incoming_edges.empty?
+          if job.incoming.empty?
             g.add_edges(start, job.name)
           end
 
 
-          if job.outgoing_edges.empty?
+          if job.outgoing.empty?
             g.add_edges(job.name, end_node)
           else
-            job.outgoing_edges.each do |edge|
-              g.add_edges(edge.from.name, edge.to.name)
+            job.outgoing.each do |out|
+              g.add_edges(job.name, out.name)
             end
           end
         end
@@ -194,6 +194,7 @@ module Gush
         when job.failed?
           "[✗] #{name.red}"
         when job.finished?
+          binding.pry
           "[✓] #{name.green}"
         when job.running?
           "[•] #{name.yellow}"
