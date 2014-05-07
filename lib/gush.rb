@@ -8,10 +8,10 @@ require "gush/job"
 require "gush/cli"
 require "hiredis"
 require "redis"
-require "redis-mutex"
 require "sidekiq"
 require "graphviz"
 require "pathname"
+require 'yajl'
 
 module Gush
   def self.gushfile
@@ -33,9 +33,9 @@ module Gush
   end
 
   def self.workflow_from_hash(hash, nodes = nil)
-    flow = hash["klass"].constantize.new(hash["name"], configure: false)
+    flow = hash[:klass].constantize.new(hash[:name], configure: false)
 
-    (nodes || hash["nodes"]).each do |node|
+    (nodes || hash[:nodes]).each do |node|
       flow.nodes << Gush::Job.from_hash(node)
     end
 
@@ -43,62 +43,54 @@ module Gush
   end
 
   def self.start_workflow(id, options = {})
-    #Redis::Mutex.with_lock("gush.mutex.start_workflow.#{id}", Gush.configuration.mutex) do
-      if options[:redis].nil?
-        raise "Provide Redis connection object through options[:redis]"
-      end
+    if options[:redis].nil?
+      raise "Provide Redis connection object through options[:redis]"
+    end
 
-      workflow = find_workflow(id, options[:redis])
+    workflow = find_workflow(id, options[:redis])
 
-      if workflow.nil?
-        puts "Workflow not found."
-        return
-      end
+    if workflow.nil?
+      puts "Workflow not found."
+      return
+    end
 
-      if options[:jobs]
-        jobs = options[:jobs].map { |name| workflow.find_job(name) }
-      else
-        jobs = workflow.next_jobs
-      end
+    if options[:jobs]
+      jobs = options[:jobs].map { |name| workflow.find_job(name) }
+    else
+      jobs = workflow.next_jobs
+    end
 
-      jobs.each do |job|
-        job.enqueue!
-        persist_job(workflow.name, job, options[:redis])
-        job.class.perform_async(workflow.name, job.name)
-      end
+    jobs.each do |job|
+      job.enqueue!
+      persist_job(workflow.name, job, options[:redis])
+      job.class.perform_async(workflow.name, Yajl::Encoder.new.encode(job.as_json))
+    end
 
-      jobs
-    #end
+    jobs
   end
 
   def self.find_workflow(id, redis)
-    Redis::Mutex.with_lock("gush.mutex.find.#{id}", Gush.configuration.mutex) do
-      json = redis.get("gush.workflows.#{id}")
-      if json.nil?
-        workflow = nil
-      else
-        hash = JSON.parse(json)
-        keys = redis.keys("gush.workflows.#{id}.*")
-        nodes = redis.mget(*keys).map { |json| JSON.parse(json) }
-        workflow = Gush.workflow_from_hash(hash, nodes)
-      end
-      workflow
+    json = redis.get("gush.workflows.#{id}")
+    if json.nil?
+      workflow = nil
+    else
+      hash = Yajl::Parser.parse(json, symbolize_keys: true)
+      keys = redis.keys("gush.jobs.#{id}.*")
+      nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
+      workflow = Gush.workflow_from_hash(hash, nodes)
     end
+    workflow
   end
 
   def self.persist_workflow(workflow, redis)
-    Redis::Mutex.with_lock("gush.mutex.persist.#{workflow.name}", Gush.configuration.mutex) do
-      redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
+    redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
 
-      workflow.nodes.each do |job|
-        persist_job(workflow.name, job, redis)
-      end
+    workflow.nodes.each do |job|
+      persist_job(workflow.name, job, redis)
     end
   end
 
   def self.persist_job(workflow_id, job, redis)
-    redis.set("gush.workflows.#{workflow_id}.#{job.name}", job.to_json)
+    redis.set("gush.jobs.#{workflow_id}.#{job.class.to_s}", job.to_json)
   end
 end
-
-Redis::Classy.db = Redis.new(url: Gush.configuration.redis_url)

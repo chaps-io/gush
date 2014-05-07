@@ -17,81 +17,73 @@ module Gush
 
     attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing
 
-    def initialize(name = nil, opts = {})
+    def initialize(opts = {})
       options = DEFAULTS.dup.merge(opts)
-      @name = name
-      @finished = options[:finished]
-      @enqueued = options[:enqueued]
-      @failed   = options[:failed]
-      @incoming = options[:incoming] || []
-      @outgoing = options[:outgoing] || []
+      assign_variables(options)
     end
 
-    def perform(workflow_id, name, *args)
+    def perform(workflow_id, json)
       begin
         @workflow_id = workflow_id
+        opts = Yajl::Parser.parse(json, symbolize_keys: true)
+        assign_variables(opts)
         start = Time.now
-        work(*args)
+        work
         mark_as_finished
-        #report(:finished, start)
+        report(:finished, start)
         continue_workflow
       rescue Exception => e
         mark_as_failed
-        #report(:failed, start, e.message)
+        report(:failed, start, e.message)
       end
     end
 
     def mark_as_finished
-      Redis::Mutex.with_lock("gush.mutex.mark_as_finished.#{@workflow_id}", Gush.configuration.mutex) do
-        self.finish!
-        Gush.persist_job(@workflow_id, self, redis)
-      end
+      self.finish!
+      Gush.persist_job(@workflow_id, self, redis)
     end
 
     def mark_as_failed
-      Redis::Mutex.with_lock("gush.mutex.mark_as_failed.#{@workflow_id}", Gush.configuration.mutex) do
-        self.fail!
-        Gush.persist_job(@workflow_id, self, redis)
-      end
+      self.fail!
+      Gush.persist_job(@workflow_id, self, redis)
     end
 
     def continue_workflow
-      Redis::Mutex.with_lock("gush.mutex.continue_workflow.#{@workflow_id}", Gush.configuration.mutex) do
+      #Redis::Mutex.with_lock("gush.mutex.continue_workflow.#{@workflow_id}", Gush.configuration.mutex) do
         workflow = find_workflow
         Gush.start_workflow(@workflow_id, redis: redis)
-      end
+      #end
     end
 
     def find_workflow
-      Redis::Mutex.with_lock("gush.mutex.find_workflow.#{@workflow_id}", Gush.configuration.mutex) do
-        Gush.find_workflow(@workflow_id, redis)
-      end
+      Gush.find_workflow(@workflow_id, redis)
     end
 
     def as_json
       hash = {
-        name: name,
+        name: @name,
         klass: self.class.to_s,
         finished: @finished,
         enqueued: @enqueued,
         failed: @failed,
-        incoming: incoming,
-        outgoing: outgoing
+        incoming: @incoming,
+        outgoing: @outgoing
       }
       hash
     end
 
     def to_json
-      as_json.to_json
+      Yajl::Encoder.new.encode(as_json)
     end
 
     def self.from_hash(hash)
-      job = hash["klass"].constantize.new(hash["name"],
-        finished: hash["finished"],
-        enqueued: hash["enqueued"],
-        failed: hash["failed"],
-        incoming: hash["incoming"],
-        outgoing: hash["outgoing"]
+      job = hash[:klass].constantize.new(
+        name:     hash[:name],
+        finished: hash[:finished],
+        enqueued: hash[:enqueued],
+        failed: hash[:failed],
+        incoming: hash[:incoming],
+        outgoing: hash[:outgoing]
       )
     end
 
@@ -139,6 +131,15 @@ module Gush
     end
 
     private
+
+    def assign_variables(options)
+      @name     = options[:name]
+      @finished = options[:finished]
+      @enqueued = options[:enqueued]
+      @failed   = options[:failed]
+      @incoming = options[:incoming] || []
+      @outgoing = options[:outgoing] || []
+    end
 
     def dependencies_satisfied?(flow)
       dependencies(flow).all? { |dep| !dep.running? && dep.finished? && !dep.failed? }

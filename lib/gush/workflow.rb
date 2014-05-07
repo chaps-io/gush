@@ -48,7 +48,7 @@ module Gush
     end
 
     def run(klass, deps = {})
-      node = klass.new(klass.to_s)
+      node = klass.new(name: klass.to_s)
       @nodes << node
 
       deps_after = [*deps[:after]]

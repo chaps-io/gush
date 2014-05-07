@@ -63,7 +63,10 @@ module Gush
         puts "No workflows registered."
         exit
       end
-      workflows = redis.mget(*keys).map {|json| Gush.workflow_from_hash(JSON.parse(json)) }
+      workflows = keys.map do |key|
+        id = key.sub("gush.workflows.", "")
+        Gush.find_workflow(id, redis)
+      end
       rows = []
       workflows.each do |workflow|
         progress = ""
@@ -194,7 +197,6 @@ module Gush
         when job.failed?
           "[✗] #{name.red}"
         when job.finished?
-          binding.pry
           "[✓] #{name.green}"
         when job.running?
           "[•] #{name.yellow}"
