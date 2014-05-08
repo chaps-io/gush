@@ -1,10 +1,9 @@
 require 'sidekiq'
 require 'yajl'
 require 'gush/metadata'
-require 'gush/node'
 
 module Gush
-  class Job < Node
+  class Job
     include ::Sidekiq::Worker
     include Gush::Metadata
 
@@ -16,22 +15,20 @@ module Gush
       failed: false
     }
 
-    attr_accessor :finished, :enqueued, :failed, :workflow_id
+    attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing
 
-    def initialize(name = nil, opts = {})
-      super(name)
+    def initialize(opts = {})
       options = DEFAULTS.dup.merge(opts)
-      @name = name
-      @finished = options[:finished]
-      @enqueued = options[:enqueued]
-      @failed   = options[:failed]
+      assign_variables(options)
     end
 
-    def perform(workflow_id, name, *args)
+    def perform(workflow_id, json)
       begin
         @workflow_id = workflow_id
+        opts = Yajl::Parser.parse(json, symbolize_keys: true)
+        assign_variables(opts)
         start = Time.now
-        work(*args)
+        work
         mark_as_finished
         report(:finished, start)
         continue_workflow
@@ -42,28 +39,18 @@ module Gush
     end
 
     def mark_as_finished
-      Redis::Mutex.with_lock("gush.mutex.mark_as_finished.#{@workflow_id}", Gush.configuration.mutex) do
-        workflow = find_workflow
-        job = workflow.find_job(self.class.to_s)
-        job.finish!
-        Gush.persist_workflow(workflow, redis)
-      end
+      self.finish!
+      Gush.persist_job(@workflow_id, self, redis)
     end
 
     def mark_as_failed
-      Redis::Mutex.with_lock("gush.mutex.mark_as_failed.#{@workflow_id}", Gush.configuration.mutex) do
-        workflow = find_workflow
-        job = workflow.find_job(self.class.to_s)
-        job.fail!
-        Gush.persist_workflow(workflow, redis)
-      end
+      self.fail!
+      Gush.persist_job(@workflow_id, self, redis)
     end
 
     def continue_workflow
-      Redis::Mutex.with_lock("gush.mutex.continue_workflow.#{@workflow_id}", Gush.configuration.mutex) do
-        workflow = find_workflow
-        Gush.start_workflow(@workflow_id, redis: redis)
-      end
+      workflow = find_workflow
+      Gush.start_workflow(@workflow_id, redis: redis)
     end
 
     def find_workflow
@@ -72,18 +59,30 @@ module Gush
 
     def as_json
       hash = {
-        name: name,
+        name: @name,
         klass: self.class.to_s,
         finished: @finished,
         enqueued: @enqueued,
-        failed: @failed
+        failed: @failed,
+        incoming: @incoming,
+        outgoing: @outgoing
       }
       hash
     end
 
+    def to_json
+      Yajl::Encoder.new.encode(as_json)
+    end
+
     def self.from_hash(hash)
-      job = hash["klass"].constantize.new(hash["name"], finished: hash["finished"],
-        enqueued: hash["enqueued"], failed: hash["failed"])
+      job = hash[:klass].constantize.new(
+        name:     hash[:name],
+        finished: hash[:finished],
+        enqueued: hash[:enqueued],
+        failed: hash[:failed],
+        incoming: hash[:incoming],
+        outgoing: hash[:outgoing]
+      )
     end
 
     def work
@@ -118,17 +117,30 @@ module Gush
       !!enqueued
     end
 
-    def can_be_started?
+    def can_be_started?(flow)
       !running? &&
         !finished? &&
           !failed? &&
-            dependencies_satisfied?
+            dependencies_satisfied?(flow)
+    end
+
+    def dependencies(flow)
+      (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow) }).uniq
     end
 
     private
 
-    def dependencies_satisfied?
-      dependencies.all? { |dep| !dep.running? && dep.finished? && !dep.failed? }
+    def assign_variables(options)
+      @name     = options[:name]
+      @finished = options[:finished]
+      @enqueued = options[:enqueued]
+      @failed   = options[:failed]
+      @incoming = options[:incoming] || []
+      @outgoing = options[:outgoing] || []
+    end
+
+    def dependencies_satisfied?(flow)
+      dependencies(flow).all? { |dep| !dep.running? && dep.finished? && !dep.failed? }
     end
 
     def report(status, start, error = nil)

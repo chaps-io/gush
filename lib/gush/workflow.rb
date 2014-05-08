@@ -1,11 +1,9 @@
 require 'tree'
 require 'securerandom'
 require 'gush/metadata'
-require 'gush/edge'
-require 'gush/node'
 
 module Gush
-  class Workflow < Node
+  class Workflow
     include Gush::Metadata
 
     attr_accessor :nodes
@@ -13,10 +11,25 @@ module Gush
     def initialize(name, options = {})
       @name = name
       @nodes = []
-      configure unless options[:configure] == false
+      @dependencies = []
+
+      unless options[:configure] == false
+        configure
+        create_dependencies
+      end
     end
 
     def configure
+    end
+
+    def create_dependencies
+      @dependencies.each do |dependency|
+        from = find_job(dependency[:from])
+        to   = find_job(dependency[:to])
+
+        to.incoming << dependency[:from]
+        from.outgoing << dependency[:to]
+      end
     end
 
     def find_job(name)
@@ -36,47 +49,34 @@ module Gush
     end
 
     def run(klass, deps = {})
-      node = klass.new(klass.to_s)
+      node = klass.new(name: klass.to_s)
+      @nodes << node
 
       deps_after = [*deps[:after]]
       deps_after.each do |dep|
-        parent = find_job(dep)
-        if parent.nil?
-          raise "Job #{dep} does not exist in the graph. Register it first."
-        end
-
-        parent.connect_to(node)
-        node.connect_from(parent)
+        @dependencies << {from: dep.to_s, to: klass.to_s }
       end
 
       deps_before = [*deps[:before]]
       deps_before.each do |dep|
-        child = find_job(dep)
-        if child.nil?
-          raise "Job #{dep} does not exist in the graph. Register it first."
-        end
-
-        node.connect_to(child)
-        child.connect_from(node)
+        @dependencies << {from: klass.to_s, to: dep.to_s }
       end
-
-      @nodes << node
     end
-
 
     def to_json
       hash = {
         name: @name,
         klass: self.class.to_s,
-        nodes: @nodes.map(&:as_json),
-        edges: @nodes.flat_map { |node| node.edges.map(&:as_json) }.uniq
+        nodes: @nodes.map(&:as_json)
       }
 
       JSON.dump(hash)
     end
 
     def next_jobs
-      @nodes.select(&:can_be_started?)
+      @nodes.select do |job|
+        job.can_be_started?(self)
+      end
     end
   end
 end
