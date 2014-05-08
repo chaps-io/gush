@@ -49,10 +49,8 @@ module Gush
     end
 
     def continue_workflow
-      #Redis::Mutex.with_lock("gush.mutex.continue_workflow.#{@workflow_id}", Gush.configuration.mutex) do
-        workflow = find_workflow
-        Gush.start_workflow(@workflow_id, redis: redis)
-      #end
+      workflow = find_workflow
+      Gush.start_workflow(@workflow_id, redis: redis)
     end
 
     def find_workflow
@@ -92,18 +90,18 @@ module Gush
 
     def enqueue!
       @enqueued = true
-      @failed   = false
+      @failed = false
     end
 
     def finish!
       @finished = true
       @enqueued = false
-      @failed   = false
+      @failed = false
     end
 
     def fail!
       @finished = true
-      @failed   = true
+      @failed = true
       @enqueued = false
     end
 

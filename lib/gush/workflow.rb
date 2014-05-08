@@ -23,11 +23,12 @@ module Gush
     end
 
     def create_dependencies
-      @dependencies.each do |dep|
-        from = find_job(dep[:from])
-        to   = find_job(dep[:to])
-        to.incoming << dep[:from]
-        from.outgoing << dep[:to]
+      @dependencies.each do |dependency|
+        from = find_job(dependency[:from])
+        to   = find_job(dependency[:to])
+
+        to.incoming << dependency[:from]
+        from.outgoing << dependency[:to]
       end
     end
 

@@ -54,10 +54,10 @@ module Gush
       return
     end
 
-    if options[:jobs]
-      jobs = options[:jobs].map { |name| workflow.find_job(name) }
+    jobs = if options[:jobs]
+      options[:jobs].map { |name| workflow.find_job(name) }
     else
-      jobs = workflow.next_jobs
+      workflow.next_jobs
     end
 
     jobs.each do |job|
@@ -65,8 +65,6 @@ module Gush
       persist_job(workflow.name, job, options[:redis])
       job.class.perform_async(workflow.name, Yajl::Encoder.new.encode(job.as_json))
     end
-
-    jobs
   end
 
   def self.find_workflow(id, redis)
