@@ -129,7 +129,7 @@ module Gush
             g.add_edges(job.name, end_node)
           else
             job.outgoing.each do |out|
-              g.add_edges(job.name, out.name)
+              g.add_edges(job.name, out)
             end
           end
         end
