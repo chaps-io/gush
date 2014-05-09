@@ -89,18 +89,19 @@ module Gush
     desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
     def viz(name)
       workflow = name.constantize.new("start")
-      # constant seed to keep colors from changing
-      r = Random.new(1235)
       GraphViz.new(:G, type: :digraph, dpi: 200, compound: true) do |g|
         g[:compound] = true
         g[:rankdir] = "LR"
         g[:center] = true
-        g.node[:shape] = "box"
+        g.node[:shape] = "ellipse"
         g.node[:style] = "filled"
+        g.node[:color] = "#555555"
+        g.node[:fillcolor] = "white"
         g.edge[:dir] = "forward"
-        g.edge[:penwidth] = 2
-        start = g.start(shape: 'diamond', fillcolor: 'green')
-        end_node = g.end(shape: 'diamond', fillcolor: 'red')
+        g.edge[:penwidth] = 1
+        g.edge[:color] = "#555555"
+        start = g.start(shape: 'diamond', fillcolor: '#CFF09E')
+        end_node = g.end(shape: 'diamond', fillcolor: '#F56991')
 
 
         workflow.nodes.each do |job|
