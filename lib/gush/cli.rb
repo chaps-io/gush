@@ -118,18 +118,19 @@ module Gush
 
 
         workflow.nodes.each do |job|
-          g.add_nodes(job.name)
+          name = job.class.to_s
+          g.add_nodes(name)
 
           if job.incoming.empty?
-            g.add_edges(start, job.name)
+            g.add_edges(start, name)
           end
 
 
           if job.outgoing.empty?
-            g.add_edges(job.name, end_node)
+            g.add_edges(name, end_node)
           else
             job.outgoing.each do |out|
-              g.add_edges(job.name, out)
+              g.add_edges(name, out)
             end
           end
         end
