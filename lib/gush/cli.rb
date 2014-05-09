@@ -135,24 +135,22 @@ module Gush
 
     def display_overview_for(workflow)
       rows = []
+      columns  = {
+        "id" => workflow.name,
+        "name" => workflow.class.to_s,
+        "jobs" => workflow.nodes.count,
+        "failed jobs" => workflow.nodes.count(&:failed?).to_s.red,
+        "succeeded jobs" => workflow.nodes.count(&:succeeded?).to_s.green,
+        "enqueued jobs" => workflow.nodes.count(&:running?).to_s.yellow,
+        "remaining jobs" => workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} },
+        "status" => status_for(workflow)
+      }
 
-      rows << [{alignment: :center, value: "id"}, workflow.name]
-      rows << :separator
-      rows << [{alignment: :center, value: "name"}, workflow.class.to_s]
-      rows << :separator
-      rows << [{alignment: :center, value: "jobs"}, workflow.nodes.count]
-      rows << :separator
-      rows << [{alignment: :center, value: "failed jobs"}, workflow.nodes.count(&:failed?).to_s.red]
-      rows << :separator
-      rows << [{alignment: :center, value: "succeeded jobs"},
-        workflow.nodes.count { |j| j.finished && !j.failed }.to_s.green]
-      rows << :separator
-      rows << [{alignment: :center, value: "enqueued jobs"}, workflow.nodes.count(&:running?).to_s.yellow]
-      rows << :separator
-      rows << [{alignment: :center, value: "remaining jobs"},
-        workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} }]
-      rows << :separator
-      rows << [{alignment: :center, value: "status"}, status_for(workflow)]
+      columns.each_pair do |name, value|
+        rows << [{alignment: :center, value: name}, value]
+        rows << :separator if name != "status"
+      end
+
       puts Terminal::Table.new(rows: rows)
     end
 

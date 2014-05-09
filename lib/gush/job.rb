@@ -113,6 +113,10 @@ module Gush
       !!failed
     end
 
+    def succeeded?
+      finished? && !failed?
+    end
+
     def running?
       !!enqueued
     end
