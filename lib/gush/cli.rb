@@ -70,26 +70,12 @@ module Gush
       rows = []
       workflows.each do |workflow|
         progress = ""
-        if workflow.failed?
-          status = "failed".red
-          progress = "#{workflow.nodes.find(&:failed).name} failed"
-        elsif workflow.running?
-          status = "running".yellow
-          finished = workflow.nodes.count {|job| job.finished }
-          total = workflow.nodes.count
-          progress = "#{finished}/#{total} [#{(finished*100)/total}%]"
-        elsif workflow.finished?
-          status = "done".green
-        else
-          status = "pending".light_white
-        end
-        rows << [workflow.name, workflow.class, {alignment: :center, value: status}, progress]
+        rows << [workflow.name, workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
       headers = [
         {alignment: :center, value: 'id'},
         {alignment: :center, value: 'name'},
-        {alignment: :center, value: 'status'},
-        {alignment: :center, value: 'progress'}
+        {alignment: :center, value: 'status'}
       ]
       table = Terminal::Table.new(headings: headers, rows: rows)
       puts table
@@ -149,21 +135,6 @@ module Gush
 
     def display_overview_for(workflow)
       rows = []
-      progress = ""
-      if workflow.failed?
-        status = "failed".red
-        status += "\n"
-        status += "#{workflow.nodes.find(&:failed).name} failed".red
-      elsif workflow.running?
-        status = "running".yellow
-        finished = workflow.nodes.count {|job| job.finished }
-        total = workflow.nodes.count
-        progress = "#{finished}/#{total} [#{(finished*100)/total}%]"
-      elsif workflow.finished?
-        status = "done".green
-      else
-        status = "pending".light_white
-      end
 
       rows << [{alignment: :center, value: "id"}, workflow.name]
       rows << :separator
@@ -181,12 +152,24 @@ module Gush
       rows << [{alignment: :center, value: "remaining jobs"},
         workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} }]
       rows << :separator
-      rows << [{alignment: :center, value: "status"}, status]
-      if !progress.empty?
-        rows << :separator
-        rows << [{alignment: :center, value: "progress"}, progress]
-      end
+      rows << [{alignment: :center, value: "status"}, status_for(workflow)]
       puts Terminal::Table.new(rows: rows)
+    end
+
+    def status_for(workflow)
+      if workflow.failed?
+        status = "failed".red
+        status += "\n#{workflow.nodes.find(&:failed).name} failed"
+      elsif workflow.running?
+        status = "running".yellow
+        finished = workflow.nodes.count {|job| job.finished }
+        total = workflow.nodes.count
+        status += "\n#{finished}/#{total} [#{(finished*100)/total}%]"
+      elsif workflow.finished?
+        status = "done".green
+      else
+        status = "pending".light_white
+      end
     end
 
     def display_jobs_list_for(workflow, jobs)
