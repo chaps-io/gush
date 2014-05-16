@@ -63,14 +63,16 @@ module Gush
       end
     end
 
-    def to_json
-      hash = {
+    def to_hash
+      {
         name: @name,
         klass: self.class.to_s,
         nodes: @nodes.map(&:as_json)
       }
+    end
 
-      JSON.dump(hash)
+    def to_json
+      JSON.dump(to_hash)
     end
 
     def next_jobs
