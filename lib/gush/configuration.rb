@@ -1,11 +1,11 @@
 module Gush
   class Configuration
-    attr_accessor :redis_url, :concurrency, :mutex
+    attr_accessor :concurrency, :namespace, :redis_url
 
     def initialize
-      @redis_url = "redis://localhost:6379"
-      @mutex = { block: 25, sleep: 0.5, expire: 35 }
       @concurrency = 5
+      @namespace = "gush"
+      @redis_url = "redis://localhost:6379"
     end
   end
 end

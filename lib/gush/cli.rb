@@ -83,7 +83,8 @@ module Gush
 
     desc "workers", "Starts Sidekiq workers"
     def workers
-      Kernel.exec "bundle exec sidekiq -r #{Gush.gushfile} -c #{Gush.configuration.concurrency} -v"
+      config = Gush.configuration
+      Kernel.exec "bundle exec sidekiq -r #{Gush.gushfile} -c #{config.concurrency} -q #{config.namespace} -v"
     end
 
     desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"

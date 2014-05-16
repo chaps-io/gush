@@ -63,7 +63,11 @@ module Gush
     jobs.each do |job|
       job.enqueue!
       persist_job(workflow.name, job, options[:redis])
-      job.class.perform_async(workflow.name, Yajl::Encoder.new.encode(job.as_json))
+      Sidekiq::Client.push({
+        'class' => job.class,
+        'queue' => Gush.configuration.namespace,
+        'args'  => [workflow.name, Yajl::Encoder.new.encode(job.as_json)]
+      })
     end
   end
 
@@ -91,4 +95,16 @@ module Gush
   def self.persist_job(workflow_id, job, redis)
     redis.set("gush.jobs.#{workflow_id}.#{job.class.to_s}", job.to_json)
   end
+
+
+  def self.configure_sidekiq
+    Sidekiq.configure_server do |config|
+      config.redis = ConnectionPool.new(size: Sidekiq.options[:concurrency] + 2, timeout: 1) do
+        Redis.new(url: Gush.configuration.redis_url)
+      end
+    end
+  end
 end
+
+
+Gush.configure_sidekiq
