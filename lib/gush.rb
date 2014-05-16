@@ -15,9 +15,9 @@ require 'yajl'
 
 module Gush
   def self.gushfile
-    gushfile = Pathname.new(FileUtils.pwd).join("Gushfile.rb")
-    raise Thor::Error, "Gushfile not found, please add it to your project".colorize(:red) unless gushfile.exist?
-    gushfile
+    path = Pathname.pwd.join("Gushfile.rb")
+    raise Thor::Error, "Gushfile.rb not found, please add it to your project".colorize(:red) unless path.exist?
+    path
   end
 
   def self.root
@@ -28,7 +28,7 @@ module Gush
     @configuration ||= Configuration.new
   end
 
-  def self.configure
+  def self.configure(&block)
     yield(configuration) if block_given?
   end
 

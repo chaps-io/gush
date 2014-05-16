@@ -1,6 +1,8 @@
 require 'gush'
 require 'pry'
+require 'sidekiq/testing'
 
+Sidekiq::Logging.logger = nil
 
 class Prepare < Gush::Job;  end
 class FetchFirstJob < Gush::Job; end
@@ -9,6 +11,8 @@ class PersistFirstJob < Gush::Job; end
 class PersistSecondJob < Gush::Job; end
 class NormalizeJob < Gush::Job; end
 
+
+redis = Redis.new
 
 class TestWorkflow < Gush::Workflow
   def configure
@@ -20,5 +24,12 @@ class TestWorkflow < Gush::Workflow
     run PersistFirstJob, after: FetchFirstJob, before: NormalizeJob
 
     run FetchSecondJob,  after: Prepare, before: NormalizeJob
+  end
+end
+
+RSpec.configure do |config|
+  config.before(:each) do
+    Sidekiq::Worker.clear_all
+    @redis = Redis.new(db: 12)
   end
 end
