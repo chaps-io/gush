@@ -15,7 +15,8 @@ module Gush
       failed: false
     }
 
-    attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing
+    attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing,
+      :finished_at, :failed_at, :started_at
 
     def initialize(opts = {})
       options = DEFAULTS.dup.merge(opts)
@@ -67,7 +68,10 @@ module Gush
         enqueued: @enqueued,
         failed: @failed,
         incoming: @incoming,
-        outgoing: @outgoing
+        outgoing: @outgoing,
+        finished_at: @finished_at,
+        started_at: @started_at,
+        failed_at: @failed_at
       }
       hash
     end
@@ -77,13 +81,16 @@ module Gush
     end
 
     def self.from_hash(hash)
-      job = hash[:klass].constantize.new(
+      hash[:klass].constantize.new(
         name:     hash[:name],
         finished: hash[:finished],
         enqueued: hash[:enqueued],
         failed: hash[:failed],
         incoming: hash[:incoming],
-        outgoing: hash[:outgoing]
+        outgoing: hash[:outgoing],
+        failed_at: hash[:failed_at],
+        finished_at: hash[:finished_at],
+        started_at: hash[:started_at]
       )
     end
 
@@ -93,18 +100,24 @@ module Gush
     def enqueue!
       @enqueued = true
       @failed = false
+      @started_at = Time.now.to_i
+      @finished_at = nil
+      @failed_at = nil
     end
 
     def finish!
       @finished = true
       @enqueued = false
       @failed = false
+      @finished_at = Time.now.to_i
     end
 
     def fail!
       @finished = true
       @failed = true
       @enqueued = false
+      @finished_at = Time.now.to_i
+      @failed_at = Time.now.to_i
     end
 
     def finished?
@@ -137,12 +150,15 @@ module Gush
     private
 
     def assign_variables(options)
-      @name     = options[:name]
-      @finished = options[:finished]
-      @enqueued = options[:enqueued]
-      @failed   = options[:failed]
-      @incoming = options[:incoming] || []
-      @outgoing = options[:outgoing] || []
+      @name        = options[:name]
+      @finished    = options[:finished]
+      @enqueued    = options[:enqueued]
+      @failed      = options[:failed]
+      @incoming    = options[:incoming] || []
+      @outgoing    = options[:outgoing] || []
+      @failed_at   = options[:failed_at]
+      @finished_at = options[:finished_at]
+      @started_at  = options[:started_at]
     end
 
     def dependencies_satisfied?(flow)

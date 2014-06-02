@@ -33,11 +33,11 @@ describe Gush::Workflow do
         "nodes" => [
           {
             "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
-          "incoming"=>[], "outgoing"=>["PersistFirstJob"]
+          "incoming"=>[], "outgoing"=>["PersistFirstJob"], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil
           },
           {
             "name"=>"PersistFirstJob", "klass"=>"PersistFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
-            "incoming"=>["FetchFirstJob"], "outgoing"=>[]
+            "incoming"=>["FetchFirstJob"], "outgoing"=>[], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil
           }
         ]
       }
