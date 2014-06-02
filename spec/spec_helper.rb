@@ -31,5 +31,8 @@ RSpec.configure do |config|
   config.before(:each) do
     Sidekiq::Worker.clear_all
     @redis = Redis.new(db: 12)
+    @redis.keys("gush.workflows.*").each do |key|
+      @redis.del(key)
+    end
   end
 end

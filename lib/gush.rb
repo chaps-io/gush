@@ -84,6 +84,13 @@ module Gush
     workflow
   end
 
+  def self.all_workflows(redis)
+    redis.keys("gush.workflows.*").map do |key|
+      id = key.sub("gush.workflows.", "")
+      Gush.find_workflow(id, redis)
+    end
+  end
+
   def self.persist_workflow(workflow, redis)
     redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
 

@@ -86,4 +86,13 @@ describe Gush do
       Gush.persist_job('deadbeef', job, redis)
     end
   end
+
+  describe ".all_workflows" do
+    it "returns all registered workflows" do
+      workflow = TestWorkflow.new(SecureRandom.uuid)
+      Gush.persist_workflow(workflow, @redis)
+      workflows = Gush.all_workflows(@redis)
+      expect(workflows.map(&:name)).to eq([workflow.name])
+    end
+  end
 end
