@@ -76,7 +76,7 @@ module Gush
       hash
     end
 
-    def to_json
+    def to_json(options = {})
       Yajl::Encoder.new.encode(as_json)
     end
 

@@ -30,6 +30,8 @@ describe Gush::Workflow do
         "status" => "Pending",
         "total" => 2,
         "finished" => 0,
+        "started_at" => nil,
+        "finished_at" => nil,
         "nodes" => [
           {
             "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,

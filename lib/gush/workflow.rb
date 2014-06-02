@@ -78,6 +78,9 @@ module Gush
 
     def to_hash
       name = self.class.to_s
+      now = Time.now.to_i
+      first_job = @nodes.min_by{ |n| n.started_at || now }
+      last_job = @nodes.select(&:finished?).max_by{ |n| n.finished_at || 0 }
       {
         name: name,
         id: @id,
@@ -85,7 +88,9 @@ module Gush
         finished: @nodes.count(&:finished?),
         klass: name,
         nodes: @nodes.map(&:as_json),
-        status: status
+        status: status,
+        started_at: first_job ? first_job.started_at : nil,
+        finished_at: last_job ? last_job.finished_at : nil
       }
     end
 
