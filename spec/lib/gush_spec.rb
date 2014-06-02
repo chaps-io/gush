@@ -9,7 +9,7 @@ describe Gush do
 
         allow(Pathname).to receive(:pwd)
           .and_return(Pathname.new("/tmp"))
-        expect {described_class.gushfile}.to raise_error(Thor::Error)
+        expect {Gush.gushfile}.to raise_error(Thor::Error)
       end
     end
 
@@ -19,7 +19,7 @@ describe Gush do
         FileUtils.touch(path)
         allow(Pathname).to receive(:pwd)
           .and_return(Pathname.new("/tmp"))
-        expect(described_class.gushfile).to eq(path)
+        expect(Gush.gushfile).to eq(path)
         path.delete
       end
     end
@@ -28,13 +28,33 @@ describe Gush do
   describe ".root" do
     it "returns root directory of Gush" do
       expected = Pathname.new(__FILE__).parent.parent.parent
-      expect(described_class.root).to eq(expected)
+      expect(Gush.root).to eq(expected)
     end
   end
 
   describe ".configure" do
     it "runs block with config instance passed" do
-      expect { |b| described_class.configure(&b) }.to yield_with_args(Gush.configuration)
+      expect { |b| Gush.configure(&b) }.to yield_with_args(Gush.configuration)
+    end
+  end
+
+  describe ".find_workflow" do
+    context "when workflow doesn't exist" do
+      it "returns nil" do
+        workflow = Gush.find_workflow('nope', @redis)
+        expect(workflow).to be_nil
+      end
+    end
+
+    context "when given workflow exists" do
+      it "returns Workflow object" do
+        expected_workflow = TestWorkflow.new(SecureRandom.uuid)
+        Gush.persist_workflow(expected_workflow, @redis)
+        workflow = Gush.find_workflow(expected_workflow.name, @redis)
+
+        expect(workflow.name).to eq(expected_workflow.name)
+        expect(workflow.nodes.map(&:name)).to match_array(expected_workflow.nodes.map(&:name))
+      end
     end
   end
 
@@ -75,6 +95,17 @@ describe Gush do
       Gush.start_workflow(id, {redis: @redis})
       job = Gush.find_workflow(id, @redis).find_job("Prepare")
       expect(job.running?).to eq(true)
+    end
+  end
+
+  describe ".persist_workflow" do
+    it "persists JSON dump of the Workflow and its jobs" do
+      redis = double("redis")
+      job = double("job", to_json: 'json')
+      workflow = double("workflow", name: 'abcd', nodes: [job, job, job], to_json: 'json')
+      expect(redis).to receive(:set).with("gush.workflows.#{workflow.name}", 'json')
+      expect(Gush).to receive(:persist_job).exactly(3).times.with(workflow.name, job, redis)
+      Gush.persist_workflow(workflow, redis)
     end
   end
 
