@@ -28,6 +28,7 @@ module Gush
         opts = Yajl::Parser.parse(json, symbolize_keys: true)
         assign_variables(opts)
         start = Time.now
+        report(:started, start)
         work
         mark_as_finished
         report(:finished, start)
