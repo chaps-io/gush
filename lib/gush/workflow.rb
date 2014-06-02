@@ -98,5 +98,9 @@ module Gush
         job.can_be_started?(self)
       end
     end
+
+    def self.descendants
+      ObjectSpace.each_object(Class).select { |klass| klass < self }
+    end
   end
 end

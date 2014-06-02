@@ -32,6 +32,7 @@ module Gush
         work
         mark_as_finished
         report(:finished, start)
+        report_workflow_status
         continue_workflow
       rescue Exception => e
         mark_as_failed
@@ -149,9 +150,15 @@ module Gush
     end
 
     def report(status, start, error = nil)
-      response = {status: status, workflow_id: workflow_id, job: @name, duration: elapsed(start)}
-      response[:error] = error if error
-      redis.publish("gush.workers.status", encoder.encode(response))
+      message = {status: status, workflow_id: workflow_id, job: @name, duration: elapsed(start)}
+      message[:error] = error if error
+      redis.publish("gush.workers.status", encoder.encode(message))
+    end
+
+    def report_workflow_status
+      workflow = find_workflow
+      message = {workflow_id: workflow.id, status: workflow.status}
+      redis.publish("gush.workflows.status", encoder.encode(message))
     end
 
     def redis
