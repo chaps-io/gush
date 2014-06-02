@@ -33,7 +33,7 @@ module Gush
   end
 
   def self.workflow_from_hash(hash, nodes = nil)
-    flow = hash[:klass].constantize.new(hash[:name], configure: false)
+    flow = hash[:klass].constantize.new(hash[:id], configure: false)
 
     (nodes || hash[:nodes]).each do |node|
       flow.nodes << Gush::Job.from_hash(node)
@@ -62,11 +62,11 @@ module Gush
 
     jobs.each do |job|
       job.enqueue!
-      persist_job(workflow.name, job, options[:redis])
+      persist_job(workflow.id, job, options[:redis])
       Sidekiq::Client.push({
         'class' => job.class,
         'queue' => Gush.configuration.namespace,
-        'args'  => [workflow.name, Yajl::Encoder.new.encode(job.as_json)]
+        'args'  => [workflow.id, Yajl::Encoder.new.encode(job.as_json)]
       })
     end
   end
@@ -92,10 +92,10 @@ module Gush
   end
 
   def self.persist_workflow(workflow, redis)
-    redis.set("gush.workflows.#{workflow.name}", workflow.to_json)
+    redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
 
     workflow.nodes.each do |job|
-      persist_job(workflow.name, job, redis)
+      persist_job(workflow.id, job, redis)
     end
   end
 

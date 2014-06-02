@@ -24,8 +24,12 @@ describe Gush::Workflow do
 
       result = JSON.parse(klass.new("workflow").to_json)
       expected = {
-        "name"=>"workflow",
+        "id"=>"workflow",
+        "name" => klass.to_s,
         "klass" => klass.to_s,
+        "status" => "Pending",
+        "total" => 2,
+        "finished" => 0,
         "nodes" => [
           {
             "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,

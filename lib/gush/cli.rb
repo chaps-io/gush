@@ -70,7 +70,7 @@ module Gush
       rows = []
       workflows.each do |workflow|
         progress = ""
-        rows << [workflow.name, workflow.class, {alignment: :center, value: status_for(workflow)}]
+        rows << [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
       headers = [
         {alignment: :center, value: 'id'},
@@ -138,7 +138,7 @@ module Gush
     def display_overview_for(workflow)
       rows = []
       columns  = {
-        "id" => workflow.name,
+        "id" => workflow.id,
         "name" => workflow.class.to_s,
         "jobs" => workflow.nodes.count,
         "failed jobs" => workflow.nodes.count(&:failed?).to_s.red,

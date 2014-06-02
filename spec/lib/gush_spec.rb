@@ -50,9 +50,9 @@ describe Gush do
       it "returns Workflow object" do
         expected_workflow = TestWorkflow.new(SecureRandom.uuid)
         Gush.persist_workflow(expected_workflow, @redis)
-        workflow = Gush.find_workflow(expected_workflow.name, @redis)
+        workflow = Gush.find_workflow(expected_workflow.id, @redis)
 
-        expect(workflow.name).to eq(expected_workflow.name)
+        expect(workflow.id).to eq(expected_workflow.id)
         expect(workflow.nodes.map(&:name)).to match_array(expected_workflow.nodes.map(&:name))
       end
     end
@@ -67,7 +67,7 @@ describe Gush do
 
       hash_parsed = Yajl::Parser.parse(flow_parsed.to_json, symbolize_keys: true)
 
-      expect(hash_parsed[:name]).to eq(hash[:name])
+      expect(hash_parsed[:id]).to eq(hash[:id])
       expect(hash_parsed[:klass]).to eq(hash[:klass])
       expect(hash_parsed[:nodes]).to match_array(hash[:nodes])
 
@@ -102,9 +102,9 @@ describe Gush do
     it "persists JSON dump of the Workflow and its jobs" do
       redis = double("redis")
       job = double("job", to_json: 'json')
-      workflow = double("workflow", name: 'abcd', nodes: [job, job, job], to_json: 'json')
-      expect(redis).to receive(:set).with("gush.workflows.#{workflow.name}", 'json')
-      expect(Gush).to receive(:persist_job).exactly(3).times.with(workflow.name, job, redis)
+      workflow = double("workflow", id: 'abcd', nodes: [job, job, job], to_json: 'json')
+      expect(redis).to receive(:set).with("gush.workflows.#{workflow.id}", 'json')
+      expect(Gush).to receive(:persist_job).exactly(3).times.with(workflow.id, job, redis)
       Gush.persist_workflow(workflow, redis)
     end
   end
@@ -123,7 +123,7 @@ describe Gush do
       workflow = TestWorkflow.new(SecureRandom.uuid)
       Gush.persist_workflow(workflow, @redis)
       workflows = Gush.all_workflows(@redis)
-      expect(workflows.map(&:name)).to eq([workflow.name])
+      expect(workflows.map(&:id)).to eq([workflow.id])
     end
   end
 end

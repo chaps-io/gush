@@ -6,10 +6,10 @@ module Gush
   class Workflow
     include Gush::Metadata
 
-    attr_accessor :nodes
+    attr_accessor :id, :nodes
 
-    def initialize(name, options = {})
-      @name = name
+    def initialize(id, options = {})
+      @id = id
       @nodes = []
       @dependencies = []
 
@@ -63,15 +63,33 @@ module Gush
       end
     end
 
+    def status
+      case
+        when failed?
+          "Failed"
+        when running?
+          "Running"
+        when finished?
+          "Finished"
+        else
+          "Pending"
+      end
+    end
+
     def to_hash
+      name = self.class.to_s
       {
-        name: @name,
-        klass: self.class.to_s,
-        nodes: @nodes.map(&:as_json)
+        name: name,
+        id: @id,
+        total: @nodes.count,
+        finished: @nodes.count(&:finished?),
+        klass: name,
+        nodes: @nodes.map(&:as_json),
+        status: status
       }
     end
 
-    def to_json
+    def to_json(options = {})
       JSON.dump(to_hash)
     end
 
