@@ -80,7 +80,9 @@ module Gush
       name = self.class.to_s
       now = Time.now.to_i
       first_job = @nodes.min_by{ |n| n.started_at || now }
-      last_job = @nodes.select(&:finished?).max_by{ |n| n.finished_at || 0 }
+      last_job = if @nodes.all?(&:finished?)
+        @nodes.max_by{ |n| n.finished_at || 0 }
+      end
       {
         name: name,
         id: @id,
