@@ -173,7 +173,7 @@ module Gush
 
     def report_workflow_status
       workflow = find_workflow
-      message = {workflow_id: workflow.id, status: workflow.status}
+      message = {workflow_id: workflow.id, status: workflow.status, started_at: workflow.started_at, finished_at: workflow.finished_at }
       redis.publish("gush.workflows.status", encoder.encode(message))
     end
 

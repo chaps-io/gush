@@ -76,13 +76,16 @@ module Gush
       end
     end
 
+    def started_at
+      first_job ? first_job.started_at : nil
+    end
+
+    def finished_at
+      last_job ? last_job.finished_at : nil
+    end
+
     def to_hash
       name = self.class.to_s
-      now = Time.now.to_i
-      first_job = @nodes.min_by{ |n| n.started_at || now }
-      last_job = if @nodes.all?(&:finished?)
-        @nodes.max_by{ |n| n.finished_at || 0 }
-      end
       {
         name: name,
         id: @id,
@@ -91,8 +94,8 @@ module Gush
         klass: name,
         nodes: @nodes.map(&:as_json),
         status: status,
-        started_at: first_job ? first_job.started_at : nil,
-        finished_at: last_job ? last_job.finished_at : nil
+        started_at: started_at,
+        finished_at: finished_at
       }
     end
 
@@ -108,6 +111,15 @@ module Gush
 
     def self.descendants
       ObjectSpace.each_object(Class).select { |klass| klass < self }
+    end
+
+    private
+    def first_job
+      nodes.min_by{ |n| n.started_at || Time.now.to_i }
+    end
+
+    def last_job
+      nodes.max_by{ |n| n.finished_at || 0 } if nodes.all?(&:finished?)
     end
   end
 end
