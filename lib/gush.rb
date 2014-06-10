@@ -99,6 +99,13 @@ module Gush
     end
   end
 
+  def self.destroy_workflow(workflow, redis)
+    redis.del("gush.workflows.#{workflow.id}")
+    workflow.nodes.each do |job|
+      redis.del("gush.jobs.#{workflow.id}.#{job.class.to_s}")
+    end
+  end
+
   def self.persist_job(workflow_id, job, redis)
     redis.set("gush.jobs.#{workflow_id}.#{job.class.to_s}", job.to_json)
   end

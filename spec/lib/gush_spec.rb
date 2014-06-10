@@ -109,6 +109,21 @@ describe Gush do
     end
   end
 
+  describe ".destroy_workflow" do
+    it "removes all Redis keys related to the workflow" do
+      id = SecureRandom.uuid
+      workflow = TestWorkflow.new(id)
+      Gush.persist_workflow(workflow, @redis)
+      expect(@redis.keys("gush.workflows.#{id}").length).to eq(1)
+      expect(@redis.keys("gush.jobs.#{id}.*").length).to eq(5)
+
+      Gush.destroy_workflow(workflow, @redis)
+
+      expect(@redis.keys("gush.workflows.#{id}").length).to eq(0)
+      expect(@redis.keys("gush.jobs.#{id}.*").length).to eq(0)
+    end
+  end
+
   describe ".persist_job" do
     it "persists JSON dump of the job in Redis" do
       redis = double("redis")
