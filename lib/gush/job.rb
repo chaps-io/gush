@@ -30,6 +30,7 @@ module Gush
         assign_variables(opts)
         start = Time.now
         report(:started, start)
+        before_work
         work
         mark_as_finished
         report(:finished, start)
@@ -92,6 +93,9 @@ module Gush
         finished_at: hash[:finished_at],
         started_at: hash[:started_at]
       )
+    end
+
+    def before_work
     end
 
     def work
