@@ -84,6 +84,13 @@ module Gush
     workflow
   end
 
+  def self.create_workflow(name, redis)
+    id = SecureRandom.uuid.split("-").first
+    workflow = name.constantize.new(id)
+    Gush.persist_workflow(workflow, redis)
+    workflow
+  end
+
   def self.all_workflows(redis)
     redis.keys("gush.workflows.*").map do |key|
       id = key.sub("gush.workflows.", "")

@@ -9,12 +9,10 @@ module Gush
 
     desc "create [WorkflowClass]", "Registers new workflow"
     def create(name)
-      id = SecureRandom.uuid.split("-").first
-      workflow = name.constantize.new(id)
-      Gush.persist_workflow(workflow, redis)
-      puts "Workflow created with id: #{id}"
-      puts "Start it with command: gush start #{id}"
-      return id
+      workflow = Gush.create_workflow(name, redis)
+      puts "Workflow created with id: #{workflow.id}"
+      puts "Start it with command: gush start #{workflow.id}"
+      return workflow.id
     end
 
     desc "start [workflow_id]", "Starts Workflow with given ID"
