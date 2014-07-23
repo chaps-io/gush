@@ -80,13 +80,13 @@ describe Gush::Workflow do
     context "when one of the jobs failed" do
       it "returns true" do
         subject.find_job('Prepare').failed = true
-        expect(subject.failed?).to be_true
+        expect(subject.failed?).to be_truthy
       end
     end
 
     context "when no jobs failed" do
       it "returns true" do
-        expect(subject.failed?).to be_false
+        expect(subject.failed?).to be_falsy
       end
     end
   end
@@ -94,26 +94,26 @@ describe Gush::Workflow do
   describe "#running?" do
     context "when no enqueued jobs" do
       it "returns false" do
-        expect(subject.running?).to be_false
+        expect(subject.running?).to be_falsy
       end
     end
 
     context "when some jobs are enqueued" do
       it "returns true" do
         subject.find_job('Prepare').enqueued = true
-        expect(subject.running?).to be_true
+        expect(subject.running?).to be_truthy
       end
     end
   end
 
   describe "#finished?" do
     it "returns false if any jobs are unfinished" do
-      expect(subject.finished?).to be_false
+      expect(subject.finished?).to be_falsy
     end
 
     it "returns true if all jobs are finished" do
       subject.nodes.each {|n| n.finished = true }
-      expect(subject.finished?).to be_true
+      expect(subject.finished?).to be_truthy
     end
   end
 
