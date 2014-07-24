@@ -28,7 +28,7 @@ module Gush
     end
 
     def build_logger_for_job(job)
-      @logger_builder.new(job).build
+      @logger_builder.new(self, job).build
     end
 
     def create_dependencies
