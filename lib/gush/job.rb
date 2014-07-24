@@ -53,12 +53,11 @@ module Gush
     end
 
     def continue_workflow
-      workflow = find_workflow
-      Gush.start_workflow(@workflow_id, redis: redis)
+      Gush.start_workflow(workflow_id, redis: redis)
     end
 
     def find_workflow
-      Gush.find_workflow(@workflow_id, redis)
+      Gush.find_workflow(workflow_id, redis)
     end
 
     def as_json
