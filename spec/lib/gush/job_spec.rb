@@ -87,4 +87,17 @@ describe Gush::Job do
       expect(job.started_at).to eq(55)
     end
   end
+
+  describe "#logger" do
+    it "returns a logger for the job" do
+      flow = Gush::Workflow.new("workflow")
+      flow.logger_builder(TestLoggerBuilder)
+
+      allow(Gush).to receive(:find_workflow) { flow }
+      job = described_class.new(name: "a-job", finished: true, enqueued: true)
+      expect(job.logger).to be_a TestLogger
+      expect(job.logger.jid).to eq(job.jid)
+      expect(job.logger.name).to eq(job.name)
+    end
+  end
 end

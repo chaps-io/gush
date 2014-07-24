@@ -41,8 +41,9 @@ describe Gush do
   describe ".find_workflow" do
     context "when workflow doesn't exist" do
       it "returns nil" do
-        workflow = Gush.find_workflow('nope', @redis)
-        expect(workflow).to be_nil
+        expect {
+          Gush.find_workflow('nope', @redis)
+        }.to raise_error(ArgumentError)
       end
     end
 
@@ -70,6 +71,7 @@ describe Gush do
       expect(hash_parsed[:id]).to eq(hash[:id])
       expect(hash_parsed[:klass]).to eq(hash[:klass])
       expect(hash_parsed[:nodes]).to match_array(hash[:nodes])
+      expect(hash_parsed[:logger_builder]).to eq("TestLoggerBuilder")
 
       path = flow_parsed.find_job('NormalizeJob').dependencies(flow).map(&:name)
       path_expected = flow.find_job('NormalizeJob').dependencies(flow).map(&:name)

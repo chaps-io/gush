@@ -11,11 +11,18 @@ class PersistFirstJob < Gush::Job; end
 class PersistSecondJob < Gush::Job; end
 class NormalizeJob < Gush::Job; end
 
+TestLogger = Struct.new(:jid, :name)
 
-redis = Redis.new
+class TestLoggerBuilder < Gush::LoggerBuilder
+  def build
+    TestLogger.new(job.jid, job.name)
+  end
+end
 
 class TestWorkflow < Gush::Workflow
   def configure
+    logger_builder TestLoggerBuilder
+
     run Prepare
 
     run NormalizeJob
