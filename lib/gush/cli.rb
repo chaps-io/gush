@@ -3,6 +3,7 @@ require 'colorize'
 require 'thor'
 require 'launchy'
 require 'sidekiq'
+require 'sidekiq/api'
 
 module Gush
   class CLI < Thor
