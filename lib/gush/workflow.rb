@@ -12,12 +12,16 @@ module Gush
       @id = id
       @nodes = []
       @dependencies = []
-      @logger_builder = LoggerBuilder
+      @logger_builder = default_logger_builder
 
       unless options[:configure] == false
         configure
         create_dependencies
       end
+    end
+
+    def default_logger_builder
+      LoggerBuilder
     end
 
     def configure
