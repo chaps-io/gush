@@ -75,9 +75,9 @@ module Gush
   end
 
   def self.find_workflow(id, redis)
-    json = redis.get("gush.workflows.#{id}")
-    unless json.nil?
-      hash = Yajl::Parser.parse(json, symbolize_keys: true)
+    data = redis.get("gush.workflows.#{id}")
+    unless data.nil?
+      hash = Yajl::Parser.parse(data, symbolize_keys: true)
       keys = redis.keys("gush.jobs.#{id}.*")
       nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
       Gush.workflow_from_hash(hash, nodes)
