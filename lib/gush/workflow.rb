@@ -63,7 +63,7 @@ module Gush
     end
 
     def running?
-      stopped? || nodes.any?(&:enqueued)
+      nodes.any?(&:running?) && !stopped?
     end
 
     def failed?
