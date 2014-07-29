@@ -68,7 +68,6 @@ module Gush
       end
       rows = []
       workflows.each do |workflow|
-        progress = ""
         rows << [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
       headers = [
