@@ -18,6 +18,8 @@ module Gush
     attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing,
       :finished_at, :failed_at, :started_at
 
+    attr_reader :name
+
     def initialize(opts = {})
       options = DEFAULTS.dup.merge(opts)
       assign_variables(options)
@@ -53,12 +55,11 @@ module Gush
     end
 
     def continue_workflow
-      workflow = find_workflow
-      Gush.start_workflow(@workflow_id, redis: redis)
+      Gush.start_workflow(workflow_id, redis: redis)
     end
 
     def find_workflow
-      Gush.find_workflow(@workflow_id, redis)
+      Gush.find_workflow(workflow_id, redis)
     end
 
     def as_json
@@ -149,6 +150,11 @@ module Gush
 
     def dependencies(flow)
       (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow) }).uniq
+    end
+
+    def logger
+      fail "You cannot log when the job is not running" unless running?
+      @logger ||= find_workflow.build_logger_for_job(self)
     end
 
     private

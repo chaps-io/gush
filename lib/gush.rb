@@ -6,6 +6,8 @@ require "gush/workflow"
 require "gush/metadata"
 require "gush/job"
 require "gush/cli"
+require "gush/logger_builder"
+require "gush/null_logger"
 require "hiredis"
 require "redis"
 require "sidekiq"
@@ -34,6 +36,7 @@ module Gush
 
   def self.workflow_from_hash(hash, nodes = nil)
     flow = hash[:klass].constantize.new(hash[:id], configure: false)
+    flow.logger_builder(hash[:logger_builder].constantize)
 
     (nodes || hash[:nodes]).each do |node|
       flow.nodes << Gush::Job.from_hash(node)
@@ -73,15 +76,14 @@ module Gush
 
   def self.find_workflow(id, redis)
     json = redis.get("gush.workflows.#{id}")
-    if json.nil?
-      workflow = nil
-    else
+    unless json.nil?
       hash = Yajl::Parser.parse(json, symbolize_keys: true)
       keys = redis.keys("gush.jobs.#{id}.*")
       nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
-      workflow = Gush.workflow_from_hash(hash, nodes)
+      Gush.workflow_from_hash(hash, nodes)
+    else
+      raise ArgumentError.new("Workflow with given id doesn't exist")
     end
-    workflow
   end
 
   def self.create_workflow(name, redis)

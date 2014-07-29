@@ -12,6 +12,7 @@ module Gush
       @id = id
       @nodes = []
       @dependencies = []
+      @logger_builder = default_logger_builder
 
       unless options[:configure] == false
         configure
@@ -19,7 +20,19 @@ module Gush
       end
     end
 
+    def default_logger_builder
+      LoggerBuilder
+    end
+
     def configure
+    end
+
+    def logger_builder(klass)
+      @logger_builder = klass
+    end
+
+    def build_logger_for_job(job)
+      @logger_builder.new(self, job).build
     end
 
     def create_dependencies
@@ -95,7 +108,8 @@ module Gush
         nodes: @nodes.map(&:as_json),
         status: status,
         started_at: started_at,
-        finished_at: finished_at
+        finished_at: finished_at,
+        logger_builder: @logger_builder.to_s
       }
     end
 
