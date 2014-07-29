@@ -32,6 +32,16 @@ module Gush
       start(id)
     end
 
+    desc "stop [workflow_id]", "Stops Workflow with given ID"
+    def stop(*args)
+      options = {redis: redis}
+      id = args.shift
+      if args.length > 0
+        options[:jobs] = args
+      end
+      Gush.stop_workflow(id, options)
+    end
+
     desc "clear", "Clears all jobs from Sidekiq queue"
     def clear
       Sidekiq::Queue.new(Gush.configuration.namespace).clear

@@ -38,6 +38,7 @@ module Gush
   def self.workflow_from_hash(hash, nodes = nil)
     flow = hash[:klass].constantize.new(hash[:id], configure: false)
     flow.logger_builder(hash[:logger_builder].constantize)
+    flow.stopped = hash[:stopped]
 
     (nodes || hash[:nodes]).each do |node|
       flow.nodes << Gush::Job.from_hash(node)
@@ -52,6 +53,8 @@ module Gush
     end
 
     workflow = find_workflow(id, options[:redis])
+    workflow.start!
+    Gush.persist_workflow(workflow, options[:redis])
 
     jobs = if options[:jobs]
       options[:jobs].map { |name| workflow.find_job(name) }
@@ -68,6 +71,18 @@ module Gush
         'args'  => [workflow.id, Yajl::Encoder.new.encode(job.as_json)]
       })
     end
+  rescue WorkflowNotFoundError
+    puts "Workflow not found."
+  end
+
+  def self.stop_workflow(id, options = {})
+    if options[:redis].nil?
+      raise "Provide Redis connection object through options[:redis]"
+    end
+
+    workflow = find_workflow(id, options[:redis])
+    workflow.stop!
+    Gush.persist_workflow(workflow, options[:redis])
   rescue WorkflowNotFoundError
     puts "Workflow not found."
   end

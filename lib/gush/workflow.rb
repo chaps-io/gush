@@ -6,13 +6,14 @@ module Gush
   class Workflow
     include Gush::Metadata
 
-    attr_accessor :id, :nodes
+    attr_accessor :id, :nodes, :stopped
 
     def initialize(id, options = {})
       @id = id
       @nodes = []
       @dependencies = []
       @logger_builder = default_logger_builder
+      @stopped = false
 
       unless options[:configure] == false
         configure
@@ -25,6 +26,14 @@ module Gush
     end
 
     def configure
+    end
+
+    def stop!
+      @stopped = true
+    end
+
+    def start!
+      @stopped = false
     end
 
     def logger_builder(klass)
@@ -54,11 +63,15 @@ module Gush
     end
 
     def running?
-      nodes.any?(&:enqueued)
+      stopped? || nodes.any?(&:enqueued)
     end
 
     def failed?
       nodes.any?(&:failed)
+    end
+
+    def stopped?
+      stopped
     end
 
     def run(klass, deps = {})
@@ -84,6 +97,8 @@ module Gush
           "Running"
         when finished?
           "Finished"
+        when stopped?
+          "Stopped"
         else
           "Pending"
       end
@@ -107,6 +122,7 @@ module Gush
         klass: name,
         nodes: @nodes.map(&:as_json),
         status: status,
+        stopped: stopped,
         started_at: started_at,
         finished_at: finished_at,
         logger_builder: @logger_builder.to_s

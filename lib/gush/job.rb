@@ -53,7 +53,9 @@ module Gush
     end
 
     def continue_workflow
-      Gush.start_workflow(workflow_id, redis: redis)
+      unless find_workflow.stopped?
+        Gush.start_workflow(workflow_id, redis: redis)
+      end
     end
 
     def find_workflow
