@@ -36,9 +36,6 @@ module Gush
     def stop(*args)
       options = {redis: redis}
       id = args.shift
-      if args.length > 0
-        options[:jobs] = args
-      end
       Gush.stop_workflow(id, options)
     end
 
