@@ -34,7 +34,7 @@ module Gush
 
     desc "clear", "Clears all jobs from Sidekiq queue"
     def clear
-      Sidekiq::Queue.new.clear
+      Sidekiq::Queue.new(Gush.configuration.namespace).clear
     end
 
     desc "show [workflow_id]", "Shows details about workflow with given ID"
