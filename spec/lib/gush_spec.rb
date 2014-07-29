@@ -90,7 +90,7 @@ describe Gush do
       }.to change{Prepare.jobs.count}.from(0).to(1)
     end
 
-    it "removes stopped flag if the workflow was stopped" do
+    it "removes stopped flag when the workflow is started" do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
       workflow.stop!
