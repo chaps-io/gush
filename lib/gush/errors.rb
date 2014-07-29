@@ -1,0 +1,2 @@
+class WorkflowNotFoundError < StandardError; end
+

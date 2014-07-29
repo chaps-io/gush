@@ -8,6 +8,7 @@ require "gush/job"
 require "gush/cli"
 require "gush/logger_builder"
 require "gush/null_logger"
+require "gush/errors"
 require "hiredis"
 require "redis"
 require "sidekiq"
@@ -52,11 +53,6 @@ module Gush
 
     workflow = find_workflow(id, options[:redis])
 
-    if workflow.nil?
-      puts "Workflow not found."
-      return
-    end
-
     jobs = if options[:jobs]
       options[:jobs].map { |name| workflow.find_job(name) }
     else
@@ -72,6 +68,8 @@ module Gush
         'args'  => [workflow.id, Yajl::Encoder.new.encode(job.as_json)]
       })
     end
+  rescue WorkflowNotFoundError
+    puts "Workflow not found."
   end
 
   def self.find_workflow(id, redis)
@@ -82,7 +80,7 @@ module Gush
       nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
       Gush.workflow_from_hash(hash, nodes)
     else
-      raise ArgumentError.new("Workflow with given id doesn't exist")
+      raise WorkflowNotFoundError.new("Workflow with given id doesn't exist")
     end
   end
 

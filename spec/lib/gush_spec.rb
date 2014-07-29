@@ -43,7 +43,7 @@ describe Gush do
       it "returns nil" do
         expect {
           Gush.find_workflow('nope', @redis)
-        }.to raise_error(ArgumentError)
+        }.to raise_error(WorkflowNotFoundError)
       end
     end
 

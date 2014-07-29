@@ -44,16 +44,12 @@ module Gush
     def show(workflow_id)
       workflow = Gush.find_workflow(workflow_id, redis)
 
-      if workflow.nil?
-        puts "Workflow not found."
-        return
-      end
-
       display_overview_for(workflow) unless options[:skip_overview]
 
       display_jobs_list_for(workflow, options[:jobs]) unless options[:skip_jobs]
+    rescue WorkflowNotFoundError
+      puts "Workflow not found."
     end
-
 
     desc "list", "Lists all workflows with their statuses"
     def list
