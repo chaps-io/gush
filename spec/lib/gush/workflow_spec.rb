@@ -12,6 +12,19 @@ describe Gush::Workflow do
     end
   end
 
+  describe "#stop!" do
+    it "marks workflow as stopped" do
+      expect{ subject.stop! }.to change{subject.stopped?}.from(false).to(true)
+    end
+  end
+
+  describe "#start!" do
+    it "removes stopped flag" do
+      subject.stopped = true
+      expect{ subject.start! }.to change{subject.stopped?}.from(true).to(false)
+    end
+  end
+
   describe "#to_json" do
     it "returns correct hash" do
 
@@ -32,6 +45,7 @@ describe Gush::Workflow do
         "finished" => 0,
         "started_at" => nil,
         "finished_at" => nil,
+        "stopped" => false,
         "logger_builder" => "Gush::LoggerBuilder",
         "nodes" => [
           {

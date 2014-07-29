@@ -43,7 +43,7 @@ describe Gush do
       it "returns nil" do
         expect {
           Gush.find_workflow('nope', @redis)
-        }.to raise_error(ArgumentError)
+        }.to raise_error(WorkflowNotFoundError)
       end
     end
 
@@ -90,6 +90,16 @@ describe Gush do
       }.to change{Prepare.jobs.count}.from(0).to(1)
     end
 
+    it "removes stopped flag when the workflow is started" do
+      id = SecureRandom.uuid
+      workflow = TestWorkflow.new(id)
+      workflow.stop!
+      Gush.persist_workflow(workflow, @redis)
+      expect {
+        Gush.start_workflow(id, {redis: @redis})
+      }.to change{Gush.find_workflow(id, @redis).stopped?}.from(true).to(false)
+    end
+
     it "marks the enqueued jobs as running" do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
@@ -97,6 +107,17 @@ describe Gush do
       Gush.start_workflow(id, {redis: @redis})
       job = Gush.find_workflow(id, @redis).find_job("Prepare")
       expect(job.running?).to eq(true)
+    end
+  end
+
+  describe ".stop_workflow" do
+    it "marks the workflow as stopped" do
+      id = SecureRandom.uuid
+      workflow = TestWorkflow.new(id)
+      Gush.persist_workflow(workflow, @redis)
+      expect {
+        Gush.stop_workflow(id, {redis: @redis})
+      }.to change{Gush.find_workflow(id, @redis).stopped?}.from(false).to(true)
     end
   end
 

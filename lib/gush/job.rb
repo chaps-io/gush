@@ -26,22 +26,20 @@ module Gush
     end
 
     def perform(workflow_id, json)
-      begin
-        @workflow_id = workflow_id
-        opts = Yajl::Parser.parse(json, symbolize_keys: true)
-        assign_variables(opts)
-        start = Time.now
-        report(:started, start)
-        before_work
-        work
-        mark_as_finished
-        report(:finished, start)
-        report_workflow_status
-        continue_workflow
-      rescue Exception => e
-        mark_as_failed
-        report(:failed, start, e.message)
-      end
+      @workflow_id = workflow_id
+      opts = Yajl::Parser.parse(json, symbolize_keys: true)
+      assign_variables(opts)
+      start = Time.now
+      report(:started, start)
+      before_work
+      work
+      mark_as_finished
+      report(:finished, start)
+      report_workflow_status
+      continue_workflow
+    rescue Exception => e
+      mark_as_failed
+      report(:failed, start, e.message)
     end
 
     def mark_as_finished
@@ -55,7 +53,9 @@ module Gush
     end
 
     def continue_workflow
-      Gush.start_workflow(workflow_id, redis: redis)
+      unless find_workflow.stopped?
+        Gush.start_workflow(workflow_id, redis: redis)
+      end
     end
 
     def find_workflow

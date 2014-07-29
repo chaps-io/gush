@@ -8,6 +8,7 @@ require "gush/job"
 require "gush/cli"
 require "gush/logger_builder"
 require "gush/null_logger"
+require "gush/errors"
 require "hiredis"
 require "redis"
 require "sidekiq"
@@ -37,6 +38,7 @@ module Gush
   def self.workflow_from_hash(hash, nodes = nil)
     flow = hash[:klass].constantize.new(hash[:id], configure: false)
     flow.logger_builder(hash[:logger_builder].constantize)
+    flow.stopped = hash[:stopped]
 
     (nodes || hash[:nodes]).each do |node|
       flow.nodes << Gush::Job.from_hash(node)
@@ -51,11 +53,8 @@ module Gush
     end
 
     workflow = find_workflow(id, options[:redis])
-
-    if workflow.nil?
-      puts "Workflow not found."
-      return
-    end
+    workflow.start!
+    Gush.persist_workflow(workflow, options[:redis])
 
     jobs = if options[:jobs]
       options[:jobs].map { |name| workflow.find_job(name) }
@@ -72,17 +71,31 @@ module Gush
         'args'  => [workflow.id, Yajl::Encoder.new.encode(job.as_json)]
       })
     end
+  rescue WorkflowNotFoundError
+    puts "Workflow not found."
+  end
+
+  def self.stop_workflow(id, options = {})
+    if options[:redis].nil?
+      raise "Provide Redis connection object through options[:redis]"
+    end
+
+    workflow = find_workflow(id, options[:redis])
+    workflow.stop!
+    Gush.persist_workflow(workflow, options[:redis])
+  rescue WorkflowNotFoundError
+    puts "Workflow not found."
   end
 
   def self.find_workflow(id, redis)
-    json = redis.get("gush.workflows.#{id}")
-    unless json.nil?
-      hash = Yajl::Parser.parse(json, symbolize_keys: true)
+    data = redis.get("gush.workflows.#{id}")
+    unless data.nil?
+      hash = Yajl::Parser.parse(data, symbolize_keys: true)
       keys = redis.keys("gush.jobs.#{id}.*")
       nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
       Gush.workflow_from_hash(hash, nodes)
     else
-      raise ArgumentError.new("Workflow with given id doesn't exist")
+      raise WorkflowNotFoundError.new("Workflow with given id doesn't exist")
     end
   end
 

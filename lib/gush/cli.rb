@@ -32,9 +32,16 @@ module Gush
       start(id)
     end
 
+    desc "stop [workflow_id]", "Stops Workflow with given ID"
+    def stop(*args)
+      options = {redis: redis}
+      id = args.shift
+      Gush.stop_workflow(id, options)
+    end
+
     desc "clear", "Clears all jobs from Sidekiq queue"
     def clear
-      Sidekiq::Queue.new.clear
+      Sidekiq::Queue.new(Gush.configuration.namespace).clear
     end
 
     desc "show [workflow_id]", "Shows details about workflow with given ID"
@@ -44,16 +51,12 @@ module Gush
     def show(workflow_id)
       workflow = Gush.find_workflow(workflow_id, redis)
 
-      if workflow.nil?
-        puts "Workflow not found."
-        return
-      end
-
       display_overview_for(workflow) unless options[:skip_overview]
 
       display_jobs_list_for(workflow, options[:jobs]) unless options[:skip_jobs]
+    rescue WorkflowNotFoundError
+      puts "Workflow not found."
     end
-
 
     desc "list", "Lists all workflows with their statuses"
     def list
@@ -68,7 +71,6 @@ module Gush
       end
       rows = []
       workflows.each do |workflow|
-        progress = ""
         rows << [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
       headers = [
