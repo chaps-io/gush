@@ -18,3 +18,4 @@ workflows/
 tmp
 test.rb
 Gushfile.rb
+dump.rdb
