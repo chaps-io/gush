@@ -83,7 +83,13 @@ module Gush
 
   def self.create_workflow(name)
     id = SecureRandom.uuid.split("-").first
-    workflow = name.constantize.new(id)
+
+    begin
+      workflow = name.constantize.new(id)
+    rescue NameError
+      raise WorkflowNotFoundError.new("Workflow with given name doesn't exist")
+    end
+
     persist_workflow(workflow)
     workflow
   end

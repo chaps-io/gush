@@ -44,22 +44,22 @@ module Gush
 
     def mark_as_finished
       self.finish!
-      Gush.persist_job(@workflow_id, self, redis)
+      Gush.persist_job(@workflow_id, self)
     end
 
     def mark_as_failed
       self.fail!
-      Gush.persist_job(@workflow_id, self, redis)
+      Gush.persist_job(@workflow_id, self)
     end
 
     def continue_workflow
       unless find_workflow.stopped?
-        Gush.start_workflow(workflow_id, redis: redis)
+        Gush.start_workflow(workflow_id)
       end
     end
 
     def find_workflow
-      Gush.find_workflow(workflow_id, redis)
+      Gush.find_workflow(workflow_id)
     end
 
     def as_json

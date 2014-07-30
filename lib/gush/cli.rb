@@ -14,6 +14,8 @@ module Gush
       puts "Workflow created with id: #{workflow.id}"
       puts "Start it with command: gush start #{workflow.id}"
       return workflow.id
+    rescue
+      puts "Workflow not found."
     end
 
     desc "start [workflow_id]", "Starts Workflow with given ID"
@@ -25,9 +27,12 @@ module Gush
     end
 
     desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
-    def create_and_start(name)
-      id = create(name)
-      start(id)
+    def create_and_start(name, *args)
+      workflow = Gush.create_workflow(name)
+      Gush.start_workflow(workflow.id, args)
+      puts "Workflow created and started with id: #{workflow.id}"
+    rescue
+      puts "Workflow not found."
     end
 
     desc "stop [workflow_id]", "Stops Workflow with given ID"
@@ -53,6 +58,14 @@ module Gush
       display_overview_for(workflow) unless options[:skip_overview]
 
       display_jobs_list_for(workflow, options[:jobs]) unless options[:skip_jobs]
+    rescue WorkflowNotFoundError
+      puts "Workflow not found."
+    end
+
+    desc "rm [workflow_id]", "Delete workflow with given ID"
+    def rm(workflow_id)
+      workflow = Gush.find_workflow(workflow_id)
+      Gush.destroy_workflow(workflow)
     rescue WorkflowNotFoundError
       puts "Workflow not found."
     end
