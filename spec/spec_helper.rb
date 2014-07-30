@@ -36,8 +36,12 @@ end
 
 RSpec.configure do |config|
   config.before(:each) do
+    redis_url = "redis://localhost/12"
+    Gush.configure do |conf|
+      conf.redis_url = redis_url
+    end
     Sidekiq::Worker.clear_all
-    @redis = Redis.new(db: 12)
+    @redis = Redis.new(url: redis_url)
     @redis.keys("gush.workflows.*").each do |key|
       @redis.del(key)
     end

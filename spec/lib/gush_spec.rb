@@ -42,7 +42,7 @@ describe Gush do
     context "when workflow doesn't exist" do
       it "returns nil" do
         expect {
-          Gush.find_workflow('nope', @redis)
+          Gush.find_workflow('nope')
         }.to raise_error(WorkflowNotFoundError)
       end
     end
@@ -50,8 +50,8 @@ describe Gush do
     context "when given workflow exists" do
       it "returns Workflow object" do
         expected_workflow = TestWorkflow.new(SecureRandom.uuid)
-        Gush.persist_workflow(expected_workflow, @redis)
-        workflow = Gush.find_workflow(expected_workflow.id, @redis)
+        Gush.persist_workflow(expected_workflow)
+        workflow = Gush.find_workflow(expected_workflow.id)
 
         expect(workflow.id).to eq(expected_workflow.id)
         expect(workflow.nodes.map(&:name)).to match_array(expected_workflow.nodes.map(&:name))
@@ -84,9 +84,9 @@ describe Gush do
     it "enqueues next jobs from the workflow" do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
-      Gush.persist_workflow(workflow, @redis)
+      Gush.persist_workflow(workflow)
       expect {
-        Gush.start_workflow(id, {redis: @redis})
+        Gush.start_workflow(id)
       }.to change{Prepare.jobs.count}.from(0).to(1)
     end
 
@@ -94,18 +94,18 @@ describe Gush do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
       workflow.stop!
-      Gush.persist_workflow(workflow, @redis)
+      Gush.persist_workflow(workflow)
       expect {
-        Gush.start_workflow(id, {redis: @redis})
-      }.to change{Gush.find_workflow(id, @redis).stopped?}.from(true).to(false)
+        Gush.start_workflow(id)
+      }.to change{Gush.find_workflow(id).stopped?}.from(true).to(false)
     end
 
     it "marks the enqueued jobs as running" do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
-      Gush.persist_workflow(workflow, @redis)
-      Gush.start_workflow(id, {redis: @redis})
-      job = Gush.find_workflow(id, @redis).find_job("Prepare")
+      Gush.persist_workflow(workflow)
+      Gush.start_workflow(id)
+      job = Gush.find_workflow(id).find_job("Prepare")
       expect(job.running?).to eq(true)
     end
   end
@@ -114,21 +114,20 @@ describe Gush do
     it "marks the workflow as stopped" do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
-      Gush.persist_workflow(workflow, @redis)
+      Gush.persist_workflow(workflow)
       expect {
-        Gush.stop_workflow(id, {redis: @redis})
-      }.to change{Gush.find_workflow(id, @redis).stopped?}.from(false).to(true)
+        Gush.stop_workflow(id)
+      }.to change{Gush.find_workflow(id).stopped?}.from(false).to(true)
     end
   end
 
   describe ".persist_workflow" do
     it "persists JSON dump of the Workflow and its jobs" do
-      redis = double("redis")
       job = double("job", to_json: 'json')
-      workflow = double("workflow", id: 'abcd', nodes: [job, job, job], to_json: 'json')
-      expect(redis).to receive(:set).with("gush.workflows.#{workflow.id}", 'json')
-      expect(Gush).to receive(:persist_job).exactly(3).times.with(workflow.id, job, redis)
-      Gush.persist_workflow(workflow, redis)
+      workflow = double("workflow", id: 'abcd', nodes: [job, job, job], to_json: '"json"')
+      expect(Gush).to receive(:persist_job).exactly(3).times.with(workflow.id, job)
+      Gush.persist_workflow(workflow)
+      expect(Gush.redis.keys("gush.workflows.abcd").length).to eq(1)
     end
   end
 
@@ -136,11 +135,11 @@ describe Gush do
     it "removes all Redis keys related to the workflow" do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
-      Gush.persist_workflow(workflow, @redis)
+      Gush.persist_workflow(workflow)
       expect(@redis.keys("gush.workflows.#{id}").length).to eq(1)
       expect(@redis.keys("gush.jobs.#{id}.*").length).to eq(5)
 
-      Gush.destroy_workflow(workflow, @redis)
+      Gush.destroy_workflow(workflow)
 
       expect(@redis.keys("gush.workflows.#{id}").length).to eq(0)
       expect(@redis.keys("gush.jobs.#{id}.*").length).to eq(0)
@@ -149,18 +148,17 @@ describe Gush do
 
   describe ".persist_job" do
     it "persists JSON dump of the job in Redis" do
-      redis = double("redis")
       job = double("job", to_json: 'json')
-      expect(redis).to receive(:set).with("gush.jobs.deadbeef.#{job.class.to_s}", 'json')
-      Gush.persist_job('deadbeef', job, redis)
+      Gush.persist_job('deadbeef', job)
+      expect(Gush.redis.keys("gush.jobs.deadbeef.*").length).to eq(1)
     end
   end
 
   describe ".all_workflows" do
     it "returns all registered workflows" do
       workflow = TestWorkflow.new(SecureRandom.uuid)
-      Gush.persist_workflow(workflow, @redis)
-      workflows = Gush.all_workflows(@redis)
+      Gush.persist_workflow(workflow)
+      workflows = Gush.all_workflows()
       expect(workflows.map(&:id)).to eq([workflow.id])
     end
   end

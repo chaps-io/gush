@@ -10,7 +10,7 @@ module Gush
 
     desc "create [WorkflowClass]", "Registers new workflow"
     def create(name)
-      workflow = Gush.create_workflow(name, redis)
+      workflow = Gush.create_workflow(name)
       puts "Workflow created with id: #{workflow.id}"
       puts "Start it with command: gush start #{workflow.id}"
       return workflow.id
@@ -18,12 +18,10 @@ module Gush
 
     desc "start [workflow_id]", "Starts Workflow with given ID"
     def start(*args)
-      options = {redis: redis}
       id = args.shift
-      if args.length > 0
-        options[:jobs] = args
-      end
-      Gush.start_workflow(id, options)
+      Gush.start_workflow(id, args)
+    rescue WorkflowNotFoundError
+      puts "Workflow not found."
     end
 
     desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
@@ -34,9 +32,10 @@ module Gush
 
     desc "stop [workflow_id]", "Stops Workflow with given ID"
     def stop(*args)
-      options = {redis: redis}
       id = args.shift
-      Gush.stop_workflow(id, options)
+      Gush.stop_workflow(id)
+    rescue WorkflowNotFoundError
+      puts "Workflow not found."
     end
 
     desc "clear", "Clears all jobs from Sidekiq queue"
@@ -49,7 +48,7 @@ module Gush
     option :skip_jobs, type: :boolean
     option :jobs, default: :all
     def show(workflow_id)
-      workflow = Gush.find_workflow(workflow_id, redis)
+      workflow = Gush.find_workflow(workflow_id)
 
       display_overview_for(workflow) unless options[:skip_overview]
 
@@ -60,26 +59,16 @@ module Gush
 
     desc "list", "Lists all workflows with their statuses"
     def list
-      keys = redis.keys("gush.workflows.*")
-      if keys.empty?
-        puts "No workflows registered."
-        exit
-      end
-      workflows = keys.map do |key|
-        id = key.sub("gush.workflows.", "")
-        Gush.find_workflow(id, redis)
-      end
-      rows = []
-      workflows.each do |workflow|
-        rows << [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
+      workflows = Gush.all_workflows
+      rows = workflows.map do |workflow|
+        [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
       headers = [
         {alignment: :center, value: 'id'},
         {alignment: :center, value: 'name'},
         {alignment: :center, value: 'status'}
       ]
-      table = Terminal::Table.new(headings: headers, rows: rows)
-      puts table
+      puts Terminal::Table.new(headings: headers, rows: rows)
     end
 
     desc "workers", "Starts Sidekiq workers"
@@ -131,10 +120,6 @@ module Gush
     end
 
     private
-
-    def redis
-      @redis ||= Redis.new
-    end
 
     def display_overview_for(workflow)
       rows = []

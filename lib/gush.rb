@@ -33,6 +33,8 @@ module Gush
 
   def self.configure(&block)
     yield(configuration) if block_given?
+    configure_sidekiq
+    @redis = build_redis
   end
 
   def self.workflow_from_hash(hash, nodes = nil)
@@ -47,47 +49,27 @@ module Gush
     flow
   end
 
-  def self.start_workflow(id, options = {})
-    if options[:redis].nil?
-      raise "Provide Redis connection object through options[:redis]"
-    end
-
-    workflow = find_workflow(id, options[:redis])
+  def self.start_workflow(id, jobs = [])
+    workflow = find_workflow(id)
     workflow.start!
-    Gush.persist_workflow(workflow, options[:redis])
+    persist_workflow(workflow)
 
-    jobs = if options[:jobs]
-      options[:jobs].map { |name| workflow.find_job(name) }
-    else
-      workflow.next_jobs
-    end
+    jobs = workflow.next_jobs if jobs.empty?
 
     jobs.each do |job|
       job.enqueue!
-      persist_job(workflow.id, job, options[:redis])
-      Sidekiq::Client.push({
-        'class' => job.class,
-        'queue' => Gush.configuration.namespace,
-        'args'  => [workflow.id, Yajl::Encoder.new.encode(job.as_json)]
-      })
+      persist_job(workflow.id, job)
+      enqueue_job(workflow.id, job)
     end
-  rescue WorkflowNotFoundError
-    puts "Workflow not found."
   end
 
-  def self.stop_workflow(id, options = {})
-    if options[:redis].nil?
-      raise "Provide Redis connection object through options[:redis]"
-    end
-
-    workflow = find_workflow(id, options[:redis])
+  def self.stop_workflow(id)
+    workflow = find_workflow(id)
     workflow.stop!
-    Gush.persist_workflow(workflow, options[:redis])
-  rescue WorkflowNotFoundError
-    puts "Workflow not found."
+    persist_workflow(workflow)
   end
 
-  def self.find_workflow(id, redis)
+  def self.find_workflow(id)
     data = redis.get("gush.workflows.#{id}")
     unless data.nil?
       hash = Yajl::Parser.parse(data, symbolize_keys: true)
@@ -99,48 +81,61 @@ module Gush
     end
   end
 
-  def self.create_workflow(name, redis)
+  def self.create_workflow(name)
     id = SecureRandom.uuid.split("-").first
     workflow = name.constantize.new(id)
-    Gush.persist_workflow(workflow, redis)
+    persist_workflow(workflow)
     workflow
   end
 
-  def self.all_workflows(redis)
+  def self.all_workflows
     redis.keys("gush.workflows.*").map do |key|
       id = key.sub("gush.workflows.", "")
-      Gush.find_workflow(id, redis)
+      find_workflow(id)
     end
   end
 
-  def self.persist_workflow(workflow, redis)
+  def self.persist_workflow(workflow)
     redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
-
-    workflow.nodes.each do |job|
-      persist_job(workflow.id, job, redis)
-    end
+    workflow.nodes.each {|job| persist_job(workflow.id, job) }
   end
 
-  def self.destroy_workflow(workflow, redis)
+  def self.destroy_workflow(workflow)
     redis.del("gush.workflows.#{workflow.id}")
-    workflow.nodes.each do |job|
-      redis.del("gush.jobs.#{workflow.id}.#{job.class.to_s}")
-    end
+    workflow.nodes.each {|job| destroy_job(workflow.id, job) }
   end
 
-  def self.persist_job(workflow_id, job, redis)
+  def self.persist_job(workflow_id, job)
     redis.set("gush.jobs.#{workflow_id}.#{job.class.to_s}", job.to_json)
   end
 
+  def self.enqueue_job(workflow_id, job)
+    Sidekiq::Client.push({
+      'class' => job.class,
+      'queue' => Gush.configuration.namespace,
+      'args'  => [workflow_id, Yajl::Encoder.new.encode(job.as_json)]
+    })
+  end
+
+  def self.destroy_job(workflow_id, job)
+    redis.del("gush.jobs.#{workflow_id}.#{job.class.to_s}")
+  end
+
+  def self.redis
+    @redis ||= build_redis
+  end
+
+  def self.build_redis
+    Redis.new(url: Gush.configuration.redis_url)
+  end
 
   def self.configure_sidekiq
     Sidekiq.configure_server do |config|
       config.redis = ConnectionPool.new(size: Sidekiq.options[:concurrency] + 2, timeout: 1) do
-        Redis.new(url: Gush.configuration.redis_url)
+        build_redis
       end
     end
   end
 end
-
 
 Gush.configure_sidekiq
