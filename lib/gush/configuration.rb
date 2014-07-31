@@ -7,5 +7,17 @@ module Gush
       @namespace = "gush"
       @redis_url = "redis://localhost:6379"
     end
+
+    def to_hash
+      {
+        concurrency: concurrency,
+        namespace:   namespace,
+        redis_url:   redis_url
+      }
+    end
+
+    def to_json
+      Yajl::Encoder.new.encode(to_hash)
+    end
   end
 end

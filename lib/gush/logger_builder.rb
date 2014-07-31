@@ -1,10 +1,11 @@
 module Gush
   class LoggerBuilder
-    attr_reader :workflow, :job
+    attr_reader :workflow, :job, :jid
 
-    def initialize(workflow, job)
+    def initialize(workflow, job, jid)
       @workflow = workflow
       @job = job
+      @jid = jid
     end
 
     def build

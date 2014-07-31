@@ -9,6 +9,7 @@ require "gush/cli"
 require "gush/logger_builder"
 require "gush/null_logger"
 require "gush/errors"
+require "gush/worker"
 require "hiredis"
 require "redis"
 require "sidekiq"
@@ -75,7 +76,7 @@ module Gush
       hash = Yajl::Parser.parse(data, symbolize_keys: true)
       keys = redis.keys("gush.jobs.#{id}.*")
       nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
-      Gush.workflow_from_hash(hash, nodes)
+      workflow_from_hash(hash, nodes)
     else
       raise WorkflowNotFoundError.new("Workflow with given id doesn't exist")
     end
@@ -117,9 +118,9 @@ module Gush
 
   def self.enqueue_job(workflow_id, job)
     Sidekiq::Client.push({
-      'class' => job.class,
+      'class' => Gush::Worker,
       'queue' => Gush.configuration.namespace,
-      'args'  => [workflow_id, Yajl::Encoder.new.encode(job.as_json)]
+      'args'  => [workflow_id, job.class.to_s, Gush.configuration.to_json]
     })
   end
 
@@ -141,6 +142,14 @@ module Gush
         build_redis
       end
     end
+  end
+
+  def self.worker_report(message)
+    redis.publish("gush.workers.status", Yajl::Encoder.new.encode(message))
+  end
+
+  def self.workflow_report(message)
+    redis.publish("gush.workflows.status", Yajl::Encoder.new.encode(message))
   end
 end
 

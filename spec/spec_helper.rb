@@ -15,7 +15,7 @@ TestLogger = Struct.new(:jid, :name)
 
 class TestLoggerBuilder < Gush::LoggerBuilder
   def build
-    TestLogger.new(job.jid, job.name)
+    TestLogger.new(jid, job.name)
   end
 end
 
@@ -35,6 +35,10 @@ class TestWorkflow < Gush::Workflow
 end
 
 RSpec.configure do |config|
+  config.mock_with :rspec do |mocks|
+    mocks.verify_partial_doubles = true
+  end
+
   config.before(:each) do
     redis_url = "redis://localhost/12"
     Gush.configure do |conf|
