@@ -10,7 +10,7 @@ module Gush
 
     desc "create [WorkflowClass]", "Registers new workflow"
     def create(name)
-      workflow = Gush.create_workflow(name)
+      workflow = client.create_workflow(name)
       puts "Workflow created with id: #{workflow.id}"
       puts "Start it with command: gush start #{workflow.id}"
       return workflow.id
@@ -21,15 +21,15 @@ module Gush
     desc "start [workflow_id]", "Starts Workflow with given ID"
     def start(*args)
       id = args.shift
-      Gush.start_workflow(id, args)
+      client.start_workflow(id, args)
     rescue WorkflowNotFoundError
       puts "Workflow not found."
     end
 
     desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
     def create_and_start(name, *args)
-      workflow = Gush.create_workflow(name)
-      Gush.start_workflow(workflow.id, args)
+      workflow = client.create_workflow(name)
+      client.start_workflow(workflow.id, args)
       puts "Workflow created and started with id: #{workflow.id}"
     rescue
       puts "Workflow not found."
@@ -38,14 +38,14 @@ module Gush
     desc "stop [workflow_id]", "Stops Workflow with given ID"
     def stop(*args)
       id = args.shift
-      Gush.stop_workflow(id)
+      client.stop_workflow(id)
     rescue WorkflowNotFoundError
       puts "Workflow not found."
     end
 
     desc "clear", "Clears all jobs from Sidekiq queue"
     def clear
-      Sidekiq::Queue.new(Gush.configuration.namespace).clear
+      Sidekiq::Queue.new(client.configuration.namespace).clear
     end
 
     desc "show [workflow_id]", "Shows details about workflow with given ID"
@@ -53,7 +53,7 @@ module Gush
     option :skip_jobs, type: :boolean
     option :jobs, default: :all
     def show(workflow_id)
-      workflow = Gush.find_workflow(workflow_id)
+      workflow = client.find_workflow(workflow_id)
 
       display_overview_for(workflow) unless options[:skip_overview]
 
@@ -64,15 +64,15 @@ module Gush
 
     desc "rm [workflow_id]", "Delete workflow with given ID"
     def rm(workflow_id)
-      workflow = Gush.find_workflow(workflow_id)
-      Gush.destroy_workflow(workflow)
+      workflow = client.find_workflow(workflow_id)
+      client.destroy_workflow(workflow)
     rescue WorkflowNotFoundError
       puts "Workflow not found."
     end
 
     desc "list", "Lists all workflows with their statuses"
     def list
-      workflows = Gush.all_workflows
+      workflows = client.all_workflows
       rows = workflows.map do |workflow|
         [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
@@ -86,7 +86,7 @@ module Gush
 
     desc "workers", "Starts Sidekiq workers"
     def workers
-      config = Gush.configuration
+      config = client.configuration
       Kernel.exec "bundle exec sidekiq -r #{Gush.gushfile} -c #{config.concurrency} -q #{config.namespace} -v"
     end
 
@@ -133,6 +133,10 @@ module Gush
     end
 
     private
+
+    def client
+      @client ||= Client.new
+    end
 
     def display_overview_for(workflow)
       rows = []

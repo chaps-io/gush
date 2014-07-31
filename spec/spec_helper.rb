@@ -34,20 +34,28 @@ class TestWorkflow < Gush::Workflow
   end
 end
 
+module GushHelpers
+  REDIS_URL = "redis://localhost/12"
+
+  def redis
+    @redis ||= Redis.new(url: REDIS_URL)
+  end
+
+  def client
+    @client ||= Gush::Client.new(Gush::Configuration.new(redis_url: REDIS_URL))
+  end
+end
+
 RSpec.configure do |config|
+  config.include GushHelpers
+
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
   end
 
-  config.before(:each) do
-    redis_url = "redis://localhost/12"
-    Gush.configure do |conf|
-      conf.redis_url = redis_url
-    end
+
+  config.after(:each) do
     Sidekiq::Worker.clear_all
-    @redis = Redis.new(url: redis_url)
-    @redis.keys("gush.workflows.*").each do |key|
-      @redis.del(key)
-    end
+    redis.flushdb
   end
 end

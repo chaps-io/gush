@@ -7,7 +7,9 @@ module Gush
     sidekiq_options retry: false
 
     def perform(workflow_id, job_id, configuration_json)
-      workflow = Gush.find_workflow(workflow_id)
+      configure_client(configuration_json)
+
+      workflow = client.find_workflow(workflow_id)
       job = workflow.find_job(job_id)
 
       start = Time.now
@@ -15,40 +17,55 @@ module Gush
 
       job.logger = workflow.build_logger_for_job(job, job_id)
 
-      job.before_work
-      job.work
-      job.after_work
+      failed = false
+      error = nil
+      begin
+        job.before_work
+        job.work
+        job.after_work
+      rescue Exception => e
+        failed = true
+        error = e
+      end
 
-      report(workflow, job, :finished, start)
-      mark_as_finished(workflow, job)
+      unless failed
+        report(workflow, job, :finished, start)
+        mark_as_finished(workflow, job)
 
-      continue_workflow(workflow)
-    rescue Exception => e
-      mark_as_failed(workflow, job)
-      report(workflow, job, :failed, start, e.message)
+        continue_workflow(workflow)
+      else
+        mark_as_failed(workflow, job)
+        report(workflow, job, :failed, start, error.message)
+      end
     end
 
     private
 
+    attr_reader :client
+
+    def configure_client(config_json)
+      @client = Client.new(Configuration.from_json(config_json))
+    end
+
     def mark_as_finished(workflow, job)
       job.finish!
-      Gush.persist_job(workflow.id, job)
+      client.persist_job(workflow.id, job)
     end
 
     def mark_as_failed(workflow, job)
       job.fail!
-      Gush.persist_job(workflow.id, job)
+      client.persist_job(workflow.id, job)
     end
 
     def report_workflow_status(workflow, job)
       message = {workflow_id: workflow.id, status: workflow.status, started_at: workflow.started_at, finished_at: workflow.finished_at }
-      Gush.workflow_report(message)
+      client.workflow_report(message)
     end
 
     def report(workflow, job, status, start, error = nil)
       message = {status: status, workflow_id: workflow.id, job: job.name, duration: elapsed(start)}
       message[:error] = error if error
-      Gush.worker_report(message)
+      client.worker_report(message)
     end
 
     def elapsed(start)
@@ -57,8 +74,8 @@ module Gush
 
     def continue_workflow(workflow)
       # refetch is important to get correct workflow status
-      unless Gush.find_workflow(workflow.id).stopped?
-        Gush.start_workflow(workflow.id)
+      unless client.find_workflow(workflow.id).stopped?
+        client.start_workflow(workflow.id)
       end
     end
   end

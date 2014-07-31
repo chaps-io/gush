@@ -4,10 +4,11 @@ describe Gush::Worker do
   let(:workflow_id) { '1234'                        }
   let(:workflow)    { TestWorkflow.new(workflow_id) }
   let(:job)         { workflow.find_job("Prepare")  }
-  let(:config)      { :fake_config                  }
+  let(:config)      { client.configuration.to_json  }
 
   before :each do
-    allow(Gush).to receive(:find_workflow).with(workflow_id).and_return(workflow)
+    allow(client).to receive(:find_workflow).with(workflow_id).and_return(workflow)
+    allow(Gush::Client).to receive(:new).and_return(client)
   end
 
   describe "#perform" do
@@ -17,7 +18,7 @@ describe Gush::Worker do
       end
 
       it "should mark it as failed" do
-        expect(Gush).to receive(:persist_job).with(workflow_id, job) do |_, job|
+        expect(client).to receive(:persist_job).with(workflow_id, job) do |_, job|
           expect(job).to be_failed
         end
 
@@ -25,28 +26,28 @@ describe Gush::Worker do
       end
 
       it "reports that job failed" do
-        allow(Gush).to receive(:worker_report)
+        allow(client).to receive(:worker_report)
         Gush::Worker.new.perform(workflow_id, "Prepare", config)
-        expect(Gush).to have_received(:worker_report).with(hash_including(status: :failed))
+        expect(client).to have_received(:worker_report).with(hash_including(status: :failed))
       end
     end
 
     context "when job completes successfully" do
       it "should mark it as succedeed" do
-        allow(Gush).to receive(:persist_job)
+        allow(client).to receive(:persist_job)
 
         Gush::Worker.new.perform(workflow_id, "Prepare", config)
 
-        expect(Gush).to have_received(:persist_job).at_least(1).times.with(workflow_id, job) do |_, job|
+        expect(client).to have_received(:persist_job).at_least(1).times.with(workflow_id, job) do |_, job|
           expect(job).to be_succeeded
         end
       end
 
       it "reports that job succedeed" do
-        allow(Gush).to receive(:worker_report)
+        allow(client).to receive(:worker_report)
         Gush::Worker.new.perform(workflow_id, "Prepare", config)
 
-        expect(Gush).to have_received(:worker_report).with(hash_including(status: :finished))
+        expect(client).to have_received(:worker_report).with(hash_including(status: :finished))
       end
     end
 
@@ -64,9 +65,9 @@ describe Gush::Worker do
     end
 
     it "reports when the job is started" do
-      allow(Gush).to receive(:worker_report)
+      allow(client).to receive(:worker_report)
       Gush::Worker.new.perform(workflow_id, "Prepare", config)
-      expect(Gush).to have_received(:worker_report).with(hash_including(status: :started))
+      expect(client).to have_received(:worker_report).with(hash_including(status: :started))
     end
   end
 end
