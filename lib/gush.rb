@@ -36,5 +36,14 @@ module Gush
 
   def self.configure
     yield configuration
+    reconfigure_sidekiq_server
+  end
+
+  def self.reconfigure_sidekiq_server
+    Sidekiq.configure_server do |config|
+      config.redis = { url: configuration.redis_url, namespace: configuration.namespace}
+    end
   end
 end
+
+Gush.reconfigure_sidekiq_server
