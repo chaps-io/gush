@@ -185,6 +185,8 @@ module Gush
           "[✗] #{name.red}"
         when job.finished?
           "[✓] #{name.green}"
+        when job.stopped?
+          "[•] #{name.red}"
         when job.running?
           "[•] #{name.yellow}"
         else
