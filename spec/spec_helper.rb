@@ -54,12 +54,17 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
 
-  config.before(:all) do
+  orchestrator = Bbq::Spawn::Orchestrator.new
+
+  config.before(:suite) do
     config_path = Pathname.pwd + "spec/redis.conf"
     executor = Bbq::Spawn::Executor.new("redis-server", config_path.to_path)
-    orchestrator = Bbq::Spawn::Orchestrator.new
     orchestrator.coordinate(executor, host: 'localhost', port: 33333)
     orchestrator.start
+  end
+
+  config.after(:suite) do
+    orchestrator.stop
   end
 
   config.after(:each) do
