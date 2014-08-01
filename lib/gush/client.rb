@@ -6,6 +6,7 @@ module Gush
       @configuration = config
       @sidekiq = build_sidekiq
       @redis = build_redis
+      load_gushfile
     end
 
     def configure
@@ -130,6 +131,12 @@ module Gush
 
     def connection_pool
       ConnectionPool.new(size: configuration, timeout: 1) { build_redis }
+    end
+
+    def load_gushfile
+      require configuration.gushfile
+    rescue LoadError
+      raise Thor::Error, "failed to load #{configuration.gushfile.basename}".colorize(:red)
     end
   end
 end

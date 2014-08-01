@@ -4,12 +4,12 @@ describe Gush do
   describe ".gushfile" do
     context "Gushfile.rb is missing from pwd" do
       it "raises an exception" do
-        path = Pathname.new("/tmp/Gushfile.rb")
+        path = Pathname("/tmp/Gushfile.rb")
         path.delete if path.exist?
 
-        allow(Pathname).to receive(:pwd)
-          .and_return(Pathname.new("/tmp"))
-        expect {Gush.gushfile}.to raise_error(Thor::Error)
+        allow(Pathname).to receive(:pwd).and_return(Pathname("/tmp"))
+
+        expect { Gush.gushfile }.to raise_error(Thor::Error)
       end
     end
 

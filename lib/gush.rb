@@ -21,9 +21,7 @@ require "gush/workflow"
 
 module Gush
   def self.gushfile
-    path = Pathname.pwd.join("Gushfile.rb")
-    raise Thor::Error, "Gushfile.rb not found, please add it to your project".colorize(:red) unless path.exist?
-    path
+    configuration.gushfile
   end
 
   def self.root

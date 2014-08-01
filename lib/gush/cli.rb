@@ -7,13 +7,20 @@ require 'sidekiq/api'
 
 module Gush
   class CLI < Thor
+    class_option :gushfile, desc: "configuration file to use", aliases: "-f", default: "Gushfile.rb"
+
+    def initialize(*)
+      super
+      Gush.configure do |config|
+        config.gushfile = Pathname.pwd.join(options[:gushfile])
+      end
+    end
 
     desc "create [WorkflowClass]", "Registers new workflow"
     def create(name)
       workflow = client.create_workflow(name)
       puts "Workflow created with id: #{workflow.id}"
       puts "Start it with command: gush start #{workflow.id}"
-      return workflow.id
     rescue
       puts "Workflow not found."
     end
@@ -30,7 +37,7 @@ module Gush
     def create_and_start(name, *args)
       workflow = client.create_workflow(name)
       client.start_workflow(workflow.id, args)
-      puts "Workflow created and started with id: #{workflow.id}"
+      puts "Created and started workflow with id: #{workflow.id}"
     rescue
       puts "Workflow not found."
     end
@@ -211,6 +218,10 @@ module Gush
 
       jobs.select!{|j| j.public_send("#{type}?") } unless type == :all
       jobs
+    end
+
+    def gushfile
+      Pathname.pwd.join(options[:gushfile])
     end
   end
 end

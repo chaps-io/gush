@@ -5,6 +5,8 @@ describe Gush::Configuration do
   it "has defaults set" do
     expect(subject.redis_url).to eq("redis://localhost:6379")
     expect(subject.concurrency).to eq(5)
+    expect(subject.namespace).to eq('gush')
+    expect(subject.gushfile).to eq(Pathname.pwd.join('Gushfile.rb'))
   end
 
   describe "#configure" do
