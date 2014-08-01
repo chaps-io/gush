@@ -1,6 +1,7 @@
 require 'gush'
 require 'pry'
 require 'sidekiq/testing'
+require 'bbq/spawn'
 
 Sidekiq::Logging.logger = nil
 
@@ -35,7 +36,7 @@ class TestWorkflow < Gush::Workflow
 end
 
 module GushHelpers
-  REDIS_URL = "redis://localhost/12"
+  REDIS_URL = "redis://localhost:33333/"
 
   def redis
     @redis ||= Redis.new(url: REDIS_URL)
@@ -53,6 +54,13 @@ RSpec.configure do |config|
     mocks.verify_partial_doubles = true
   end
 
+  config.before(:all) do
+    config_path = Pathname.pwd + "spec/redis.conf"
+    executor = Bbq::Spawn::Executor.new("redis-server", config_path.to_path)
+    orchestrator = Bbq::Spawn::Orchestrator.new
+    orchestrator.coordinate(executor, host: 'localhost', port: 33333)
+    orchestrator.start
+  end
 
   config.after(:each) do
     Sidekiq::Worker.clear_all
