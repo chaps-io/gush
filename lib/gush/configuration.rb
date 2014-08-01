@@ -2,7 +2,7 @@ require 'yajl'
 
 module Gush
   class Configuration
-    attr_accessor :concurrency, :namespace, :redis_url, :sidekiq, :redis
+    attr_accessor :concurrency, :namespace, :redis_url
 
     def self.from_json(json)
       new(Yajl::Parser.parse(json, symbolize_keys: true))
