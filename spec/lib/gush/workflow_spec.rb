@@ -102,15 +102,14 @@ describe Gush::Workflow do
   describe "#build_logger_for_job" do
     it 'builds a logger' do
       job = double('job')
-      allow(job).to receive(:jid) { 42 }
       allow(job).to receive(:name) { 'a-job' }
 
       tree = Gush::Workflow.new("workflow")
       tree.logger_builder(TestLoggerBuilder)
 
-      logger = tree.build_logger_for_job(job)
+      logger = tree.build_logger_for_job(job, :jid)
       expect(logger).to be_a(TestLogger)
-      expect(logger.jid).to eq(42)
+      expect(logger.jid).to eq(:jid)
       expect(logger.name).to eq('a-job')
     end
   end

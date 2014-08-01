@@ -1,13 +1,8 @@
-require 'sidekiq'
-require 'yajl'
 require 'gush/metadata'
 
 module Gush
   class Job
-    include ::Sidekiq::Worker
     include Gush::Metadata
-
-    sidekiq_options retry: false
 
     DEFAULTS = {
       finished: false,
@@ -20,50 +15,15 @@ module Gush
 
     attr_reader :name
 
+    attr_writer :logger
+
     def initialize(opts = {})
       options = DEFAULTS.dup.merge(opts)
       assign_variables(options)
     end
 
-    def perform(workflow_id, json)
-      @workflow_id = workflow_id
-      opts = Yajl::Parser.parse(json, symbolize_keys: true)
-      assign_variables(opts)
-      start = Time.now
-      report(:started, start)
-      before_work
-      work
-      mark_as_finished
-      report(:finished, start)
-      report_workflow_status
-      continue_workflow
-    rescue Exception => e
-      mark_as_failed
-      report(:failed, start, e.message)
-    end
-
-    def mark_as_finished
-      self.finish!
-      Gush.persist_job(@workflow_id, self, redis)
-    end
-
-    def mark_as_failed
-      self.fail!
-      Gush.persist_job(@workflow_id, self, redis)
-    end
-
-    def continue_workflow
-      unless find_workflow.stopped?
-        Gush.start_workflow(workflow_id, redis: redis)
-      end
-    end
-
-    def find_workflow
-      Gush.find_workflow(workflow_id, redis)
-    end
-
     def as_json
-      hash = {
+      {
         name: @name,
         klass: self.class.to_s,
         finished: @finished,
@@ -75,7 +35,6 @@ module Gush
         started_at: @started_at,
         failed_at: @failed_at
       }
-      hash
     end
 
     def to_json(options = {})
@@ -100,6 +59,9 @@ module Gush
     end
 
     def work
+    end
+
+    def after_work
     end
 
     def enqueue!
@@ -154,7 +116,7 @@ module Gush
 
     def logger
       fail "You cannot log when the job is not running" unless running?
-      @logger ||= find_workflow.build_logger_for_job(self)
+      @logger
     end
 
     private
@@ -173,30 +135,6 @@ module Gush
 
     def dependencies_satisfied?(flow)
       dependencies(flow).all? { |dep| !dep.running? && dep.finished? && !dep.failed? }
-    end
-
-    def report(status, start, error = nil)
-      message = {status: status, workflow_id: workflow_id, job: @name, duration: elapsed(start)}
-      message[:error] = error if error
-      redis.publish("gush.workers.status", encoder.encode(message))
-    end
-
-    def report_workflow_status
-      workflow = find_workflow
-      message = {workflow_id: workflow.id, status: workflow.status, started_at: workflow.started_at, finished_at: workflow.finished_at }
-      redis.publish("gush.workflows.status", encoder.encode(message))
-    end
-
-    def redis
-      @redis ||= Redis.new
-    end
-
-    def elapsed(start)
-      (Time.now - start).to_f.round(3)
-    end
-
-    def encoder
-      @encoder ||= Yajl::Encoder.new
     end
   end
 end

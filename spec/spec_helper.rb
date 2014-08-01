@@ -15,7 +15,7 @@ TestLogger = Struct.new(:jid, :name)
 
 class TestLoggerBuilder < Gush::LoggerBuilder
   def build
-    TestLogger.new(job.jid, job.name)
+    TestLogger.new(jid, job.name)
   end
 end
 
@@ -34,12 +34,28 @@ class TestWorkflow < Gush::Workflow
   end
 end
 
+module GushHelpers
+  REDIS_URL = "redis://localhost/12"
+
+  def redis
+    @redis ||= Redis.new(url: REDIS_URL)
+  end
+
+  def client
+    @client ||= Gush::Client.new(Gush::Configuration.new(redis_url: REDIS_URL))
+  end
+end
+
 RSpec.configure do |config|
-  config.before(:each) do
+  config.include GushHelpers
+
+  config.mock_with :rspec do |mocks|
+    mocks.verify_partial_doubles = true
+  end
+
+
+  config.after(:each) do
     Sidekiq::Worker.clear_all
-    @redis = Redis.new(db: 12)
-    @redis.keys("gush.workflows.*").each do |key|
-      @redis.del(key)
-    end
+    redis.flushdb
   end
 end

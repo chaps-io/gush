@@ -40,8 +40,8 @@ module Gush
       @logger_builder = klass
     end
 
-    def build_logger_for_job(job)
-      @logger_builder.new(self, job).build
+    def build_logger_for_job(job, jid)
+      @logger_builder.new(self, job, jid).build
     end
 
     def create_dependencies
