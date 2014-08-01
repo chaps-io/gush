@@ -7,12 +7,12 @@ require 'sidekiq/api'
 
 module Gush
   class CLI < Thor
-    class_option :gushfile, desc: "configuration file to use", aliases: "-f", default: "Gushfile.rb"
+    class_option :gushfile, desc: "configuration file to use", aliases: "-f"
 
     def initialize(*)
       super
       Gush.configure do |config|
-        config.gushfile = Pathname.pwd.join(options[:gushfile])
+        config.gushfile = Pathname.pwd.join(options.fetch(:gushfile, config.gushfile))
       end
     end
 
