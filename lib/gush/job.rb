@@ -11,7 +11,7 @@ module Gush
     }
 
     attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing,
-      :finished_at, :failed_at, :started_at
+      :finished_at, :failed_at, :started_at, :jid
 
     attr_reader :name
 

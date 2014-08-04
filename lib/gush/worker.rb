@@ -16,6 +16,7 @@ module Gush
       report(workflow, job, :started, start)
 
       job.logger = workflow.build_logger_for_job(job, job_id)
+      job.jid = jid
 
       failed = false
       error = nil
