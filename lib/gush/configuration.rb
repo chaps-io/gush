@@ -29,7 +29,7 @@ module Gush
         concurrency: concurrency,
         namespace:   namespace,
         redis_url:   redis_url,
-        gushfile:    gushfile.realpath.to_path
+        gushfile:    gushfile.to_path
       }
     end
 
