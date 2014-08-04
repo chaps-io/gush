@@ -36,6 +36,7 @@ module Gush
         continue_workflow(workflow)
       else
         mark_as_failed(workflow, job)
+        log_exception(job.logger, error)
         report(workflow, job, :failed, start, error.message)
       end
     end
@@ -77,6 +78,15 @@ module Gush
       # refetch is important to get correct workflow status
       unless client.find_workflow(workflow.id).stopped?
         client.start_workflow(workflow.id)
+      end
+    end
+
+    def log_exception(logger, exception)
+      first, *rest = exception.backtrace
+
+      logger << "#{first}: #{exception.message} (#{exception.class})"
+      rest.each do |line|
+        logger << "        from #{line}"
       end
     end
   end

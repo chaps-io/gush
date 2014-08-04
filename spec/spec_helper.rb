@@ -12,7 +12,10 @@ class PersistFirstJob < Gush::Job; end
 class PersistSecondJob < Gush::Job; end
 class NormalizeJob < Gush::Job; end
 
-TestLogger = Struct.new(:jid, :name)
+TestLogger = Struct.new(:jid, :name) do
+  def <<(msg)
+  end
+end
 
 class TestLoggerBuilder < Gush::LoggerBuilder
   def build

@@ -15,6 +15,7 @@ describe Gush::Worker do
     context "when job fails" do
       before :each do
         expect(job).to receive(:work).and_raise(StandardError)
+        expect(job).to receive(:running?).and_return(true)
       end
 
       it "should mark it as failed" do
@@ -29,6 +30,14 @@ describe Gush::Worker do
         allow(client).to receive(:worker_report)
         Gush::Worker.new.perform(workflow_id, "Prepare", config)
         expect(client).to have_received(:worker_report).with(hash_including(status: :failed))
+      end
+
+      it "logs the exception" do
+        logger = TestLogger.new(1234, 'Prepare')
+        expect(logger).to receive(:<<).with(instance_of(String)).at_least(1).times
+        expect(workflow).to receive(:build_logger_for_job).and_return(logger)
+
+        Gush::Worker.new.perform(workflow_id, "Prepare", config)
       end
     end
 
