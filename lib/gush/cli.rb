@@ -168,7 +168,7 @@ module Gush
 
     def status_for(workflow)
       if workflow.failed?
-        status = "failed".red
+        status = "failed".light_red
         status += "\n#{workflow.nodes.find(&:failed).name} failed"
       elsif workflow.running?
         status = "running".yellow
@@ -177,6 +177,8 @@ module Gush
         status += "\n#{finished}/#{total} [#{(finished*100)/total}%]"
       elsif workflow.finished?
         status = "done".green
+      elsif workflow.stopped?
+        status = "stopped".red
       else
         status = "pending".light_white
       end
@@ -192,8 +194,6 @@ module Gush
           "[✗] #{name.red}"
         when job.finished?
           "[✓] #{name.green}"
-        when job.stopped?
-          "[•] #{name.red}"
         when job.running?
           "[•] #{name.yellow}"
         else
