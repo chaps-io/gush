@@ -4,8 +4,5 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'pry'
-gem 'tilt'
-gem 'slim'
 gem 'yajl-ruby'
-gem 'goliath'
 gem 'bbq-spawn', git: 'git@github.com:drugpl/bbq-spawn.git'
