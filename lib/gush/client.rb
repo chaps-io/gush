@@ -130,7 +130,7 @@ module Gush
     end
 
     def connection_pool
-      ConnectionPool.new(size: configuration, timeout: 1) { build_redis }
+      ConnectionPool.new(size: configuration.concurrency, timeout: 1) { build_redis }
     end
 
     def load_gushfile
