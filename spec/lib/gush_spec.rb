@@ -2,12 +2,12 @@ require 'spec_helper'
 
 describe Gush do
   describe ".gushfile" do
+    let(:path) { Pathname("/tmp/Gushfile.rb") }
+
     context "Gushfile.rb is missing from pwd" do
       it "raises an exception" do
-        path = Pathname("/tmp/Gushfile.rb")
         path.delete if path.exist?
-
-        allow(Pathname).to receive(:pwd).and_return(Pathname("/tmp"))
+        Gush.configuration.gushfile = path
 
         expect { Gush.gushfile }.to raise_error(Thor::Error)
       end
@@ -15,11 +15,9 @@ describe Gush do
 
     context "Gushfile.rb exists" do
       it "returns Pathname to it" do
-        path = Pathname.new("/tmp/Gushfile.rb")
         FileUtils.touch(path)
-        allow(Pathname).to receive(:pwd)
-          .and_return(Pathname.new("/tmp"))
-        expect(Gush.gushfile).to eq(path)
+        Gush.configuration.gushfile = path
+        expect(Gush.gushfile).to eq(path.realpath)
         path.delete
       end
     end
