@@ -27,7 +27,7 @@ module Gush
         concurrency: concurrency,
         namespace:   namespace,
         redis_url:   redis_url,
-        gushfile:    gushfile
+        gushfile:    @gushfile
       }
     end
 
