@@ -59,7 +59,7 @@ RSpec.configure do |config|
   config.before(:suite) do
     config_path = Pathname.pwd + "spec/redis.conf"
     executor = Bbq::Spawn::Executor.new("redis-server", config_path.to_path)
-    orchestrator.coordinate(executor, host: 'localhost', port: 33333)
+    orchestrator.coordinate(executor, host: '127.0.0.1', port: 33333)
     orchestrator.start
   end
 
