@@ -33,7 +33,11 @@ module Gush
       workflow.start!
       persist_workflow(workflow)
 
-      jobs = workflow.next_jobs if jobs.empty?
+      jobs = if jobs.empty?
+               workflow.next_jobs
+             else
+               jobs.map {|name| workflow.find_job(name) }
+             end
 
       jobs.each do |job|
         job.enqueue!

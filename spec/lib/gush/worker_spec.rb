@@ -15,7 +15,7 @@ describe Gush::Worker do
     context "when job fails" do
       before :each do
         expect(job).to receive(:work).and_raise(StandardError)
-        expect(job).to receive(:running?).and_return(true)
+        job.enqueue!
       end
 
       it "should mark it as failed" do

@@ -35,8 +35,8 @@ module Gush
 
         continue_workflow(workflow)
       else
-        mark_as_failed(workflow, job)
         log_exception(job.logger, error)
+        mark_as_failed(workflow, job)
         report(workflow, job, :failed, start, error.message)
       end
     end
@@ -84,9 +84,9 @@ module Gush
     def log_exception(logger, exception)
       first, *rest = exception.backtrace
 
-      logger << "#{first}: #{exception.message} (#{exception.class})"
+      logger << "#{first}: #{exception.message} (#{exception.class})\n"
       rest.each do |line|
-        logger << "        from #{line}"
+        logger << "        from #{line}\n"
       end
     end
   end
