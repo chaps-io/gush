@@ -3,23 +3,25 @@ require 'yajl'
 module Gush
   class Configuration
     attr_accessor :concurrency, :namespace, :redis_url
-    attr_writer :gushfile
 
     def self.from_json(json)
       new(Yajl::Parser.parse(json, symbolize_keys: true))
     end
 
     def initialize(hash = {})
-      @concurrency = hash.fetch(:concurrency, 5)
-      @namespace   = hash.fetch(:namespace, 'gush')
-      @redis_url   = hash.fetch(:redis_url, 'redis://localhost:6379')
-      @gushfile    = hash.fetch(:gushfile, 'Gushfile.rb')
+      self.concurrency = hash.fetch(:concurrency, 5)
+      self.namespace   = hash.fetch(:namespace, 'gush')
+      self.redis_url   = hash.fetch(:redis_url, 'redis://localhost:6379')
+      self.gushfile    = hash.fetch(:gushfile, 'Gushfile.rb')
+    end
+
+    def gushfile=(path)
+      @gushfile = Pathname(path)
     end
 
     def gushfile
-      path = Pathname.pwd.join(@gushfile)
-      raise Thor::Error, "#{path.basename} not found, please add it to your project".colorize(:red) unless path.exist?
-      path
+      raise Thor::Error, "#{@gushfile.basename} not found, please add it to your project".colorize(:red) unless @gushfile.exist?
+      @gushfile.realpath
     end
 
     def to_hash
@@ -27,7 +29,7 @@ module Gush
         concurrency: concurrency,
         namespace:   namespace,
         redis_url:   redis_url,
-        gushfile:    @gushfile
+        gushfile:    gushfile.to_path
       }
     end
 
