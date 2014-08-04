@@ -2,7 +2,7 @@ require 'yajl'
 
 module Gush
   class Configuration
-    attr_accessor :concurrency, :namespace, :redis_url
+    attr_accessor :concurrency, :namespace, :redis_url, :environment
 
     def self.from_json(json)
       new(Yajl::Parser.parse(json, symbolize_keys: true))
@@ -13,6 +13,7 @@ module Gush
       self.namespace   = hash.fetch(:namespace, 'gush')
       self.redis_url   = hash.fetch(:redis_url, 'redis://localhost:6379')
       self.gushfile    = hash.fetch(:gushfile, 'Gushfile.rb')
+      self.environment = hash.fetch(:environment, 'development')
     end
 
     def gushfile=(path)
@@ -29,6 +30,7 @@ module Gush
         concurrency: concurrency,
         namespace:   namespace,
         redis_url:   redis_url,
+        environment: environment,
         gushfile:    gushfile.to_path
       }
     end
