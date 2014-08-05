@@ -16,11 +16,11 @@ module Gush
     def initialize(*)
       super
       Gush.configure do |config|
-        config.gushfile    = options.fetch(:gushfile,    config.gushfile)
-        config.concurrency = options.fetch(:concurrency, config.concurrency)
-        config.redis_url   = options.fetch(:redis,       config.redis_url)
-        config.namespace   = options.fetch(:namespace,   config.namespace)
-        config.environment = options.fetch(:environment, config.environment)
+        config.gushfile    = options.fetch("gushfile",    config.gushfile)
+        config.concurrency = options.fetch("concurrency", config.concurrency)
+        config.redis_url   = options.fetch("redis",       config.redis_url)
+        config.namespace   = options.fetch("namespace",   config.namespace)
+        config.environment = options.fetch("environment", config.environment)
       end
     end
 
