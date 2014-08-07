@@ -104,4 +104,22 @@ describe Gush::Client do
       expect(workflows.map(&:id)).to eq([workflow.id])
     end
   end
+
+  it "should be able to handle outdated data format" do
+    workflow_id = SecureRandom.uuid
+    workflow = TestWorkflow.new(workflow_id)
+    client.persist_workflow(workflow)
+
+    # malform the data
+    hash = Yajl::Parser.parse(redis.get("gush.workflows.#{workflow_id}"), symbolize_keys: true)
+    hash.delete(:logger_builder)
+    hash.delete(:stopped)
+    redis.set("gush.workflows.#{workflow_id}", Yajl::Encoder.new.encode(hash))
+
+    expect {
+      workflow = client.find_workflow(workflow_id)
+      expect(workflow.stopped?).to be false
+      expect(workflow.instance_variable_get(:@logger_builder)).to be Gush::LoggerBuilder
+    }.not_to raise_error
+  end
 end
