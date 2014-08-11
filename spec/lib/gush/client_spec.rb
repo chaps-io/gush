@@ -42,13 +42,13 @@ describe Gush::Client do
       }.to change{client.find_workflow(id).stopped?}.from(true).to(false)
     end
 
-    it "marks the enqueued jobs as running" do
+    it "marks the enqueued jobs as enqueued" do
       id = SecureRandom.uuid
       workflow = TestWorkflow.new(id)
       client.persist_workflow(workflow)
       client.start_workflow(id)
       job = client.find_workflow(id).find_job("Prepare")
-      expect(job.running?).to eq(true)
+      expect(job.enqueued?).to eq(true)
     end
   end
 

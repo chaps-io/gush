@@ -165,7 +165,8 @@ module Gush
         "jobs" => workflow.nodes.count,
         "failed jobs" => workflow.nodes.count(&:failed?).to_s.red,
         "succeeded jobs" => workflow.nodes.count(&:succeeded?).to_s.green,
-        "enqueued jobs" => workflow.nodes.count(&:running?).to_s.yellow,
+        "enqueued jobs" => workflow.nodes.count(&:enqueued?).to_s.yellow,
+        "running jobs" => workflow.nodes.count(&:running?).to_s.blue,
         "remaining jobs" => workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} },
         "status" => status_for(workflow)
       }
@@ -206,8 +207,10 @@ module Gush
           "[✗] #{name.red}"
         when job.finished?
           "[✓] #{name.green}"
-        when job.running?
+        when job.enqueued?
           "[•] #{name.yellow}"
+        when job.running?
+          "[•] #{name.blue}"
         else
           "[ ] #{name}"
         end
@@ -221,10 +224,12 @@ module Gush
           0
         when job.finished?
           1
-        when job.running?
+        when job.enqueued?
           2
-        else
+        when job.running?
           3
+        else
+          4
         end
       end
 

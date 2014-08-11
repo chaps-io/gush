@@ -50,11 +50,13 @@ describe Gush::Workflow do
         "nodes" => [
           {
             "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
-          "incoming"=>[], "outgoing"=>["PersistFirstJob"], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil
+            "incoming"=>[], "outgoing"=>["PersistFirstJob"], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil,
+            "running" => false
           },
           {
             "name"=>"PersistFirstJob", "klass"=>"PersistFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
-            "incoming"=>["FetchFirstJob"], "outgoing"=>[], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil
+            "incoming"=>["FetchFirstJob"], "outgoing"=>[], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil,
+            "running" => false
           }
         ]
       }
@@ -130,7 +132,7 @@ describe Gush::Workflow do
   end
 
   describe "#running?" do
-    context "when no enqueued jobs" do
+    context "when no enqueued or running jobs" do
       it "returns false" do
         expect(subject.running?).to be_falsy
       end
@@ -139,6 +141,13 @@ describe Gush::Workflow do
     context "when some jobs are enqueued" do
       it "returns true" do
         subject.find_job('Prepare').enqueued = true
+        expect(subject.running?).to be_truthy
+      end
+    end
+
+    context "when some jobs are running" do
+      it "returns true" do
+        subject.find_job('Prepare').running = true
         expect(subject.running?).to be_truthy
       end
     end
