@@ -37,7 +37,7 @@ module Gush
     def start(*args)
       id = args.shift
       client.start_workflow(id, args)
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 
@@ -46,7 +46,7 @@ module Gush
       workflow = client.create_workflow(name)
       client.start_workflow(workflow.id, args)
       puts "Created and started workflow with id: #{workflow.id}"
-    rescue
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 
@@ -54,7 +54,7 @@ module Gush
     def stop(*args)
       id = args.shift
       client.stop_workflow(id)
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 
@@ -73,7 +73,7 @@ module Gush
       display_overview_for(workflow) unless options[:skip_overview]
 
       display_jobs_list_for(workflow, options[:jobs]) unless options[:skip_jobs]
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 
@@ -81,7 +81,7 @@ module Gush
     def rm(workflow_id)
       workflow = client.find_workflow(workflow_id)
       client.destroy_workflow(workflow)
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 

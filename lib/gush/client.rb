@@ -21,7 +21,7 @@ module Gush
       begin
         workflow = name.constantize.new(id)
       rescue NameError
-        raise WorkflowNotFoundError.new("Workflow with given name doesn't exist")
+        raise WorkflowNotFound.new("Workflow with given name doesn't exist")
       end
 
       persist_workflow(workflow)
@@ -67,7 +67,7 @@ module Gush
         nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
         workflow_from_hash(hash, nodes)
       else
-        raise WorkflowNotFoundError.new("Workflow with given id doesn't exist")
+        raise WorkflowNotFound.new("Workflow with given id doesn't exist")
       end
     end
 

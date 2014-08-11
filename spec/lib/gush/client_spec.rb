@@ -3,10 +3,10 @@ require 'spec_helper'
 describe Gush::Client do
   describe "#find_workflow" do
     context "when workflow doesn't exist" do
-      it "returns raises WorkflowNotFoundError" do
+      it "returns raises WorkflowNotFound" do
         expect {
           client.find_workflow('nope')
-        }.to raise_error(WorkflowNotFoundError)
+        }.to raise_error(WorkflowNotFound)
       end
     end
 

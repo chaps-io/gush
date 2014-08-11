@@ -1,2 +1,2 @@
-class WorkflowNotFoundError < StandardError; end
+class WorkflowNotFound < StandardError; end
 
