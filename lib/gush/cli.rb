@@ -39,6 +39,8 @@ module Gush
       client.start_workflow(id, args)
     rescue WorkflowNotFound
       puts "Workflow not found."
+    rescue DependencyLevelTooDeep
+      puts "Dependency level too deep. Perhaps you have a dependency cycle?"
     end
 
     desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
@@ -48,6 +50,8 @@ module Gush
       puts "Created and started workflow with id: #{workflow.id}"
     rescue WorkflowNotFound
       puts "Workflow not found."
+    rescue DependencyLevelTooDeep
+      puts "Dependency level too deep. Perhaps you have a dependency cycle?"
     end
 
     desc "stop [workflow_id]", "Stops Workflow with given ID"

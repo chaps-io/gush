@@ -218,5 +218,20 @@ describe Gush::Workflow do
         expect(flow.next_jobs.map(&:name)).to match_array(["NormalizeJob"])
       end
     end
+
+    it "fails when dependency resolution recurses too deep" do
+      flow = Gush::Workflow.new("workflow")
+      klass1 = Class.new(Gush::Job)
+      klass2 = Class.new(Gush::Job)
+      klass3 = Class.new(Gush::Job)
+      flow.run(klass1, after: klass3)
+      flow.run(klass2, after: klass1)
+      flow.run(klass3, after: klass2)
+      flow.create_dependencies
+
+      expect {
+        flow.next_jobs
+      }.to raise_error(DependencyLevelTooDeep)
+    end
   end
 end

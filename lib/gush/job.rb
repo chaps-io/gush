@@ -4,6 +4,8 @@ module Gush
   class Job
     include Gush::Metadata
 
+    RECURSION_LIMIT = 1000
+
     DEFAULTS = {
       finished: false,
       enqueued: false,
@@ -110,8 +112,9 @@ module Gush
             dependencies_satisfied?(flow)
     end
 
-    def dependencies(flow)
-      (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow) }).uniq
+    def dependencies(flow, level = 0)
+      fail DependencyLevelTooDeep if level > RECURSION_LIMIT
+      (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow, level + 1) }).uniq
     end
 
     def logger
