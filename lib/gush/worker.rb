@@ -20,6 +20,8 @@ module Gush
 
       failed = false
       error = nil
+
+      mark_as_started(workflow, job)
       begin
         job.before_work
         job.work
@@ -56,6 +58,11 @@ module Gush
 
     def mark_as_failed(workflow, job)
       job.fail!
+      client.persist_job(workflow.id, job)
+    end
+
+    def mark_as_started(workflow, job)
+      job.start!
       client.persist_job(workflow.id, job)
     end
 

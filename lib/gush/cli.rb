@@ -37,8 +37,10 @@ module Gush
     def start(*args)
       id = args.shift
       client.start_workflow(id, args)
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
+    rescue DependencyLevelTooDeep
+      puts "Dependency level too deep. Perhaps you have a dependency cycle?"
     end
 
     desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
@@ -46,15 +48,17 @@ module Gush
       workflow = client.create_workflow(name)
       client.start_workflow(workflow.id, args)
       puts "Created and started workflow with id: #{workflow.id}"
-    rescue
+    rescue WorkflowNotFound
       puts "Workflow not found."
+    rescue DependencyLevelTooDeep
+      puts "Dependency level too deep. Perhaps you have a dependency cycle?"
     end
 
     desc "stop [workflow_id]", "Stops Workflow with given ID"
     def stop(*args)
       id = args.shift
       client.stop_workflow(id)
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 
@@ -73,7 +77,7 @@ module Gush
       display_overview_for(workflow) unless options[:skip_overview]
 
       display_jobs_list_for(workflow, options[:jobs]) unless options[:skip_jobs]
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 
@@ -81,7 +85,7 @@ module Gush
     def rm(workflow_id)
       workflow = client.find_workflow(workflow_id)
       client.destroy_workflow(workflow)
-    rescue WorkflowNotFoundError
+    rescue WorkflowNotFound
       puts "Workflow not found."
     end
 
@@ -161,7 +165,8 @@ module Gush
         "jobs" => workflow.nodes.count,
         "failed jobs" => workflow.nodes.count(&:failed?).to_s.red,
         "succeeded jobs" => workflow.nodes.count(&:succeeded?).to_s.green,
-        "enqueued jobs" => workflow.nodes.count(&:running?).to_s.yellow,
+        "enqueued jobs" => workflow.nodes.count(&:enqueued?).to_s.yellow,
+        "running jobs" => workflow.nodes.count(&:running?).to_s.blue,
         "remaining jobs" => workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} },
         "status" => status_for(workflow)
       }
@@ -202,8 +207,10 @@ module Gush
           "[✗] #{name.red}"
         when job.finished?
           "[✓] #{name.green}"
-        when job.running?
+        when job.enqueued?
           "[•] #{name.yellow}"
+        when job.running?
+          "[•] #{name.blue}"
         else
           "[ ] #{name}"
         end
@@ -217,10 +224,12 @@ module Gush
           0
         when job.finished?
           1
-        when job.running?
+        when job.enqueued?
           2
-        else
+        when job.running?
           3
+        else
+          4
         end
       end
 

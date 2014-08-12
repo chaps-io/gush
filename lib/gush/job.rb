@@ -4,14 +4,17 @@ module Gush
   class Job
     include Gush::Metadata
 
+    RECURSION_LIMIT = 1000
+
     DEFAULTS = {
       finished: false,
       enqueued: false,
-      failed: false
+      failed: false,
+      running: false
     }
 
     attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing,
-      :finished_at, :failed_at, :started_at, :jid
+      :finished_at, :failed_at, :started_at, :jid, :running
 
     attr_reader :name
 
@@ -33,7 +36,8 @@ module Gush
         outgoing: @outgoing,
         finished_at: @finished_at,
         started_at: @started_at,
-        failed_at: @failed_at
+        failed_at: @failed_at,
+        running: @running
       }
     end
 
@@ -51,7 +55,8 @@ module Gush
         outgoing: hash[:outgoing],
         failed_at: hash[:failed_at],
         finished_at: hash[:finished_at],
-        started_at: hash[:started_at]
+        started_at: hash[:started_at],
+        running: hash[:running]
       )
     end
 
@@ -64,15 +69,23 @@ module Gush
     def after_work
     end
 
+    def start!
+      @enqueued = false
+      @running = true
+      @started_at = Time.now.to_i
+    end
+
     def enqueue!
       @enqueued = true
+      @running = false
       @failed = false
-      @started_at = Time.now.to_i
+      @started_at = nil
       @finished_at = nil
       @failed_at = nil
     end
 
     def finish!
+      @running = false
       @finished = true
       @enqueued = false
       @failed = false
@@ -81,10 +94,15 @@ module Gush
 
     def fail!
       @finished = true
+      @running = false
       @failed = true
       @enqueued = false
       @finished_at = Time.now.to_i
       @failed_at = Time.now.to_i
+    end
+
+    def enqueued?
+      !!enqueued
     end
 
     def finished?
@@ -100,18 +118,20 @@ module Gush
     end
 
     def running?
-      !!enqueued
+      !!running
     end
 
     def can_be_started?(flow)
       !running? &&
-        !finished? &&
-          !failed? &&
-            dependencies_satisfied?(flow)
+        !enqueued? &&
+          !finished? &&
+            !failed? &&
+              dependencies_satisfied?(flow)
     end
 
-    def dependencies(flow)
-      (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow) }).uniq
+    def dependencies(flow, level = 0)
+      fail DependencyLevelTooDeep if level > RECURSION_LIMIT
+      (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow, level + 1) }).uniq
     end
 
     def logger
@@ -131,10 +151,11 @@ module Gush
       @failed_at   = options[:failed_at]
       @finished_at = options[:finished_at]
       @started_at  = options[:started_at]
+      @running     = options[:running]
     end
 
     def dependencies_satisfied?(flow)
-      dependencies(flow).all? { |dep| !dep.running? && dep.finished? && !dep.failed? }
+      dependencies(flow).all? { |dep| !dep.enqueued? && dep.finished? && !dep.failed? }
     end
   end
 end

@@ -9,6 +9,7 @@ describe Gush::Job do
       expect(job.failed_at).to eq(Time.now.to_i)
       expect(job.failed).to eq(true)
       expect(job.finished).to eq(true)
+      expect(job.running).to eq(false)
       expect(job.enqueued).to eq(false)
     end
   end
@@ -19,23 +20,36 @@ describe Gush::Job do
       job.finish!
       expect(job.finished_at).to eq(Time.now.to_i)
       expect(job.failed).to eq(false)
+      expect(job.running).to eq(false)
       expect(job.finished).to eq(true)
       expect(job.enqueued).to eq(false)
     end
   end
 
   describe "#enqueue!" do
-    it "resets flags to false and sets enqueued to true and records time" do
+    it "resets flags to false and sets enqueued to true" do
       job = described_class.new(name: "a-job")
       job.finished_at = 123
       job.failed_at = 123
       job.enqueue!
-      expect(job.started_at).to eq(Time.now.to_i)
+      expect(job.started_at).to eq(nil)
       expect(job.finished_at).to eq(nil)
       expect(job.failed_at).to eq(nil)
       expect(job.failed).to eq(false)
       expect(job.finished).to eq(false)
       expect(job.enqueued).to eq(true)
+      expect(job.running).to eq(false)
+    end
+  end
+
+  describe "#start!" do
+    it "resets flags to false and sets running to true" do
+      job = described_class.new(name: "a-job")
+      job.enqueue!
+      job.start!
+      expect(job.started_at).to eq(Time.now.to_i)
+      expect(job.enqueued).to eq(false)
+      expect(job.running).to eq(true)
     end
   end
 
@@ -53,7 +67,8 @@ describe Gush::Job do
           outgoing: [],
           failed_at: nil,
           started_at: nil,
-          finished_at: nil
+          finished_at: nil,
+          running: false
         }
         expect(job.as_json).to eq(expected)
       end
@@ -90,7 +105,7 @@ describe Gush::Job do
 
   describe "#logger" do
     it "returns a logger for the job" do
-      job = described_class.new(name: "a-job", finished: true, enqueued: true)
+      job = described_class.new(name: "a-job", finished: true, running: true)
       job.logger = TestLoggerBuilder.new(:workflow, job, 1234).build
       expect(job.logger).to be_a TestLogger
       expect(job.logger.name).to eq(job.name)

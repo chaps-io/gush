@@ -16,14 +16,17 @@ describe Gush::Worker do
       before :each do
         expect(job).to receive(:work).and_raise(StandardError)
         job.enqueue!
+        job.start!
       end
 
       it "should mark it as failed" do
-        expect(client).to receive(:persist_job).with(workflow_id, job) do |_, job|
+        allow(client).to receive(:persist_job)
+        Gush::Worker.new.perform(workflow_id, "Prepare", config)
+
+        expect(client).to have_received(:persist_job).with(workflow_id, job).at_least(1).times do |_, job|
           expect(job).to be_failed
         end
 
-        Gush::Worker.new.perform(workflow_id, "Prepare", config)
       end
 
       it "reports that job failed" do
@@ -69,7 +72,7 @@ describe Gush::Worker do
 
     it "sets up a logger for the job" do
       Gush::Worker.new.perform(workflow_id, "Prepare", config)
-      job.enqueue!
+      job.start!
       expect(job.logger).to be_a TestLogger
     end
 
