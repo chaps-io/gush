@@ -1,4 +1,3 @@
-require 'tree'
 require 'securerandom'
 require 'gush/metadata'
 

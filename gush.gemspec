@@ -22,12 +22,11 @@ Gem::Specification.new do |spec|
   spec.add_dependency "redis", "~> 3.0.0"
   spec.add_dependency "hiredis", "~> 0.5.2"
   spec.add_dependency "ruby-graphviz"
-  spec.add_dependency "rubytree", "~> 0.9.3"
   spec.add_dependency "terminal-table"
   spec.add_dependency "colorize"
   spec.add_dependency "thor"
   spec.add_dependency "launchy"
   spec.add_development_dependency "bundler", "~> 1.5"
   spec.add_development_dependency "rake"
-  spec.add_development_dependency "rspec"
+  spec.add_development_dependency "rspec", '~> 3.0.0'
 end
