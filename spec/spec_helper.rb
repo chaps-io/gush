@@ -12,6 +12,8 @@ class PersistFirstJob < Gush::Job; end
 class PersistSecondJob < Gush::Job; end
 class NormalizeJob < Gush::Job; end
 
+GUSHFILE  = Pathname.new(__FILE__).parent.join("Gushfile.rb")
+
 TestLogger = Struct.new(:jid, :name) do
   def <<(msg)
   end
@@ -46,7 +48,7 @@ module GushHelpers
   end
 
   def client
-    @client ||= Gush::Client.new(Gush::Configuration.new(redis_url: REDIS_URL))
+    @client ||= Gush::Client.new(Gush::Configuration.new(gushfile: GUSHFILE, redis_url: REDIS_URL))
   end
 end
 

@@ -21,7 +21,7 @@ module Gush
     end
 
     def gushfile
-      raise Thor::Error, "#{@gushfile.basename} not found, please add it to your project".colorize(:red) unless @gushfile.exist?
+      raise Thor::Error, "#{@gushfile} not found, please add it to your project".colorize(:red) unless @gushfile.exist?
       @gushfile.realpath
     end
 
