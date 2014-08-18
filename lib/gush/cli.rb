@@ -111,6 +111,7 @@ module Gush
 
     desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
     def viz(name)
+      client
       workflow = name.constantize.new("start")
       GraphViz.new(:G, type: :digraph, dpi: 200, compound: true) do |g|
         g[:compound] = true
