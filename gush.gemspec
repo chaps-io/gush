@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "sidekiq", "~> 3.0.0"
+  spec.add_dependency "sidekiq", "~> 3.2.2"
   spec.add_dependency "yajl-ruby"
   spec.add_dependency "redis", "~> 3.0.0"
   spec.add_dependency "hiredis", "~> 0.5.2"
