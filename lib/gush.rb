@@ -8,6 +8,7 @@ require "securerandom"
 require "sidekiq"
 
 require "gush/cli"
+require "gush/graph"
 require "gush/client"
 require "gush/configuration"
 require "gush/errors"
