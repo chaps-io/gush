@@ -113,43 +113,7 @@ module Gush
     def viz(name)
       client
       workflow = name.constantize.new("start")
-      GraphViz.new(:G, type: :digraph, dpi: 200, compound: true) do |g|
-        g[:compound] = true
-        g[:rankdir] = "LR"
-        g[:center] = true
-        g.node[:shape] = "ellipse"
-        g.node[:style] = "filled"
-        g.node[:color] = "#555555"
-        g.node[:fillcolor] = "white"
-        g.edge[:dir] = "forward"
-        g.edge[:penwidth] = 1
-        g.edge[:color] = "#555555"
-        start = g.start(shape: 'diamond', fillcolor: '#CFF09E')
-        end_node = g.end(shape: 'diamond', fillcolor: '#F56991')
-
-
-        workflow.nodes.each do |job|
-          name = job.class.to_s
-          g.add_nodes(name)
-
-          if job.incoming.empty?
-            g.add_edges(start, name)
-          end
-
-
-          if job.outgoing.empty?
-            g.add_edges(name, end_node)
-          else
-            job.outgoing.each do |out|
-              g.add_edges(name, out)
-            end
-          end
-        end
-
-        g.output(png: Pathname.new(Dir.tmpdir).join("graph.png"))
-      end
-
-      Launchy.open(Pathname.new(Dir.tmpdir).join("graph.png").to_s)
+      Launchy.open Graph.new(workflow).path
     end
 
     private
