@@ -9,4 +9,10 @@ $:.unshift File.expand_path("../../lib", bin_file)
 
 require 'gush'
 
-Gush::CLI.start(ARGV)
+begin
+  Gush::CLI.start(ARGV)
+rescue Gush::WorkflowNotFound
+  puts "Workflow not found".red
+rescue DependencyLevelTooDeep
+  puts "Dependency level too deep. Perhaps you have a dependency cycle?".red
+end

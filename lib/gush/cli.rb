@@ -29,18 +29,12 @@ module Gush
       workflow = client.create_workflow(name)
       puts "Workflow created with id: #{workflow.id}"
       puts "Start it with command: gush start #{workflow.id}"
-    rescue
-      puts "Workflow not found."
     end
 
     desc "start [workflow_id]", "Starts Workflow with given ID"
     def start(*args)
       id = args.shift
       client.start_workflow(id, args)
-    rescue WorkflowNotFound
-      puts "Workflow not found."
-    rescue DependencyLevelTooDeep
-      puts "Dependency level too deep. Perhaps you have a dependency cycle?"
     end
 
     desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
@@ -48,18 +42,12 @@ module Gush
       workflow = client.create_workflow(name)
       client.start_workflow(workflow.id, args)
       puts "Created and started workflow with id: #{workflow.id}"
-    rescue WorkflowNotFound
-      puts "Workflow not found."
-    rescue DependencyLevelTooDeep
-      puts "Dependency level too deep. Perhaps you have a dependency cycle?"
     end
 
     desc "stop [workflow_id]", "Stops Workflow with given ID"
     def stop(*args)
       id = args.shift
       client.stop_workflow(id)
-    rescue WorkflowNotFound
-      puts "Workflow not found."
     end
 
     desc "clear", "Clears all jobs from Sidekiq queue"
@@ -77,16 +65,12 @@ module Gush
       display_overview_for(workflow) unless options[:skip_overview]
 
       display_jobs_list_for(workflow, options[:jobs]) unless options[:skip_jobs]
-    rescue WorkflowNotFound
-      puts "Workflow not found."
     end
 
     desc "rm [workflow_id]", "Delete workflow with given ID"
     def rm(workflow_id)
       workflow = client.find_workflow(workflow_id)
       client.destroy_workflow(workflow)
-    rescue WorkflowNotFound
-      puts "Workflow not found."
     end
 
     desc "list", "Lists all workflows with their statuses"
