@@ -6,7 +6,7 @@ describe Gush::Client do
       it "returns raises WorkflowNotFound" do
         expect {
           client.find_workflow('nope')
-        }.to raise_error(WorkflowNotFound)
+        }.to raise_error(Gush::WorkflowNotFound)
       end
     end
 
