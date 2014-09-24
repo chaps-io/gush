@@ -122,84 +122,20 @@ module Gush
       @client ||= Client.new
     end
 
+    def overview(workflow)
+      CLI::Overview.new(workflow)
+    end
+
     def display_overview_for(workflow)
-      rows = []
-      columns  = {
-        "id" => workflow.id,
-        "name" => workflow.class.to_s,
-        "jobs" => workflow.nodes.count,
-        "failed jobs" => workflow.nodes.count(&:failed?).to_s.red,
-        "succeeded jobs" => workflow.nodes.count(&:succeeded?).to_s.green,
-        "enqueued jobs" => workflow.nodes.count(&:enqueued?).to_s.yellow,
-        "running jobs" => workflow.nodes.count(&:running?).to_s.blue,
-        "remaining jobs" => workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].all? {|b| !b} },
-        "status" => status_for(workflow)
-      }
-
-      columns.each_pair do |name, value|
-        rows << [{alignment: :center, value: name}, value]
-        rows << :separator if name != "status"
-      end
-
-      puts Terminal::Table.new(rows: rows)
+      puts overview(workflow).table
     end
 
     def status_for(workflow)
-      if workflow.failed?
-        status = "failed".light_red
-        status += "\n#{workflow.nodes.find(&:failed).name} failed"
-      elsif workflow.running?
-        status = "running".yellow
-        finished = workflow.nodes.count {|job| job.finished }
-        total = workflow.nodes.count
-        status += "\n#{finished}/#{total} [#{(finished*100)/total}%]"
-      elsif workflow.finished?
-        status = "done".green
-      elsif workflow.stopped?
-        status = "stopped".red
-      else
-        status = "pending".light_white
-      end
+      overview(workflow).status
     end
 
     def display_jobs_list_for(workflow, jobs)
-      puts "\nJobs list:\n"
-
-      jobs_by_type(workflow, jobs).each do |job|
-        name = job.name
-        puts case
-        when job.failed?
-          "[✗] #{name.red}"
-        when job.finished?
-          "[✓] #{name.green}"
-        when job.enqueued?
-          "[•] #{name.yellow}"
-        when job.running?
-          "[•] #{name.blue}"
-        else
-          "[ ] #{name}"
-        end
-      end
-    end
-
-    def jobs_by_type(workflow, type)
-      jobs = workflow.nodes.sort_by do |job|
-        case
-        when job.failed?
-          0
-        when job.finished?
-          1
-        when job.enqueued?
-          2
-        when job.running?
-          3
-        else
-          4
-        end
-      end
-
-      jobs.select!{|j| j.public_send("#{type}?") } unless type == :all
-      jobs
+      puts overview(workflow).jobs_list(jobs)
     end
 
     def gushfile
