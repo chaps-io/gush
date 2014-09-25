@@ -240,7 +240,7 @@ describe Gush::Workflow do
 
       expect {
         flow.next_jobs
-      }.to raise_error(DependencyLevelTooDeep)
+      }.to raise_error(Gush::DependencyLevelTooDeep)
     end
   end
 end
