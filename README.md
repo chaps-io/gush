@@ -25,7 +25,7 @@ Example:
 ```ruby
 require_relative './lib/your_project'
 
-Dir[Rails.root.join("workflows/**/*.rb")].each do |file|
+Dir[Rails.root.join("app/workflows/**/*.rb")].each do |file|
   require file
 end
 ```
