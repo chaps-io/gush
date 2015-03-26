@@ -1,10 +1,7 @@
 require 'securerandom'
-require 'gush/metadata'
 
 module Gush
   class Workflow
-    include Gush::Metadata
-
     attr_accessor :id, :nodes, :stopped
 
     def initialize(id, options = {})

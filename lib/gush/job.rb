@@ -1,9 +1,5 @@
-require 'gush/metadata'
-
 module Gush
   class Job
-    include Gush::Metadata
-
     RECURSION_LIMIT = 1000
 
     DEFAULTS = {
