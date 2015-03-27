@@ -19,16 +19,8 @@ TestLogger = Struct.new(:jid, :name) do
   end
 end
 
-class TestLoggerBuilder < Gush::LoggerBuilder
-  def build
-    TestLogger.new(jid, job.name)
-  end
-end
-
 class TestWorkflow < Gush::Workflow
   def configure
-    logger_builder TestLoggerBuilder
-
     run Prepare
 
     run NormalizeJob

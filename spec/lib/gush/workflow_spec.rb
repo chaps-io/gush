@@ -46,7 +46,6 @@ describe Gush::Workflow do
         "started_at" => nil,
         "finished_at" => nil,
         "stopped" => false,
-        "logger_builder" => "Gush::LoggerBuilder",
         "nodes" => [
           {
             "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
@@ -90,29 +89,6 @@ describe Gush::Workflow do
         expect(tree.nodes.first).to be_an_instance_of(klass1)
         expect(tree.nodes.first.outgoing.first).to eq(klass2.to_s)
       end
-    end
-  end
-
-  describe "#logger_builder" do
-    it 'sets logger builder for workflow' do
-      tree = Gush::Workflow.new("workflow")
-      tree.logger_builder(TestLoggerBuilder)
-      expect(tree.instance_variable_get(:@logger_builder)).to eq(TestLoggerBuilder)
-    end
-  end
-
-  describe "#build_logger_for_job" do
-    it 'builds a logger' do
-      job = double('job')
-      allow(job).to receive(:name) { 'a-job' }
-
-      tree = Gush::Workflow.new("workflow")
-      tree.logger_builder(TestLoggerBuilder)
-
-      logger = tree.build_logger_for_job(job, :jid)
-      expect(logger).to be_a(TestLogger)
-      expect(logger.jid).to eq(:jid)
-      expect(logger.name).to eq('a-job')
     end
   end
 

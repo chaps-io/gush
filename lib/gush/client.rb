@@ -103,7 +103,6 @@ module Gush
 
     def workflow_from_hash(hash, nodes = nil)
       flow = hash[:klass].constantize.new(hash[:id], configure: false)
-      flow.logger_builder(hash.fetch(:logger_builder, 'Gush::LoggerBuilder').constantize)
       flow.stopped = hash.fetch(:stopped, false)
 
       (nodes || hash[:nodes]).each do |node|

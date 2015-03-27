@@ -8,17 +8,12 @@ module Gush
       @id = id
       @nodes = []
       @dependencies = []
-      @logger_builder = default_logger_builder
       @stopped = false
 
       unless options[:configure] == false
         configure
         create_dependencies
       end
-    end
-
-    def default_logger_builder
-      LoggerBuilder
     end
 
     def configure
@@ -30,14 +25,6 @@ module Gush
 
     def start!
       @stopped = false
-    end
-
-    def logger_builder(klass)
-      @logger_builder = klass
-    end
-
-    def build_logger_for_job(job, jid)
-      @logger_builder.new(self, job, jid).build
     end
 
     def create_dependencies
@@ -120,8 +107,7 @@ module Gush
         status: status,
         stopped: stopped,
         started_at: started_at,
-        finished_at: finished_at,
-        logger_builder: @logger_builder.to_s
+        finished_at: finished_at
       }
     end
 

@@ -34,14 +34,6 @@ describe Gush::Worker do
         Gush::Worker.new.perform(workflow_id, "Prepare", config)
         expect(client).to have_received(:worker_report).with(hash_including(status: :failed))
       end
-
-      it "logs the exception" do
-        logger = TestLogger.new(1234, 'Prepare')
-        expect(logger).to receive(:<<).with(instance_of(String)).at_least(1).times
-        expect(workflow).to receive(:build_logger_for_job).and_return(logger)
-
-        Gush::Worker.new.perform(workflow_id, "Prepare", config)
-      end
     end
 
     context "when job completes successfully" do
@@ -68,12 +60,6 @@ describe Gush::Worker do
         expect(job).to receive(method)
         Gush::Worker.new.perform(workflow_id, "Prepare", config)
       end
-    end
-
-    it "sets up a logger for the job" do
-      Gush::Worker.new.perform(workflow_id, "Prepare", config)
-      job.start!
-      expect(job.logger).to be_a TestLogger
     end
 
     it "sets a job id" do
