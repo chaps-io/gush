@@ -15,8 +15,6 @@ module Gush
       start = Time.now
       report(workflow, job, :started, start)
 
-      job.jid = jid
-
       failed = false
       error = nil
 

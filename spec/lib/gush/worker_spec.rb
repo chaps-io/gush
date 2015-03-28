@@ -60,17 +60,6 @@ describe Gush::Worker do
       Gush::Worker.new.perform(workflow_id, "Prepare", config)
     end
 
-    it "sets a job id" do
-      job_id = 1234
-      worker = Gush::Worker.new
-
-      allow(worker).to receive(:jid).and_return(job_id)
-
-      worker.perform(workflow_id, "Prepare", config)
-      job.enqueue!
-      expect(job.jid).to eq job_id
-    end
-
     it "reports when the job is started" do
       allow(client).to receive(:worker_report)
       Gush::Worker.new.perform(workflow_id, "Prepare", config)
