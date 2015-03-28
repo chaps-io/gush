@@ -22,9 +22,7 @@ module Gush
 
       mark_as_started(workflow, job)
       begin
-        job.before_work
         job.work
-        job.after_work
       rescue Exception => e
         failed = true
         error = e

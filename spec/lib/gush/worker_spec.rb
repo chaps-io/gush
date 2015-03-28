@@ -55,11 +55,9 @@ describe Gush::Worker do
       end
     end
 
-    [:before_work, :work, :after_work].each do |method|
-      it "calls job.#{method} hook" do
-        expect(job).to receive(method)
-        Gush::Worker.new.perform(workflow_id, "Prepare", config)
-      end
+    it "calls job.work method" do
+      expect(job).to receive(:work)
+      Gush::Worker.new.perform(workflow_id, "Prepare", config)
     end
 
     it "sets a job id" do
