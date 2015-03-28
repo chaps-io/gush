@@ -58,7 +58,7 @@ module Gush
     end
 
     def run(klass, deps = {})
-      node = klass.new(name: klass.to_s)
+      node = klass.new(self, name: klass.to_s)
       @nodes << node
 
       deps_after = [*deps[:after]]
@@ -117,7 +117,7 @@ module Gush
 
     def next_jobs
       @nodes.select do |job|
-        job.can_be_started?(self)
+        job.can_be_started?
       end
     end
 

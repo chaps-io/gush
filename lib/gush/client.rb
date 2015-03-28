@@ -106,7 +106,7 @@ module Gush
       flow.stopped = hash.fetch(:stopped, false)
 
       (nodes || hash[:nodes]).each do |node|
-        flow.nodes << Gush::Job.from_hash(node)
+        flow.nodes << Gush::Job.from_hash(flow, node)
       end
 
       flow

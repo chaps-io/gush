@@ -16,7 +16,8 @@ module Gush
 
     attr_writer :logger
 
-    def initialize(opts = {})
+    def initialize(workflow, opts = {})
+      @workflow = workflow
       options = DEFAULTS.dup.merge(opts)
       assign_variables(options)
     end
@@ -41,8 +42,9 @@ module Gush
       Yajl::Encoder.new.encode(as_json)
     end
 
-    def self.from_hash(hash)
+    def self.from_hash(flow, hash)
       hash[:klass].constantize.new(
+        flow,
         name:     hash[:name],
         finished: hash[:finished],
         enqueued: hash[:enqueued],
@@ -117,17 +119,13 @@ module Gush
       !!running
     end
 
-    def can_be_started?(flow)
-      !running? &&
-        !enqueued? &&
-          !finished? &&
-            !failed? &&
-              dependencies_satisfied?(flow)
+    def can_be_started?
+      [running?, enqueued?, finished?, failed?].none? && dependencies_satisfied?
     end
 
-    def dependencies(flow, level = 0)
+    def dependencies(level = 0)
       fail DependencyLevelTooDeep if level > RECURSION_LIMIT
-      (incoming.map {|name| flow.find_job(name) } + incoming.flat_map{ |name| flow.find_job(name).dependencies(flow, level + 1) }).uniq
+      incoming_jobs + incoming_jobs.flat_map { |job| job.dependencies(level + 1) }
     end
 
     def logger
@@ -136,6 +134,10 @@ module Gush
     end
 
     private
+
+    def incoming_jobs
+      @incoming_jobs ||= incoming.map {|name| @workflow.find_job(name) }
+    end
 
     def assign_variables(options)
       @name        = options[:name]
@@ -150,8 +152,8 @@ module Gush
       @running     = options[:running]
     end
 
-    def dependencies_satisfied?(flow)
-      dependencies(flow).all? { |dep| !dep.enqueued? && dep.finished? && !dep.failed? }
+    def dependencies_satisfied?
+      dependencies.all? { |dep| !dep.enqueued? && dep.finished? && !dep.failed? }
     end
   end
 end

@@ -56,7 +56,7 @@ describe Gush::Job do
   describe "#as_json" do
     context "finished and enqueued set to true" do
       it "returns correct hash" do
-        job = described_class.new(name: "a-job", finished: true, enqueued: true)
+        job = described_class.new(double('flow'), name: "a-job", finished: true, enqueued: true)
         expected = {
           name: "a-job",
           klass: "Gush::Job",
@@ -77,18 +77,21 @@ describe Gush::Job do
 
   describe ".from_hash" do
     it "properly restores state of the job from hash" do
-      job = described_class.from_hash({
-        klass: 'Gush::Job',
-        name: 'gob',
-        finished: true,
-        failed: true,
-        enqueued: true,
-        incoming: ['a', 'b'],
-        outgoing: ['c'],
-        failed_at: 123,
-        finished_at: 122,
-        started_at: 55
-      })
+      job = described_class.from_hash(
+        double('flow'),
+        {
+          klass: 'Gush::Job',
+          name: 'gob',
+          finished: true,
+          failed: true,
+          enqueued: true,
+          incoming: ['a', 'b'],
+          outgoing: ['c'],
+          failed_at: 123,
+          finished_at: 122,
+          started_at: 55
+        }
+      )
 
       expect(job.name).to eq('gob')
       expect(job.class).to eq(Gush::Job)
