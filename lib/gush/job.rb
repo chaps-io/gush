@@ -56,13 +56,7 @@ module Gush
       )
     end
 
-    def before_work
-    end
-
     def work
-    end
-
-    def after_work
     end
 
     def start!
