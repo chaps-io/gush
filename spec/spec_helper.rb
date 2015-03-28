@@ -14,11 +14,6 @@ class NormalizeJob < Gush::Job; end
 
 GUSHFILE  = Pathname.new(__FILE__).parent.join("Gushfile.rb")
 
-TestLogger = Struct.new(:jid, :name) do
-  def <<(msg)
-  end
-end
-
 class TestWorkflow < Gush::Workflow
   def configure
     run Prepare

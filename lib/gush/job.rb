@@ -14,8 +14,6 @@ module Gush
 
     attr_reader :name
 
-    attr_writer :logger
-
     def initialize(workflow, opts = {})
       @workflow = workflow
       options = DEFAULTS.dup.merge(opts)
@@ -126,11 +124,6 @@ module Gush
     def dependencies(level = 0)
       fail DependencyLevelTooDeep if level > RECURSION_LIMIT
       incoming_jobs + incoming_jobs.flat_map { |job| job.dependencies(level + 1) }
-    end
-
-    def logger
-      fail "You cannot log when the job is not running" unless running?
-      @logger
     end
 
     private
