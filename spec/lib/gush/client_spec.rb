@@ -17,56 +17,52 @@ describe Gush::Client do
         workflow = client.find_workflow(expected_workflow.id)
 
         expect(workflow.id).to eq(expected_workflow.id)
-        expect(workflow.nodes.map(&:name)).to match_array(expected_workflow.nodes.map(&:name))
+        expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
       end
     end
   end
 
   describe "#start_workflow" do
     it "enqueues next jobs from the workflow" do
-      id = SecureRandom.uuid
-      workflow = TestWorkflow.new(id)
+      workflow = TestWorkflow.new
       client.persist_workflow(workflow)
       expect {
-        client.start_workflow(id)
+        client.start_workflow(workflow.id)
       }.to change{Gush::Worker.jobs.count}.from(0).to(1)
     end
 
     it "removes stopped flag when the workflow is started" do
-      id = SecureRandom.uuid
-      workflow = TestWorkflow.new(id)
+      workflow = TestWorkflow.new
       workflow.stop!
       client.persist_workflow(workflow)
       expect {
-        client.start_workflow(id)
-      }.to change{client.find_workflow(id).stopped?}.from(true).to(false)
+        client.start_workflow(workflow.id)
+      }.to change{client.find_workflow(workflow.id).stopped?}.from(true).to(false)
     end
 
     it "marks the enqueued jobs as enqueued" do
-      id = SecureRandom.uuid
-      workflow = TestWorkflow.new(id)
+      workflow = TestWorkflow.new
       client.persist_workflow(workflow)
-      client.start_workflow(id)
-      job = client.find_workflow(id).find_job("Prepare")
+      client.start_workflow(workflow.id)
+      job = client.find_workflow(workflow.id).find_job("Prepare")
       expect(job.enqueued?).to eq(true)
     end
   end
 
   describe "#stop_workflow" do
     it "marks the workflow as stopped" do
-      id = SecureRandom.uuid
-      workflow = TestWorkflow.new(id)
+      workflow = TestWorkflow.new
       client.persist_workflow(workflow)
       expect {
-        client.stop_workflow(id)
-      }.to change{client.find_workflow(id).stopped?}.from(false).to(true)
+        client.stop_workflow(workflow.id)
+      }.to change{client.find_workflow(workflow.id).stopped?}.from(false).to(true)
     end
   end
 
   describe "#persist_workflow" do
     it "persists JSON dump of the Workflow and its jobs" do
       job = double("job", to_json: 'json')
-      workflow = double("workflow", id: 'abcd', nodes: [job, job, job], to_json: '"json"')
+      workflow = double("workflow", id: 'abcd', jobs: [job, job, job], to_json: '"json"')
       expect(client).to receive(:persist_job).exactly(3).times.with(workflow.id, job)
       client.persist_workflow(workflow)
       expect(redis.keys("gush.workflows.abcd").length).to eq(1)
@@ -75,16 +71,15 @@ describe Gush::Client do
 
   describe "#destroy_workflow" do
     it "removes all Redis keys related to the workflow" do
-      id = SecureRandom.uuid
-      workflow = TestWorkflow.new(id)
+      workflow = TestWorkflow.new
       client.persist_workflow(workflow)
-      expect(redis.keys("gush.workflows.#{id}").length).to eq(1)
-      expect(redis.keys("gush.jobs.#{id}.*").length).to eq(5)
+      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(1)
+      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(5)
 
       client.destroy_workflow(workflow)
 
-      expect(redis.keys("gush.workflows.#{id}").length).to eq(0)
-      expect(redis.keys("gush.jobs.#{id}.*").length).to eq(0)
+      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(0)
+      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(0)
     end
   end
 
@@ -106,17 +101,16 @@ describe Gush::Client do
   end
 
   it "should be able to handle outdated data format" do
-    workflow_id = SecureRandom.uuid
-    workflow = TestWorkflow.new(workflow_id)
+    workflow = TestWorkflow.new
     client.persist_workflow(workflow)
 
     # malform the data
-    hash = Yajl::Parser.parse(redis.get("gush.workflows.#{workflow_id}"), symbolize_keys: true)
+    hash = Yajl::Parser.parse(redis.get("gush.workflows.#{workflow.id}"), symbolize_keys: true)
     hash.delete(:stopped)
-    redis.set("gush.workflows.#{workflow_id}", Yajl::Encoder.new.encode(hash))
+    redis.set("gush.workflows.#{workflow.id}", Yajl::Encoder.new.encode(hash))
 
     expect {
-      workflow = client.find_workflow(workflow_id)
+      workflow = client.find_workflow(workflow.id)
       expect(workflow.stopped?).to be false
     }.not_to raise_error
   end

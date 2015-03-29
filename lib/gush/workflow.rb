@@ -2,18 +2,29 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :nodes, :stopped
+    attr_accessor :id, :jobs, :stopped
 
-    def initialize(id, options = {})
+    def initialize(should_run_configure = true)
       @id = id
-      @nodes = []
+      @jobs = []
       @dependencies = []
       @stopped = false
 
-      unless options[:configure] == false
+      if should_run_configure
         configure
         create_dependencies
       end
+    end
+
+    def self.create(*args)
+      flow = new(*args)
+      flow.save
+      flow
+    end
+
+    def save
+      @id = client.next_free_id
+      client.persist_workflow(self)
     end
 
     def configure
@@ -38,19 +49,19 @@ module Gush
     end
 
     def find_job(name)
-      @nodes.find { |node| node.name == name.to_s || node.class.to_s == name.to_s }
+      @jobs.find { |node| node.name == name.to_s || node.class.to_s == name.to_s }
     end
 
     def finished?
-      nodes.all?(&:finished)
+      jobs.all?(&:finished)
     end
 
     def running?
-      !stopped? && nodes.any? {|j| j.enqueued? || j.running? }
+      !stopped? && jobs.any? {|j| j.enqueued? || j.running? }
     end
 
     def failed?
-      nodes.any?(&:failed)
+      jobs.any?(&:failed)
     end
 
     def stopped?
@@ -59,7 +70,7 @@ module Gush
 
     def run(klass, deps = {})
       node = klass.new(self, name: klass.to_s)
-      @nodes << node
+      @jobs << node
 
       deps_after = [*deps[:after]]
       deps_after.each do |dep|
@@ -100,10 +111,10 @@ module Gush
       {
         name: name,
         id: @id,
-        total: @nodes.count,
-        finished: @nodes.count(&:finished?),
+        total: @jobs.count,
+        finished: @jobs.count(&:finished?),
         klass: name,
-        nodes: @nodes.map(&:as_json),
+        jobs: @jobs.map(&:as_json),
         status: status,
         stopped: stopped,
         started_at: started_at,
@@ -116,7 +127,7 @@ module Gush
     end
 
     def next_jobs
-      @nodes.select(&:can_be_started?)
+      jobs.select(&:can_be_started?)
     end
 
     def self.descendants
@@ -124,12 +135,17 @@ module Gush
     end
 
     private
+
+    def client
+      @client ||= Client.new
+    end
+
     def first_job
-      nodes.min_by{ |n| n.started_at || Time.now.to_i }
+      jobs.min_by{ |n| n.started_at || Time.now.to_i }
     end
 
     def last_job
-      nodes.max_by{ |n| n.finished_at || 0 } if nodes.all?(&:finished?)
+      jobs.max_by{ |n| n.finished_at || 0 } if jobs.all?(&:finished?)
     end
   end
 end

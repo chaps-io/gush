@@ -7,9 +7,13 @@ describe Gush::Workflow do
     context "when configure option is true" do
       it "runs #configure method " do
         expect_any_instance_of(TestWorkflow).to receive(:configure)
-        TestWorkflow.new("name", configure: true)
+        TestWorkflow.new(true)
       end
     end
+  end
+
+  describe "persistence" do
+
   end
 
   describe "#stop!" do
@@ -37,7 +41,7 @@ describe Gush::Workflow do
 
       result = JSON.parse(klass.new("workflow").to_json)
       expected = {
-        "id"=>"workflow",
+        "id"=>nil,
         "name" => klass.to_s,
         "klass" => klass.to_s,
         "status" => "Pending",
@@ -46,7 +50,7 @@ describe Gush::Workflow do
         "started_at" => nil,
         "finished_at" => nil,
         "stopped" => false,
-        "nodes" => [
+        "jobs" => [
           {
             "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
             "incoming"=>[], "outgoing"=>["PersistFirstJob"], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil,
@@ -74,7 +78,7 @@ describe Gush::Workflow do
       it "adds new job with the given class as a node" do
         flow = Gush::Workflow.new("workflow")
         flow.run(Gush::Job)
-        expect(flow.nodes.first).to be_instance_of(Gush::Job)
+        expect(flow.jobs.first).to be_instance_of(Gush::Job)
       end
     end
 
@@ -86,8 +90,8 @@ describe Gush::Workflow do
         tree.run(klass1)
         tree.run(klass2, after: klass1)
         tree.create_dependencies
-        expect(tree.nodes.first).to be_an_instance_of(klass1)
-        expect(tree.nodes.first.outgoing.first).to eq(klass2.to_s)
+        expect(tree.jobs.first).to be_an_instance_of(klass1)
+        expect(tree.jobs.first.outgoing.first).to eq(klass2.to_s)
       end
     end
   end
@@ -135,7 +139,7 @@ describe Gush::Workflow do
     end
 
     it "returns true if all jobs are finished" do
-      subject.nodes.each {|n| n.finished = true }
+      subject.jobs.each {|n| n.finished = true }
       expect(subject.finished?).to be_truthy
     end
   end

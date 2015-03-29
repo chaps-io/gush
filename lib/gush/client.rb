@@ -15,15 +15,12 @@ module Gush
     end
 
     def create_workflow(name)
-      id = SecureRandom.uuid.split("-").first
-
       begin
-        workflow = name.constantize.new(id)
+        workflow = name.constantize.create
       rescue NameError
         raise WorkflowNotFound.new("Workflow with given name doesn't exist")
       end
 
-      persist_workflow(workflow)
       workflow
     end
 
@@ -51,6 +48,16 @@ module Gush
       persist_workflow(workflow)
     end
 
+    def next_free_id
+      id = nil
+      loop do
+        id = SecureRandom.uuid
+        break if !redis.exists("gush.workflow.#{id}")
+      end
+
+      id
+    end
+
     def all_workflows
       redis.keys("gush.workflows.*").map do |key|
         id = key.sub("gush.workflows.", "")
@@ -72,7 +79,7 @@ module Gush
 
     def persist_workflow(workflow)
       redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
-      workflow.nodes.each {|job| persist_job(workflow.id, job) }
+      workflow.jobs.each {|job| persist_job(workflow.id, job) }
       true
     end
 
@@ -82,7 +89,7 @@ module Gush
 
     def destroy_workflow(workflow)
       redis.del("gush.workflows.#{workflow.id}")
-      workflow.nodes.each {|job| destroy_job(workflow.id, job) }
+      workflow.jobs.each {|job| destroy_job(workflow.id, job) }
     end
 
     def destroy_job(workflow_id, job)
@@ -102,11 +109,12 @@ module Gush
     attr_reader :sidekiq, :redis
 
     def workflow_from_hash(hash, nodes = nil)
-      flow = hash[:klass].constantize.new(hash[:id], configure: false)
+      flow = hash[:klass].constantize.new(false)
       flow.stopped = hash.fetch(:stopped, false)
+      flow.id = hash[:id]
 
       (nodes || hash[:nodes]).each do |node|
-        flow.nodes << Gush::Job.from_hash(flow, node)
+        flow.jobs << Gush::Job.from_hash(flow, node)
       end
 
       flow
