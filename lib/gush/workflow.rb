@@ -46,7 +46,7 @@ module Gush
     end
 
     def running?
-      nodes.any? {|j| j.enqueued? || j.running? } && !stopped?
+      !stopped? && nodes.any? {|j| j.enqueued? || j.running? }
     end
 
     def failed?
@@ -116,9 +116,7 @@ module Gush
     end
 
     def next_jobs
-      @nodes.select do |job|
-        job.can_be_started?
-      end
+      @nodes.select(&:can_be_started?)
     end
 
     def self.descendants
