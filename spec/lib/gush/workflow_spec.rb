@@ -191,14 +191,19 @@ describe Gush::Workflow do
 
         flow.create_dependencies
         expect(flow.next_jobs.map(&:name)).to match_array(["Prepare"])
+
         flow.find_job("Prepare").finished = true
         expect(flow.next_jobs.map(&:name)).to match_array(["FetchFirstJob", "FetchSecondJob"])
+
         flow.find_job("FetchFirstJob").finished = true
         expect(flow.next_jobs.map(&:name)).to match_array(["FetchSecondJob", "PersistFirstJob"])
+
         flow.find_job("FetchSecondJob").finished = true
         expect(flow.next_jobs.map(&:name)).to match_array(["PersistFirstJob", "PersistSecondJob"])
+
         flow.find_job("PersistFirstJob").finished = true
         expect(flow.next_jobs.map(&:name)).to match_array(["PersistSecondJob"])
+
         flow.find_job("PersistSecondJob").finished = true
         expect(flow.next_jobs.map(&:name)).to match_array(["NormalizeJob"])
       end

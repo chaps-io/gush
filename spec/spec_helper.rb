@@ -1,7 +1,7 @@
 require 'gush'
 require 'pry'
 require 'sidekiq/testing'
-require 'bbq/spawn'
+require "fakeredis"
 
 Sidekiq::Logging.logger = nil
 
@@ -27,6 +27,11 @@ class TestWorkflow < Gush::Workflow
   end
 end
 
+class Redis
+  def publish(*)
+  end
+end
+
 module GushHelpers
   REDIS_URL = "redis://localhost:33333/"
 
@@ -44,19 +49,6 @@ RSpec.configure do |config|
 
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
-  end
-
-  orchestrator = Bbq::Spawn::Orchestrator.new
-
-  config.before(:suite) do
-    config_path = Pathname.pwd + "spec/redis.conf"
-    executor = Bbq::Spawn::Executor.new("redis-server", config_path.to_path)
-    orchestrator.coordinate(executor, host: '127.0.0.1', port: 33333)
-    orchestrator.start
-  end
-
-  config.after(:suite) do
-    orchestrator.stop
   end
 
   config.after(:each) do

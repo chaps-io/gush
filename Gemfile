@@ -5,4 +5,4 @@ gemspec
 
 gem 'pry'
 gem 'yajl-ruby'
-gem 'bbq-spawn', git: 'git@github.com:drugpl/bbq-spawn.git'
+gem "fakeredis", require: false
