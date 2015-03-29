@@ -22,6 +22,7 @@ module Gush
         config.namespace   = options.fetch("namespace",   config.namespace)
         config.environment = options.fetch("environment", config.environment)
       end
+      load_gushfile
     end
 
     desc "create [WorkflowClass]", "Registers new workflow"
@@ -124,6 +125,12 @@ module Gush
 
     def gushfile
       Pathname.pwd.join(options[:gushfile])
+    end
+
+    def load_gushfile
+      require configuration.gushfile
+    rescue LoadError
+      raise Thor::Error, "failed to load #{configuration.gushfile.basename}".colorize(:red)
     end
   end
 end

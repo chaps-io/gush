@@ -6,7 +6,6 @@ module Gush
       @configuration = config
       @sidekiq = build_sidekiq
       @redis = build_redis
-      load_gushfile
     end
 
     def configure
@@ -74,6 +73,7 @@ module Gush
     def persist_workflow(workflow)
       redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
       workflow.nodes.each {|job| persist_job(workflow.id, job) }
+      true
     end
 
     def persist_job(workflow_id, job)
@@ -134,12 +134,6 @@ module Gush
 
     def connection_pool
       ConnectionPool.new(size: configuration.concurrency, timeout: 1) { build_redis }
-    end
-
-    def load_gushfile
-      require configuration.gushfile
-    rescue LoadError
-      raise Thor::Error, "failed to load #{configuration.gushfile.basename}".colorize(:red)
     end
   end
 end
