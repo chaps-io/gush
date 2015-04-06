@@ -107,6 +107,7 @@ in the order defined in `configure` method inside Workflow.
 ```ruby
 flow.reload
 flow.status
+#=> :running|:pending|:finished|:failed
 ```
 
 `reload` is needed to see the latest status, since workflows are updated asynchronously.
@@ -127,7 +128,7 @@ flow.status
 
 ### Requiring workflows inside your projects
 
-**Skip this step if using Gush inside Rails application, workflows will already by loaded**
+**Skip this step if using Gush inside Rails application, workflows will already be loaded**
 
 When using Gush and its CLI commands you need a Gushfile.rb in root directory.
 Gushfile should require all your Workflows and jobs, for example:
