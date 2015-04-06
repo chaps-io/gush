@@ -76,7 +76,7 @@ flow = SampleWorkflow.new
 flow.save # saves workflow and its jobs to Redis
 ```
 
-**or:** ou can also use a shortcut:
+**or:** you can also use a shortcut:
 
 ```ruby
 flow = SampleWorkflow.create
