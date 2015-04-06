@@ -18,18 +18,6 @@ Or install it yourself as:
 
 ## Usage
 
-Your project should contain a file called `Gushfile.rb` which loads all the necessary workflows for Sidekiq to use.
-
-Example:
-
-```ruby
-require_relative './lib/your_project'
-
-Dir[Rails.root.join("app/workflows/**/*.rb")].each do |file|
-  require file
-end
-```
-
 ### Defining workflows
 
 The DSL for defining jobs consists of a single `run` method.
@@ -137,6 +125,20 @@ flow.status
   bundle gush list
   ```
 
+### Requiring workflows inside your projects
+
+**Skip this step if using Gush inside Rails application, workflows will already by loaded**
+
+When using Gush and its CLI commands you need a Gushfile.rb in root directory.
+Gushfile should require all your Workflows and jobs, for example:
+
+```ruby
+require_relative './lib/your_project'
+
+Dir[Rails.root.join("app/workflows/**/*.rb")].each do |file|
+  require file
+end
+```
 
 ## Contributing
 
