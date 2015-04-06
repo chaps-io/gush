@@ -16,17 +16,17 @@ module Gush
 
     def create_workflow(name)
       begin
-        workflow = name.constantize.create
+        flow = name.constantize.new
+        flow.save
       rescue NameError
         raise WorkflowNotFound.new("Workflow with given name doesn't exist")
       end
 
-      workflow
+      flow
     end
 
-    def start_workflow(id, jobs = [])
-      workflow = find_workflow(id)
-      workflow.start!
+    def start_workflow(workflow, jobs = [])
+      workflow.mark_as_started
       persist_workflow(workflow)
 
       jobs = if jobs.empty?
@@ -44,7 +44,7 @@ module Gush
 
     def stop_workflow(id)
       workflow = find_workflow(id)
-      workflow.stop!
+      workflow.mark_as_stopped
       persist_workflow(workflow)
     end
 
@@ -80,6 +80,7 @@ module Gush
     def persist_workflow(workflow)
       redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
       workflow.jobs.each {|job| persist_job(workflow.id, job) }
+      workflow.mark_as_persisted
       true
     end
 

@@ -27,23 +27,23 @@ describe Gush::Client do
       workflow = TestWorkflow.new
       client.persist_workflow(workflow)
       expect {
-        client.start_workflow(workflow.id)
+        client.start_workflow(workflow)
       }.to change{Gush::Worker.jobs.count}.from(0).to(1)
     end
 
     it "removes stopped flag when the workflow is started" do
       workflow = TestWorkflow.new
-      workflow.stop!
+      workflow.mark_as_stopped
       client.persist_workflow(workflow)
       expect {
-        client.start_workflow(workflow.id)
+        client.start_workflow(workflow)
       }.to change{client.find_workflow(workflow.id).stopped?}.from(true).to(false)
     end
 
     it "marks the enqueued jobs as enqueued" do
       workflow = TestWorkflow.new
       client.persist_workflow(workflow)
-      client.start_workflow(workflow.id)
+      client.start_workflow(workflow)
       job = client.find_workflow(workflow.id).find_job("Prepare")
       expect(job.enqueued?).to eq(true)
     end
@@ -64,6 +64,7 @@ describe Gush::Client do
       job = double("job", to_json: 'json')
       workflow = double("workflow", id: 'abcd', jobs: [job, job, job], to_json: '"json"')
       expect(client).to receive(:persist_job).exactly(3).times.with(workflow.id, job)
+      expect(workflow).to receive(:mark_as_persisted)
       client.persist_workflow(workflow)
       expect(redis.keys("gush.workflows.abcd").length).to eq(1)
     end

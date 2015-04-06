@@ -32,7 +32,7 @@ end
 
 ### Defining workflows
 
-The DSL for defining jobs consists of a single `run` method. 
+The DSL for defining jobs consists of a single `run` method.
 Here is a complete example of a workflow you can create:
 
 ```ruby
@@ -63,6 +63,7 @@ bundle exec gush viz SampleWorkflow
 For the Workflow above, the graph will look like this:
 
 ![SampleWorkflow](http://i.imgur.com/SmeRRVT.png)
+
 ### Defining jobs
 
 Jobs are classes inheriting from `Gush::Job`:
@@ -76,35 +77,53 @@ class FetchJob1 < Gush::Job
 end
 ```
 
-### Running
+### Running workflows
 
-#### 1. Register workflow
+Now that we have defined our workflow we can use it:
 
-After you define your workflows and jobs, all you have to do is register them:
+#### 1. Initialize and save it
 
+```ruby
+flow = SampleWorkflow.new
+flow.save # saves workflow and its jobs to Redis
 ```
-bundle exec gush create SampleWorkflow
+
+**or:** ou can also use a shortcut:
+
+```ruby
+flow = SampleWorkflow.create
 ```
 
-the command will return a unique workflow id you will use in later commands.
+#### 2. Start workflow
 
-#### 2. Run workers
-
-This will start Sidekiq workers responsible for processing jobs
+First you need to start Sidekiq workers:
 
 ```
 bundle exec gush workers
 ```
 
-#### 3. Start the workflow
+and then start your workflow:
 
-Use your workflow_id returned by `create` command.
-
-```
-bundle gush start <workflow_id>
+```ruby
+flow.start!
 ```
 
-### 5. Check the status
+Now Gush will start processing jobs in background using Sidekiq
+in the order defined in `configure` method inside Workflow.
+
+
+### Checking status:
+
+#### In Ruby:
+
+```ruby
+flow.reload
+flow.status
+```
+
+`reload` is needed to see the latest status, since workflows are updated asynchronously.
+
+#### Via CLI:
 
 - of a specific workflow:
 
@@ -113,7 +132,7 @@ bundle gush start <workflow_id>
   ```
 
 - of all created workflows:
-  
+
   ```
   bundle gush list
   ```

@@ -77,8 +77,9 @@ module Gush
 
     def continue_workflow(workflow)
       # refetch is important to get correct workflow status
-      unless client.find_workflow(workflow.id).stopped?
-        client.start_workflow(workflow.id)
+      flow = client.find_workflow(workflow.id)
+      unless flow.stopped?
+        client.start_workflow(flow)
       end
     end
   end

@@ -10,22 +10,52 @@ describe Gush::Workflow do
         TestWorkflow.new(true)
       end
     end
-  end
 
-  describe "persistence" do
-
-  end
-
-  describe "#stop!" do
-    it "marks workflow as stopped" do
-      expect{ subject.stop! }.to change{subject.stopped?}.from(false).to(true)
+    context "when configure option is false" do
+      it "it doesn't run #configure method " do
+        expect_any_instance_of(TestWorkflow).to_not receive(:configure)
+        TestWorkflow.new(false)
+      end
     end
   end
 
-  describe "#start!" do
+  describe "#save" do
+    context "workflow not persisted" do
+      it "sets persisted to true" do
+        flow = TestWorkflow.new
+        flow.save
+        expect(flow.persisted).to be(true)
+      end
+
+      it "assigns new unique id" do
+        flow = TestWorkflow.new
+        expect(flow.id).to eq(nil)
+        flow.save
+        expect(flow.id).to_not be_nil
+      end
+    end
+
+    context "workflow persisted" do
+      it "does not assign new id" do
+        flow = TestWorkflow.new
+        flow.save
+        id = flow.id
+        flow.save
+        expect(flow.id).to eq(id)
+      end
+    end
+  end
+
+  describe "#mark_as_stopped" do
+    it "marks workflow as stopped" do
+      expect{ subject.mark_as_stopped }.to change{subject.stopped?}.from(false).to(true)
+    end
+  end
+
+  describe "#mark_as_started" do
     it "removes stopped flag" do
       subject.stopped = true
-      expect{ subject.start! }.to change{subject.stopped?}.from(true).to(false)
+      expect{ subject.mark_as_started }.to change{subject.stopped?}.from(true).to(false)
     end
   end
 
@@ -44,7 +74,7 @@ describe Gush::Workflow do
         "id"=>nil,
         "name" => klass.to_s,
         "klass" => klass.to_s,
-        "status" => "Pending",
+        "status" => "pending",
         "total" => 2,
         "finished" => 0,
         "started_at" => nil,

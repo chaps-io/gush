@@ -2,12 +2,13 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped
+    attr_accessor :id, :jobs, :stopped, :persisted
 
     def initialize(should_run_configure = true)
       @id = id
       @jobs = []
       @dependencies = []
+      @persisted = false
       @stopped = false
 
       if should_run_configure
@@ -16,25 +17,42 @@ module Gush
       end
     end
 
-    def self.create(*args)
-      flow = new(*args)
-      flow.save
-      flow
+    def self.find(id)
+      Gush::Client.new.find_workflow(id)
+    end
+
+    def self.create
+      Gush::Client.new.create_workflow(name)
     end
 
     def save
-      @id = client.next_free_id
+      if @id.nil?
+        assign_id
+      end
+
       client.persist_workflow(self)
     end
 
     def configure
     end
 
-    def stop!
+    def mark_as_stopped
       @stopped = true
     end
 
     def start!
+      client.start_workflow(self)
+    end
+
+    def persist!
+      client.persist_workflow(self)
+    end
+
+    def mark_as_persisted
+      @persisted = true
+    end
+
+    def mark_as_started
       @stopped = false
     end
 
@@ -83,18 +101,22 @@ module Gush
       end
     end
 
+    def reload
+      self.class.find(@id)
+    end
+
     def status
       case
         when failed?
-          "Failed"
+          :failed
         when running?
-          "Running"
+          :running
         when finished?
-          "Finished"
+          :finished
         when stopped?
-          "Stopped"
+          :stopped
         else
-          "Pending"
+          :pending
       end
     end
 
@@ -135,6 +157,10 @@ module Gush
     end
 
     private
+
+    def assign_id
+      @id = client.next_free_id
+    end
 
     def client
       @client ||= Client.new
