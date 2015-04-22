@@ -47,9 +47,9 @@ module Gush
         {
           "ID" => workflow.id,
           "Name" => workflow.class.to_s,
-          "Jobs" => workflow.nodes.count,
+          "Jobs" => workflow.jobs.count,
           "Failed jobs" => failed_jobs_count.red,
-          "Succeeded jobs" => succeedded_jobs_count.green,
+          "Succeeded jobs" => succeeded_jobs_count.green,
           "Enqueued jobs" => enqueued_jobs_count.yellow,
           "Running jobs" => running_jobs_count.blue,
           "Remaining jobs" => remaining_jobs_count,
@@ -58,7 +58,7 @@ module Gush
       end
 
       def running_status
-        finished = succeedded_jobs.to_i
+        finished = succeeded_jobs_count.to_i
         status = "running".yellow
         status += "\n#{finished}/#{total_jobs_count} [#{(finished*100)/total_jobs_count}%]"
       end
@@ -90,7 +90,7 @@ module Gush
       end
 
       def sorted_jobs
-        workflow.nodes.sort_by do |job|
+        workflow.jobs.sort_by do |job|
           case
           when job.failed?
             0
@@ -107,31 +107,31 @@ module Gush
       end
 
       def failed_job
-        workflow.nodes.find(&:failed).name
+        workflow.jobs.find(&:failed).name
       end
 
       def total_jobs_count
-        workflow.nodes.count
+        workflow.jobs.count
       end
 
       def failed_jobs_count
-        workflow.nodes.count(&:failed?).to_s
+        workflow.jobs.count(&:failed?).to_s
       end
 
-      def succeedded_jobs_count
-        workflow.nodes.count(&:succeeded?).to_s
+      def succeeded_jobs_count
+        workflow.jobs.count(&:succeeded?).to_s
       end
 
       def enqueued_jobs_count
-        workflow.nodes.count(&:enqueued?).to_s
+        workflow.jobs.count(&:enqueued?).to_s
       end
 
       def running_jobs_count
-        workflow.nodes.count(&:running?).to_s
+        workflow.jobs.count(&:running?).to_s
       end
 
       def remaining_jobs_count
-        workflow.nodes.count{|j| [j.finished, j.failed, j.enqueued].none? }.to_s
+        workflow.jobs.count{|j| [j.finished, j.failed, j.enqueued].none? }.to_s
       end
     end
   end
