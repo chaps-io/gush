@@ -30,7 +30,7 @@ module Gush
         report(workflow, job, :finished, start)
         mark_as_finished(workflow, job)
 
-        continue_workflow(workflow)
+        enqueue_outgoing_jobs(workflow, job)
       else
         mark_as_failed(workflow, job)
         report(workflow, job, :failed, start, error.message)
@@ -75,11 +75,11 @@ module Gush
       (Time.now - start).to_f.round(3)
     end
 
-    def continue_workflow(workflow)
-      # refetch is important to get correct workflow status
+    def enqueue_outgoing_jobs(workflow, job)
       flow = client.find_workflow(workflow.id)
-      unless flow.stopped?
-        client.start_workflow(flow)
+
+      job.outgoing.each do |job_name|
+        client.enqueue_job(flow.id, flow.find_job(job_name))
       end
     end
   end

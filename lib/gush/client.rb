@@ -25,14 +25,14 @@ module Gush
       flow
     end
 
-    def start_workflow(workflow, jobs = [])
+    def start_workflow(workflow, job_names = [])
       workflow.mark_as_started
       persist_workflow(workflow)
 
-      jobs = if jobs.empty?
+      jobs = if job_names.empty?
                workflow.next_jobs
              else
-               jobs.map {|name| workflow.find_job(name) }
+               job_names.map {|name| workflow.find_job(name) }
              end
 
       jobs.each do |job|
@@ -105,6 +105,14 @@ module Gush
       report("gush.workflows.status", message)
     end
 
+    def enqueue_job(workflow_id, job)
+      sidekiq.push(
+        'class' => Gush::Worker,
+        'queue' => configuration.namespace,
+        'args'  => [workflow_id, job.class.to_s, configuration.to_json]
+      )
+    end
+
     private
 
     attr_reader :sidekiq, :redis
@@ -125,13 +133,6 @@ module Gush
       redis.publish(key, Gush::JSON.encode(message))
     end
 
-    def enqueue_job(workflow_id, job)
-      sidekiq.push(
-        'class' => Gush::Worker,
-        'queue' => configuration.namespace,
-        'args'  => [workflow_id, job.class.to_s, configuration.to_json]
-      )
-    end
 
     def build_sidekiq
       Sidekiq::Client.new(connection_pool)
