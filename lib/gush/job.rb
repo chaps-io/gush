@@ -37,7 +37,7 @@ module Gush
     end
 
     def to_json(options = {})
-      Yajl::Encoder.new.encode(as_json)
+      Gush::JSON.encode(as_json)
     end
 
     def self.from_hash(flow, hash)

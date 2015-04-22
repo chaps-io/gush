@@ -32,7 +32,7 @@ end
 
 ### Defining workflows
 
-The DSL for defining jobs consists of a single `run` method. 
+The DSL for defining jobs consists of a single `run` method.
 Here is a complete example of a workflow you can create:
 
 ```ruby
@@ -80,10 +80,9 @@ end
 
 #### 1. Register workflow
 
-After you define your workflows and jobs, all you have to do is register them:
 
-```
-bundle exec gush create SampleWorkflow
+```ruby
+flow = SampleWorkflow.new("sample-workflow-1")
 ```
 
 the command will return a unique workflow id you will use in later commands.
@@ -113,7 +112,7 @@ bundle gush start <workflow_id>
   ```
 
 - of all created workflows:
-  
+
   ```
   bundle gush list
   ```

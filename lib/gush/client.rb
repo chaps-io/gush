@@ -68,9 +68,9 @@ module Gush
     def find_workflow(id)
       data = redis.get("gush.workflows.#{id}")
       unless data.nil?
-        hash = Yajl::Parser.parse(data, symbolize_keys: true)
+        hash = Gush::JSON.decode(data, symbolize_keys: true)
         keys = redis.keys("gush.jobs.#{id}.*")
-        nodes = redis.mget(*keys).map { |json| Yajl::Parser.parse(json, symbolize_keys: true) }
+        nodes = redis.mget(*keys).map { |json| Gush::JSON.decode(json, symbolize_keys: true) }
         workflow_from_hash(hash, nodes)
       else
         raise WorkflowNotFound.new("Workflow with given id doesn't exist")
@@ -121,7 +121,7 @@ module Gush
     end
 
     def report(key, message)
-      redis.publish(key, Yajl::Encoder.new.encode(message))
+      redis.publish(key, Gush::JSON.encode(message))
     end
 
     def enqueue_job(workflow_id, job)

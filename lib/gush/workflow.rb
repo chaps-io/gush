@@ -16,6 +16,10 @@ module Gush
       end
     end
 
+    def self.find(id)
+      Gush::Client.new.find_workflow(id)
+    end
+
     def self.create(*args)
       flow = new(*args)
       flow.save
@@ -123,7 +127,7 @@ module Gush
     end
 
     def to_json(options = {})
-      JSON.dump(to_hash)
+      Gush::JSON.encode(to_hash)
     end
 
     def next_jobs

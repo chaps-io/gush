@@ -7,6 +7,7 @@ require "redis"
 require "securerandom"
 require "sidekiq"
 
+require "gush/json"
 require "gush/cli"
 require "gush/cli/overview"
 require "gush/graph"
