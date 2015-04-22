@@ -13,6 +13,6 @@ begin
   Gush::CLI.start(ARGV)
 rescue Gush::WorkflowNotFound
   puts "Workflow not found".red
-rescue DependencyLevelTooDeep
+rescue Gush::DependencyLevelTooDeep
   puts "Dependency level too deep. Perhaps you have a dependency cycle?".red
 end

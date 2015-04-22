@@ -97,8 +97,10 @@ module Gush
     desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
     def viz(name)
       client
-      workflow = name.constantize.new("start")
-      Launchy.open Graph.new(workflow).path
+      workflow = name.constantize.new
+      graph = Graph.new(workflow)
+      graph.viz
+      Launchy.open graph.path
     end
 
     private
@@ -128,7 +130,7 @@ module Gush
     end
 
     def load_gushfile
-      require configuration.gushfile
+      require client.configuration.gushfile
     rescue LoadError
       raise Thor::Error, "failed to load #{configuration.gushfile.basename}".colorize(:red)
     end

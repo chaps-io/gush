@@ -16,7 +16,7 @@ module Gush
         @start = graph.start(shape: 'diamond', fillcolor: '#CFF09E')
         @end_node = graph.end(shape: 'diamond', fillcolor: '#F56991')
 
-        workflow.nodes.each do |job|
+        workflow.jobs.each do |job|
           add_job(graph, job)
         end
 
@@ -25,8 +25,7 @@ module Gush
     end
 
     def path
-      viz
-      path.to_s
+      @path.to_s
     end
 
     private
