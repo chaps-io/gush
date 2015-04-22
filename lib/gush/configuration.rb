@@ -5,7 +5,7 @@ module Gush
     attr_accessor :concurrency, :namespace, :redis_url, :environment
 
     def self.from_json(json)
-      new(Yajl::Parser.parse(json, symbolize_keys: true))
+      new(Gush::JSON.decode(json, symbolize_keys: true))
     end
 
     def initialize(hash = {})
@@ -36,7 +36,7 @@ module Gush
     end
 
     def to_json
-      Yajl::Encoder.new.encode(to_hash)
+      Gush::JSON.encode(to_hash)
     end
   end
 end

@@ -106,9 +106,9 @@ describe Gush::Client do
     client.persist_workflow(workflow)
 
     # malform the data
-    hash = Yajl::Parser.parse(redis.get("gush.workflows.#{workflow.id}"), symbolize_keys: true)
+    hash = Gush::JSON.decode(redis.get("gush.workflows.#{workflow.id}"), symbolize_keys: true)
     hash.delete(:stopped)
-    redis.set("gush.workflows.#{workflow.id}", Yajl::Encoder.new.encode(hash))
+    redis.set("gush.workflows.#{workflow.id}", Gush::JSON.encode(hash))
 
     expect {
       workflow = client.find_workflow(workflow.id)

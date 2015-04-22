@@ -17,15 +17,15 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "sidekiq", "~> 3.2.2"
-  spec.add_dependency "yajl-ruby"
-  spec.add_dependency "redis", "~> 3.1.0"
-  spec.add_dependency "hiredis", "~> 0.5.2"
-  spec.add_dependency "ruby-graphviz"
-  spec.add_dependency "terminal-table"
-  spec.add_dependency "colorize"
-  spec.add_dependency "thor"
-  spec.add_dependency "launchy"
+  spec.add_dependency "sidekiq", "~> 3.3.4"
+  spec.add_dependency "yajl-ruby", "~> 1.2.1"
+  spec.add_dependency "redis", "~> 3.2.1"
+  spec.add_dependency "hiredis", "~> 0.6.0"
+  spec.add_dependency "ruby-graphviz", "~> 1.2.1"
+  spec.add_dependency "terminal-table", "~> 1.4.5"
+  spec.add_dependency "colorize", "~> 0.7.7"
+  spec.add_dependency "thor", "~> 0.19.1"
+  spec.add_dependency "launchy", "~> 2.4.3"
   spec.add_development_dependency "bundler", "~> 1.5"
   spec.add_development_dependency "rake"
   spec.add_development_dependency "rspec", '~> 3.0.0'
