@@ -36,8 +36,6 @@ module Gush
              end
 
       jobs.each do |job|
-        job.enqueue!
-        persist_job(workflow.id, job)
         enqueue_job(workflow.id, job)
       end
     end
@@ -106,6 +104,9 @@ module Gush
     end
 
     def enqueue_job(workflow_id, job)
+      job.enqueue!
+      persist_job(workflow_id, job)
+
       sidekiq.push(
         'class' => Gush::Worker,
         'queue' => configuration.namespace,
