@@ -30,7 +30,7 @@ module Gush
       persist_workflow(workflow)
 
       jobs = if job_names.empty?
-               workflow.next_jobs
+               workflow.initial_jobs
              else
                job_names.map {|name| workflow.find_job(name) }
              end
@@ -84,6 +84,13 @@ module Gush
 
     def persist_job(workflow_id, job)
       redis.set("gush.jobs.#{workflow_id}.#{job.class.to_s}", job.to_json)
+    end
+
+    def load_job(workflow_id, job_id)
+      data = redis.get("gush.jobs.#{workflow_id}.#{job_id}")
+      return nil if data.nil?
+      data = Gush::JSON.decode(data, symbolize_keys: true)
+      Gush::Job.from_hash(nil, data)
     end
 
     def destroy_workflow(workflow)

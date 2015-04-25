@@ -30,7 +30,7 @@ module Gush
         report(workflow, job, :finished, start)
         mark_as_finished(workflow, job)
 
-        enqueue_outgoing_jobs(workflow, job)
+        enqueue_outgoing_jobs(workflow.id, job)
       else
         mark_as_failed(workflow, job)
         report(workflow, job, :failed, start, error.message)
@@ -75,11 +75,12 @@ module Gush
       (Time.now - start).to_f.round(3)
     end
 
-    def enqueue_outgoing_jobs(workflow, job)
-      flow = client.find_workflow(workflow.id)
-
+    def enqueue_outgoing_jobs(workflow_id, job)
       job.outgoing.each do |job_name|
-        client.enqueue_job(flow.id, flow.find_job(job_name))
+        out = client.load_job(workflow_id, job_name)
+        if out.ready_to_start?
+          client.enqueue_job(workflow_id, out)
+        end
       end
     end
   end

@@ -9,7 +9,7 @@ describe Gush do
         path.delete if path.exist?
         Gush.configuration.gushfile = path
 
-        expect { Gush.gushfile }.to raise_error(Thor::Error)
+        expect { Gush.gushfile }.to raise_error(Errno::ENOENT)
       end
     end
 

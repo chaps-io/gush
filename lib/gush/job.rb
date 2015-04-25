@@ -111,8 +111,12 @@ module Gush
       !!running
     end
 
-    def can_be_started?
-      [running?, enqueued?, finished?, failed?].none? && dependencies_satisfied?
+    def ready_to_start?
+      [running?, enqueued?, finished?, failed?].none?
+    end
+
+    def has_no_dependencies?
+      incoming.empty?
     end
 
     def dependencies(level = 0)

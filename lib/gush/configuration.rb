@@ -21,7 +21,6 @@ module Gush
     end
 
     def gushfile
-      raise Thor::Error, "#{@gushfile} not found, please add it to your project".colorize(:red) unless @gushfile.exist?
       @gushfile.realpath
     end
 
@@ -30,8 +29,7 @@ module Gush
         concurrency: concurrency,
         namespace:   namespace,
         redis_url:   redis_url,
-        environment: environment,
-        gushfile:    gushfile.to_path
+        environment: environment
       }
     end
 

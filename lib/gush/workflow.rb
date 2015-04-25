@@ -107,6 +107,10 @@ module Gush
       self.class.find(@id)
     end
 
+    def initial_jobs
+      jobs.select(&:has_no_dependencies?)
+    end
+
     def status
       case
         when failed?
@@ -148,10 +152,6 @@ module Gush
 
     def to_json(options = {})
       Gush::JSON.encode(to_hash)
-    end
-
-    def next_jobs
-      jobs.select(&:can_be_started?)
     end
 
     def self.descendants

@@ -1,11 +1,11 @@
 require 'gush'
 require 'pry'
 require 'sidekiq/testing'
-require "fakeredis"
 
+Sidekiq::Testing.fake!
 Sidekiq::Logging.logger = nil
 
-class Prepare < Gush::Job;  end
+class Prepare < Gush::Job; end
 class FetchFirstJob < Gush::Job; end
 class FetchSecondJob < Gush::Job; end
 class PersistFirstJob < Gush::Job; end
@@ -32,15 +32,24 @@ class Redis
   end
 end
 
-module GushHelpers
-  REDIS_URL = "redis://localhost:33333/"
+REDIS_URL = "redis://localhost:6379/12"
 
+module GushHelpers
   def redis
     @redis ||= Redis.new(url: REDIS_URL)
   end
+end
 
-  def client
-    @client ||= Gush::Client.new(Gush::Configuration.new(gushfile: GUSHFILE, redis_url: REDIS_URL))
+RSpec::Matchers.define :have_jobs do |flow, jobs|
+  match do |actual|
+    expected = jobs.map do |job|
+      hash_including("args" => include(flow, job))
+    end
+    expect(Gush::Worker.jobs).to match_array(expected)
+  end
+
+  failure_message do |actual|
+    "expected queue to have #{jobs}, but instead has: #{actual.jobs.map{ |j| j["args"][1]}}"
   end
 end
 
@@ -50,6 +59,15 @@ RSpec.configure do |config|
   config.mock_with :rspec do |mocks|
     mocks.verify_partial_doubles = true
   end
+
+  config.before(:each) do
+    Gush.configure do |config|
+      config.redis_url = REDIS_URL
+      config.environment = 'test'
+      config.gushfile = GUSHFILE
+    end
+  end
+
 
   config.after(:each) do
     Sidekiq::Worker.clear_all

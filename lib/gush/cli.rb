@@ -130,9 +130,14 @@ module Gush
     end
 
     def load_gushfile
-      require client.configuration.gushfile
+      file = client.configuration.gushfile
+      if !@gushfile.exist?
+        raise Thor::Error, "#{file} not found, please add it to your project".colorize(:red)
+      end
+
+      require file
     rescue LoadError
-      raise Thor::Error, "failed to load #{configuration.gushfile.basename}".colorize(:red)
+      raise Thor::Error, "failed to require #{file}".colorize(:red)
     end
   end
 end
