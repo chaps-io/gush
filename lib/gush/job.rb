@@ -41,19 +41,7 @@ module Gush
     end
 
     def self.from_hash(flow, hash)
-      hash[:klass].constantize.new(
-        flow,
-        name:     hash[:name],
-        finished: hash[:finished],
-        enqueued: hash[:enqueued],
-        failed: hash[:failed],
-        incoming: hash[:incoming],
-        outgoing: hash[:outgoing],
-        failed_at: hash[:failed_at],
-        finished_at: hash[:finished_at],
-        started_at: hash[:started_at],
-        running: hash[:running]
-      )
+      hash[:klass].constantize.new(flow, hash)
     end
 
     def work
