@@ -1,4 +1,4 @@
-# Gush
+# Gush [![Build Status](https://travis-ci.org/pokonski/gush.svg?branch=master)](https://travis-ci.org/pokonski/gush)
 
 Gush is a parallel workflow runner using only Redis as its message broker and Sidekiq for workers.
 
