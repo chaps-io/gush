@@ -48,7 +48,7 @@ describe Gush::Client do
       workflow = TestWorkflow.new
       client.persist_workflow(workflow)
       client.start_workflow(workflow)
-      job = client.find_workflow(workflow.id).find_job("Prepare")
+      job = workflow.reload.find_job("Prepare")
       expect(job.enqueued?).to eq(true)
     end
   end

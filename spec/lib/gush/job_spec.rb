@@ -43,9 +43,8 @@ describe Gush::Job do
   end
 
   describe "#start!" do
-    it "resets flags to false and sets running to true" do
+    it "resets flags and marks as running" do
       job = described_class.new(name: "a-job")
-      job.enqueue!
       job.start!
       expect(job.started_at).to eq(Time.now.to_i)
       expect(job.enqueued?).to eq(false)
@@ -56,7 +55,7 @@ describe Gush::Job do
   describe "#as_json" do
     context "finished and enqueued set to true" do
       it "returns correct hash" do
-        job = described_class.new(double('flow'), name: "a-job", finished: true, enqueued: true)
+        job = described_class.new(double('flow'), name: "a-job", finished_at: 123, enqueued_at: 120)
         expected = {
           name: "a-job",
           klass: "Gush::Job",
@@ -67,7 +66,8 @@ describe Gush::Job do
           outgoing: [],
           failed_at: nil,
           started_at: nil,
-          finished_at: nil,
+          finished_at: 123,
+          enqueued_at: 120,
           running: false
         }
         expect(job.as_json).to eq(expected)
@@ -89,7 +89,8 @@ describe Gush::Job do
           outgoing: ['c'],
           failed_at: 123,
           finished_at: 122,
-          started_at: 55
+          started_at: 55,
+          enqueued_at: 444
         }
       )
 
@@ -103,6 +104,7 @@ describe Gush::Job do
       expect(job.failed_at).to eq(123)
       expect(job.finished_at).to eq(122)
       expect(job.started_at).to eq(55)
+      expect(job.enqueued_at).to eq(444)
     end
   end
 end

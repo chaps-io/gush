@@ -8,8 +8,8 @@ module Gush
       failed: false
     }
 
-    attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing,
-      :finished_at, :failed_at, :started_at
+    attr_accessor :workflow_id, :incoming, :outgoing,
+      :finished_at, :failed_at, :started_at, :enqueued_at
 
     attr_reader :name
 
@@ -28,9 +28,10 @@ module Gush
         failed: failed?,
         incoming: @incoming,
         outgoing: @outgoing,
-        finished_at: @finished_at,
-        started_at: @started_at,
-        failed_at: @failed_at,
+        finished_at: finished_at,
+        enqueued_at: enqueued_at,
+        started_at: started_at,
+        failed_at: failed_at,
         running: running?
       }
     end
@@ -47,43 +48,35 @@ module Gush
     end
 
     def start!
-      @enqueued = false
       @started_at = Time.now.to_i
     end
 
     def enqueue!
-      @enqueued = true
-      @failed = false
+      @enqueued_at = Time.now.to_i
       @started_at = nil
       @finished_at = nil
       @failed_at = nil
     end
 
     def finish!
-      @finished = true
-      @enqueued = false
-      @failed = false
       @finished_at = Time.now.to_i
     end
 
     def fail!
-      @finished = true
-      @failed = true
-      @enqueued = false
       @finished_at = Time.now.to_i
       @failed_at = Time.now.to_i
     end
 
     def enqueued?
-      !!enqueued
+      !!enqueued_at
     end
 
     def finished?
-      !!finished
+      !!finished_at
     end
 
     def failed?
-      !!failed
+      !!failed_at
     end
 
     def succeeded?
@@ -106,14 +99,12 @@ module Gush
 
     def assign_variables(options)
       @name        = options[:name]
-      @finished    = options[:finished]
-      @enqueued    = options[:enqueued]
-      @failed      = options[:failed]
       @incoming    = options[:incoming] || []
       @outgoing    = options[:outgoing] || []
       @failed_at   = options[:failed_at]
       @finished_at = options[:finished_at]
       @started_at  = options[:started_at]
+      @enqueued_at = options[:enqueued_at]
     end
   end
 end

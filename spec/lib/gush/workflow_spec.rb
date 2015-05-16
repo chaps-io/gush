@@ -82,13 +82,31 @@ describe Gush::Workflow do
         "stopped" => false,
         "jobs" => [
           {
-            "name"=>"FetchFirstJob", "klass"=>"FetchFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
-            "incoming"=>[], "outgoing"=>["PersistFirstJob"], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil,
+            "name"=>"FetchFirstJob",
+            "klass"=>"FetchFirstJob",
+            "finished"=>false,
+            "enqueued"=>false,
+            "failed"=>false,
+            "incoming"=>[],
+            "outgoing"=>["PersistFirstJob"],
+            "finished_at"=>nil,
+            "started_at"=>nil,
+            "enqueued_at"=>nil,
+            "failed_at"=>nil,
             "running" => false
           },
           {
-            "name"=>"PersistFirstJob", "klass"=>"PersistFirstJob", "finished"=>false, "enqueued"=>false, "failed"=>false,
-            "incoming"=>["FetchFirstJob"], "outgoing"=>[], "finished_at"=>nil, "started_at"=>nil, "failed_at"=>nil,
+            "name"=>"PersistFirstJob",
+            "klass"=>"PersistFirstJob",
+            "finished"=>false,
+            "enqueued"=>false,
+            "failed"=>false,
+            "incoming"=>["FetchFirstJob"],
+            "outgoing"=>[],
+            "finished_at"=>nil,
+            "started_at"=>nil,
+            "enqueued_at"=>nil,
+            "failed_at"=>nil,
             "running" => false
           }
         ]
@@ -129,7 +147,7 @@ describe Gush::Workflow do
   describe "#failed?" do
     context "when one of the jobs failed" do
       it "returns true" do
-        subject.find_job('Prepare').failed = true
+        subject.find_job('Prepare').fail!
         expect(subject.failed?).to be_truthy
       end
     end
@@ -169,7 +187,7 @@ describe Gush::Workflow do
     end
 
     it "returns true if all jobs are finished" do
-      subject.jobs.each {|n| n.finished = true }
+      subject.jobs.each {|n| n.finish! }
       expect(subject.finished?).to be_truthy
     end
   end

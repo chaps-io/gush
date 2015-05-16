@@ -73,7 +73,7 @@ module Gush
     end
 
     def finished?
-      jobs.all?(&:finished)
+      jobs.all?(&:finished?)
     end
 
     def running?
@@ -81,7 +81,7 @@ module Gush
     end
 
     def failed?
-      jobs.any?(&:failed)
+      jobs.any?(&:failed?)
     end
 
     def stopped?
