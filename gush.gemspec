@@ -1,11 +1,10 @@
 # coding: utf-8
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require 'gush/version'
 
 Gem::Specification.new do |spec|
   spec.name          = "gush"
-  spec.version       = Gush::VERSION
+  spec.version       = "0.1"
   spec.authors       = ["Piotrek Okoński"]
   spec.email         = ["piotrek@okonski.org"]
   spec.summary       = "Fast and distributed workflow runner using only Sidekiq and Redis"
