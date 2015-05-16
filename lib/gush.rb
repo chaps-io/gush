@@ -15,7 +15,6 @@ require "gush/client"
 require "gush/configuration"
 require "gush/errors"
 require "gush/job"
-require "gush/version"
 require "gush/worker"
 require "gush/workflow"
 
