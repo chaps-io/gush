@@ -1,12 +1,5 @@
 module Gush
   class Job
-    RECURSION_LIMIT = 1000
-
-    DEFAULTS = {
-      finished: false,
-      enqueued: false,
-      failed: false
-    }
 
     attr_accessor :workflow_id, :incoming, :outgoing,
       :finished_at, :failed_at, :started_at, :enqueued_at
@@ -15,7 +8,7 @@ module Gush
 
     def initialize(workflow, opts = {})
       @workflow = workflow
-      options = DEFAULTS.dup.merge(opts)
+      options = opts.dup
       assign_variables(options)
     end
 
