@@ -48,23 +48,23 @@ module Gush
     end
 
     def start!
-      @started_at = Time.now.to_i
+      @started_at = current_timestamp
     end
 
     def enqueue!
-      @enqueued_at = Time.now.to_i
+      @enqueued_at = current_timestamp
       @started_at = nil
       @finished_at = nil
       @failed_at = nil
     end
 
     def finish!
-      @finished_at = Time.now.to_i
+      @finished_at = current_timestamp
     end
 
     def fail!
-      @finished_at = Time.now.to_i
-      @failed_at = Time.now.to_i
+      @finished_at = current_timestamp
+      @failed_at = current_timestamp
     end
 
     def enqueued?
@@ -96,6 +96,10 @@ module Gush
     end
 
     private
+
+    def current_timestamp
+      Time.now.to_i
+    end
 
     def assign_variables(options)
       @name        = options[:name]
