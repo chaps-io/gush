@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "yajl-ruby", "~> 1.2.1"
   spec.add_dependency "redis", "~> 3.2.1"
   spec.add_dependency "hiredis", "~> 0.6.0"
-  spec.add_dependency "ruby-graphviz", "~> 1.2.1"
+  spec.add_dependency "ruby-graphviz", "~> 1.2.2"
   spec.add_dependency "terminal-table", "~> 1.4.5"
   spec.add_dependency "colorize", "~> 0.7.7"
   spec.add_dependency "thor", "~> 0.19.1"
