@@ -150,14 +150,14 @@ describe Gush::Workflow do
 
     context "when some jobs are enqueued" do
       it "returns true" do
-        subject.find_job('Prepare').enqueued = true
+        subject.find_job('Prepare').enqueue!
         expect(subject.running?).to be_truthy
       end
     end
 
     context "when some jobs are running" do
       it "returns true" do
-        subject.find_job('Prepare').running = true
+        subject.find_job('Prepare').start!
         expect(subject.running?).to be_truthy
       end
     end

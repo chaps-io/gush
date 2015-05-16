@@ -5,12 +5,11 @@ module Gush
     DEFAULTS = {
       finished: false,
       enqueued: false,
-      failed: false,
-      running: false
+      failed: false
     }
 
     attr_accessor :finished, :enqueued, :failed, :workflow_id, :incoming, :outgoing,
-      :finished_at, :failed_at, :started_at, :running
+      :finished_at, :failed_at, :started_at
 
     attr_reader :name
 
@@ -24,15 +23,15 @@ module Gush
       {
         name: @name,
         klass: self.class.to_s,
-        finished: @finished,
-        enqueued: @enqueued,
-        failed: @failed,
+        finished: finished?,
+        enqueued: enqueued?,
+        failed: failed?,
         incoming: @incoming,
         outgoing: @outgoing,
         finished_at: @finished_at,
         started_at: @started_at,
         failed_at: @failed_at,
-        running: @running
+        running: running?
       }
     end
 
@@ -49,13 +48,11 @@ module Gush
 
     def start!
       @enqueued = false
-      @running = true
       @started_at = Time.now.to_i
     end
 
     def enqueue!
       @enqueued = true
-      @running = false
       @failed = false
       @started_at = nil
       @finished_at = nil
@@ -63,7 +60,6 @@ module Gush
     end
 
     def finish!
-      @running = false
       @finished = true
       @enqueued = false
       @failed = false
@@ -72,7 +68,6 @@ module Gush
 
     def fail!
       @finished = true
-      @running = false
       @failed = true
       @enqueued = false
       @finished_at = Time.now.to_i
@@ -96,7 +91,7 @@ module Gush
     end
 
     def running?
-      !!running
+      !!started_at && !finished?
     end
 
     def ready_to_start?
@@ -119,7 +114,6 @@ module Gush
       @failed_at   = options[:failed_at]
       @finished_at = options[:finished_at]
       @started_at  = options[:started_at]
-      @running     = options[:running]
     end
   end
 end

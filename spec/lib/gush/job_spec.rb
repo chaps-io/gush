@@ -7,10 +7,10 @@ describe Gush::Job do
       job = described_class.new(name: "a-job")
       job.fail!
       expect(job.failed_at).to eq(Time.now.to_i)
-      expect(job.failed).to eq(true)
-      expect(job.finished).to eq(true)
-      expect(job.running).to eq(false)
-      expect(job.enqueued).to eq(false)
+      expect(job.failed?).to eq(true)
+      expect(job.finished?).to eq(true)
+      expect(job.running?).to eq(false)
+      expect(job.enqueued?).to eq(false)
     end
   end
 
@@ -19,10 +19,10 @@ describe Gush::Job do
       job = described_class.new(name: "a-job")
       job.finish!
       expect(job.finished_at).to eq(Time.now.to_i)
-      expect(job.failed).to eq(false)
-      expect(job.running).to eq(false)
-      expect(job.finished).to eq(true)
-      expect(job.enqueued).to eq(false)
+      expect(job.failed?).to eq(false)
+      expect(job.running?).to eq(false)
+      expect(job.finished?).to eq(true)
+      expect(job.enqueued?).to eq(false)
     end
   end
 
@@ -35,10 +35,10 @@ describe Gush::Job do
       expect(job.started_at).to eq(nil)
       expect(job.finished_at).to eq(nil)
       expect(job.failed_at).to eq(nil)
-      expect(job.failed).to eq(false)
-      expect(job.finished).to eq(false)
-      expect(job.enqueued).to eq(true)
-      expect(job.running).to eq(false)
+      expect(job.failed?).to eq(false)
+      expect(job.finished?).to eq(false)
+      expect(job.enqueued?).to eq(true)
+      expect(job.running?).to eq(false)
     end
   end
 
@@ -48,8 +48,8 @@ describe Gush::Job do
       job.enqueue!
       job.start!
       expect(job.started_at).to eq(Time.now.to_i)
-      expect(job.enqueued).to eq(false)
-      expect(job.running).to eq(true)
+      expect(job.enqueued?).to eq(false)
+      expect(job.running?).to eq(true)
     end
   end
 
@@ -95,9 +95,9 @@ describe Gush::Job do
 
       expect(job.name).to eq('gob')
       expect(job.class).to eq(Gush::Job)
-      expect(job.finished).to eq(true)
-      expect(job.failed).to eq(true)
-      expect(job.enqueued).to eq(true)
+      expect(job.finished?).to eq(true)
+      expect(job.failed?).to eq(true)
+      expect(job.enqueued?).to eq(true)
       expect(job.incoming).to eq(['a', 'b'])
       expect(job.outgoing).to eq(['c'])
       expect(job.failed_at).to eq(123)
