@@ -100,23 +100,14 @@ module Gush
     end
 
     def ready_to_start?
-      [running?, enqueued?, finished?, failed?].none?
+      !running? && !enqueued? && !finished? && !failed?
     end
 
     def has_no_dependencies?
       incoming.empty?
     end
 
-    def dependencies(level = 0)
-      fail DependencyLevelTooDeep if level > RECURSION_LIMIT
-      incoming_jobs + incoming_jobs.flat_map { |job| job.dependencies(level + 1) }
-    end
-
     private
-
-    def incoming_jobs
-      @incoming_jobs ||= incoming.map {|name| @workflow.find_job(name) }
-    end
 
     def assign_variables(options)
       @name        = options[:name]
@@ -129,10 +120,6 @@ module Gush
       @finished_at = options[:finished_at]
       @started_at  = options[:started_at]
       @running     = options[:running]
-    end
-
-    def dependencies_satisfied?
-      dependencies.all? { |dep| !dep.enqueued? && dep.finished? && !dep.failed? }
     end
   end
 end
