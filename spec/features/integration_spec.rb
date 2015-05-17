@@ -32,19 +32,20 @@ describe "Workflows" do
   it "passes payloads down the workflow" do
     class UpcaseJob < Gush::Job
       def work
-        params[:input].upcase
+        output params[:input].upcase
       end
     end
 
     class PrefixJob < Gush::Job
       def work
-        params[:prefix].capitalize
+        output params[:prefix].capitalize
       end
     end
 
     class PrependJob < Gush::Job
       def work
-        "#{payloads["PrefixJob"]}: #{payloads["UpcaseJob"]}"
+        string = "#{payloads["PrefixJob"]}: #{payloads["UpcaseJob"]}"
+        output string
       end
     end
 
@@ -60,12 +61,12 @@ describe "Workflows" do
     flow.start!
 
     Gush::Worker.perform_one
-    expect(flow.reload.find_job("UpcaseJob").output).to eq("SOME TEXT")
+    expect(flow.reload.find_job("UpcaseJob").output_payload).to eq("SOME TEXT")
 
     Gush::Worker.perform_one
-    expect(flow.reload.find_job("PrefixJob").output).to eq("A prefix")
+    expect(flow.reload.find_job("PrefixJob").output_payload).to eq("A prefix")
 
     Gush::Worker.perform_one
-    expect(flow.reload.find_job("PrependJob").output).to eq("A prefix: SOME TEXT")
+    expect(flow.reload.find_job("PrependJob").output_payload).to eq("A prefix: SOME TEXT")
   end
 end

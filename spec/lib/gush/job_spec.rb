@@ -2,6 +2,13 @@ require 'spec_helper'
 
 describe Gush::Job do
 
+  describe "#output" do
+    it "saves output to output_payload" do
+      job = described_class.new(name: "a-job")
+      job.output "something"
+      expect(job.output_payload).to eq("something")
+    end
+  end
   describe "#fail!" do
     it "sets finished and failed to true and records time" do
       job = described_class.new(name: "a-job")
@@ -70,7 +77,7 @@ describe Gush::Job do
           enqueued_at: 120,
           running: false,
           params: {},
-          output: nil
+          output_payload: nil
         }
         expect(job.as_json).to eq(expected)
       end

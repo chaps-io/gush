@@ -95,7 +95,7 @@ describe Gush::Workflow do
             "failed_at"=>nil,
             "running" => false,
             "params" => {},
-            "output" => nil
+            "output_payload" => nil
           },
           {
             "name"=>"PersistFirstJob",
@@ -111,7 +111,7 @@ describe Gush::Workflow do
             "failed_at"=>nil,
             "running" => false,
             "params" => {},
-            "output" => nil
+            "output_payload" => nil
           }
         ]
       }

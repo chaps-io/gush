@@ -21,7 +21,7 @@ module Gush
 
       mark_as_started
       begin
-        @job.output = @job.work
+        @job.work
       rescue Exception => e
         failed = true
         error = e
@@ -45,7 +45,7 @@ module Gush
     def incoming_payloads
       payloads = {}
       @job.incoming.each do |job_name|
-        payloads[job_name] = client.load_job(@workflow.id, job_name).output
+        payloads[job_name] = client.load_job(@workflow.id, job_name).output_payload
       end
 
       payloads

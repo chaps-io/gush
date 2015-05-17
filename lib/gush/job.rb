@@ -1,8 +1,8 @@
 module Gush
   class Job
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
-      :finished_at, :failed_at, :started_at, :enqueued_at, :output, :payloads
-    attr_reader :name, :payloads
+      :finished_at, :failed_at, :started_at, :enqueued_at, :payloads
+    attr_reader :name, :output_payload
 
     def initialize(workflow, opts = {})
       @workflow = workflow
@@ -25,7 +25,7 @@ module Gush
         failed_at: failed_at,
         running: running?,
         params: params,
-        output: output
+        output_payload: @output_payload
       }
     end
 
@@ -35,6 +35,10 @@ module Gush
 
     def self.from_hash(flow, hash)
       hash[:klass].constantize.new(flow, hash)
+    end
+
+    def output data
+      @output_payload = data
     end
 
     def work
@@ -98,16 +102,16 @@ module Gush
       Time.now.to_i
     end
 
-    def assign_variables(options)
-      @name        = options[:name]
-      @incoming    = options[:incoming] || []
-      @outgoing    = options[:outgoing] || []
-      @failed_at   = options[:failed_at]
-      @finished_at = options[:finished_at]
-      @started_at  = options[:started_at]
-      @enqueued_at = options[:enqueued_at]
-      @params      = options[:params] || {}
-      @output      = options[:output]
+    def assign_variables(opts)
+      @name           = opts[:name]
+      @incoming       = opts[:incoming] || []
+      @outgoing       = opts[:outgoing] || []
+      @failed_at      = opts[:failed_at]
+      @finished_at    = opts[:finished_at]
+      @started_at     = opts[:started_at]
+      @enqueued_at    = opts[:enqueued_at]
+      @params         = opts[:params] || {}
+      @output_payload = opts[:output_payload]
     end
   end
 end
