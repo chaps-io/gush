@@ -94,7 +94,8 @@ describe Gush::Workflow do
             "enqueued_at"=>nil,
             "failed_at"=>nil,
             "running" => false,
-            "params" => {}
+            "params" => {},
+            "output" => nil
           },
           {
             "name"=>"PersistFirstJob",
@@ -109,7 +110,8 @@ describe Gush::Workflow do
             "enqueued_at"=>nil,
             "failed_at"=>nil,
             "running" => false,
-            "params" => {}
+            "params" => {},
+            "output" => nil
           }
         ]
       }

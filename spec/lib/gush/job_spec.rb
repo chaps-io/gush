@@ -69,7 +69,8 @@ describe Gush::Job do
           finished_at: 123,
           enqueued_at: 120,
           running: false,
-          params: {}
+          params: {},
+          output: nil
         }
         expect(job.as_json).to eq(expected)
       end

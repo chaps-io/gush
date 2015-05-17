@@ -9,31 +9,32 @@ module Gush
     def perform(workflow_id, job_id, configuration_json)
       configure_client(configuration_json)
 
-      workflow = client.find_workflow(workflow_id)
-      job = workflow.find_job(job_id)
+      @workflow = client.find_workflow(workflow_id)
+      @job = @workflow.find_job(job_id)
+      @job.payloads = incoming_payloads
 
       start = Time.now
-      report(workflow, job, :started, start)
+      report(:started, start)
 
       failed = false
       error = nil
 
-      mark_as_started(workflow, job)
+      mark_as_started
       begin
-        job.work
+        @job.output = @job.work
       rescue Exception => e
         failed = true
         error = e
       end
 
       unless failed
-        report(workflow, job, :finished, start)
-        mark_as_finished(workflow, job)
+        report(:finished, start)
+        mark_as_finished
 
-        enqueue_outgoing_jobs(workflow.id, job)
+        enqueue_outgoing_jobs
       else
-        mark_as_failed(workflow, job)
-        report(workflow, job, :failed, start, error.message)
+        mark_as_failed
+        report(:failed, start, error.message)
       end
     end
 
@@ -41,32 +42,50 @@ module Gush
 
     attr_reader :client
 
+    def incoming_payloads
+      payloads = {}
+      @job.incoming.each do |job_name|
+        payloads[job_name] = client.load_job(@workflow.id, job_name).output
+      end
+
+      payloads
+    end
+
     def configure_client(config_json)
       @client = Client.new(Configuration.from_json(config_json))
     end
 
-    def mark_as_finished(workflow, job)
-      job.finish!
-      client.persist_job(workflow.id, job)
+    def mark_as_finished
+      @job.finish!
+      client.persist_job(@workflow.id, @job)
     end
 
-    def mark_as_failed(workflow, job)
-      job.fail!
-      client.persist_job(workflow.id, job)
+    def mark_as_failed
+      @job.fail!
+      client.persist_job(@workflow.id, @job)
     end
 
-    def mark_as_started(workflow, job)
-      job.start!
-      client.persist_job(workflow.id, job)
+    def mark_as_started
+      @job.start!
+      client.persist_job(@workflow.id, @job)
     end
 
-    def report_workflow_status(workflow, job)
-      message = {workflow_id: workflow.id, status: workflow.status, started_at: workflow.started_at, finished_at: workflow.finished_at }
-      client.workflow_report(message)
+    def report_workflow_status
+      client.workflow_report({
+        workflow_id:  @workflow.id,
+        status:       @workflow.status,
+        started_at:   @workflow.started_at,
+        finished_at:  @workflow.finished_at
+      })
     end
 
-    def report(workflow, job, status, start, error = nil)
-      message = {status: status, workflow_id: workflow.id, job: job.name, duration: elapsed(start)}
+    def report(status, start, error = nil)
+      message = {
+        status: status,
+        workflow_id: @workflow.id,
+        job: @job.name,
+        duration: elapsed(start)
+      }
       message[:error] = error if error
       client.worker_report(message)
     end
@@ -75,11 +94,11 @@ module Gush
       (Time.now - start).to_f.round(3)
     end
 
-    def enqueue_outgoing_jobs(workflow_id, job)
-      job.outgoing.each do |job_name|
-        out = client.load_job(workflow_id, job_name)
+    def enqueue_outgoing_jobs
+      @job.outgoing.each do |job_name|
+        out = client.load_job(@workflow.id, job_name)
         if out.ready_to_start?
-          client.enqueue_job(workflow_id, out)
+          client.enqueue_job(@workflow.id, out)
         end
       end
     end
