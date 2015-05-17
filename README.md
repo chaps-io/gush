@@ -28,7 +28,7 @@ Here is a complete example of a workflow you can create:
 class SampleWorkflow < Gush::Workflow
   def configure
     run FetchJob1
-    run FetchJob2
+    run FetchJob2, params: {some_flag: true, url: 'http://url.com'}
 
     run PersistJob1, after: FetchJob1
     run PersistJob2, after: FetchJob2
@@ -52,6 +52,21 @@ For the Workflow above, the graph will look like this:
 
 ![SampleWorkflow](http://i.imgur.com/SmeRRVT.png)
 
+#### Passing parameters to jobs
+
+You can pass any primitive arguments into jobs while defining your workflow:
+
+```ruby
+# workflows/sample_workflow.rb
+class SampleWorkflow < Gush::Workflow
+  def configure
+    run FetchJob1, params: {url: "http://some.com/url"}
+  end
+end
+```
+
+See below to learn how to access those inside your job.
+
 ### Defining jobs
 
 Jobs are classes inheriting from `Gush::Job`:
@@ -61,9 +76,13 @@ Jobs are classes inheriting from `Gush::Job`:
 class FetchJob1 < Gush::Job
   def work
     # do some fetching from remote APIs
+
+    params #=> {url: "http://some.com/url"}
   end
 end
 ```
+
+`params` method is a hash containing your (optional) parameters passed to `run` method in the workflow.
 
 ### Running workflows
 
