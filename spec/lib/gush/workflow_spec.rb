@@ -93,7 +93,8 @@ describe Gush::Workflow do
             "started_at"=>nil,
             "enqueued_at"=>nil,
             "failed_at"=>nil,
-            "running" => false
+            "running" => false,
+            "params" => {}
           },
           {
             "name"=>"PersistFirstJob",
@@ -107,7 +108,8 @@ describe Gush::Workflow do
             "started_at"=>nil,
             "enqueued_at"=>nil,
             "failed_at"=>nil,
-            "running" => false
+            "running" => false,
+            "params" => {}
           }
         ]
       }
@@ -122,6 +124,12 @@ describe Gush::Workflow do
   end
 
   describe "#run" do
+    it "allows passing additional params to the job" do
+      flow = Gush::Workflow.new("workflow")
+      flow.run(Gush::Job, params: { something: 1 })
+      expect(flow.jobs.first.params).to eq ({ something: 1 })
+    end
+
     context "when graph is empty" do
       it "adds new job with the given class as a node" do
         flow = Gush::Workflow.new("workflow")
@@ -130,17 +138,54 @@ describe Gush::Workflow do
       end
     end
 
-    context "when last node is a job" do
-      it "attaches job as a child of the last inserted job" do
-        tree = Gush::Workflow.new("workflow")
-        klass1 = Class.new(Gush::Job)
-        klass2 = Class.new(Gush::Job)
-        tree.run(klass1)
-        tree.run(klass2, after: klass1)
-        tree.create_dependencies
-        expect(tree.jobs.first).to be_an_instance_of(klass1)
-        expect(tree.jobs.first.outgoing.first).to eq(klass2.to_s)
-      end
+    it "allows `after` to accept an array of jobs" do
+      tree = Gush::Workflow.new("workflow")
+      klass1 = Class.new(Gush::Job)
+      klass2 = Class.new(Gush::Job)
+      klass3 = Class.new(Gush::Job)
+      tree.run(klass1)
+      tree.run(klass2, after: [klass1, klass3])
+      tree.run(klass3)
+
+      tree.create_dependencies
+
+      expect(tree.jobs.first.outgoing).to match_array([klass2.to_s])
+    end
+
+    it "allows `before` to accept an array of jobs" do
+      tree = Gush::Workflow.new("workflow")
+      klass1 = Class.new(Gush::Job)
+      klass2 = Class.new(Gush::Job)
+      klass3 = Class.new(Gush::Job)
+      tree.run(klass1)
+      tree.run(klass2, before: [klass1, klass3])
+      tree.run(klass3)
+
+      tree.create_dependencies
+
+      expect(tree.jobs.first.incoming).to match_array([klass2.to_s])
+    end
+
+    it "attaches job as a child of the job in `after` key" do
+      tree = Gush::Workflow.new("workflow")
+      klass1 = Class.new(Gush::Job)
+      klass2 = Class.new(Gush::Job)
+      tree.run(klass1)
+      tree.run(klass2, after: klass1)
+      tree.create_dependencies
+      job = tree.jobs.first
+      expect(job.outgoing).to match_array([klass2.to_s])
+    end
+
+    it "attaches job as a parent of the job in `before` key" do
+      tree = Gush::Workflow.new("workflow")
+      klass1 = Class.new(Gush::Job)
+      klass2 = Class.new(Gush::Job)
+      tree.run(klass1)
+      tree.run(klass2, before: klass1)
+      tree.create_dependencies
+      job = tree.jobs.first
+      expect(job.incoming).to match_array([klass2.to_s])
     end
   end
 

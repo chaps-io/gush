@@ -1,7 +1,6 @@
 module Gush
   class Job
-
-    attr_accessor :workflow_id, :incoming, :outgoing,
+    attr_accessor :workflow_id, :incoming, :outgoing, :params,
       :finished_at, :failed_at, :started_at, :enqueued_at
 
     attr_reader :name
@@ -25,7 +24,8 @@ module Gush
         enqueued_at: enqueued_at,
         started_at: started_at,
         failed_at: failed_at,
-        running: running?
+        running: running?,
+        params: params
       }
     end
 
@@ -88,6 +88,10 @@ module Gush
       incoming.empty?
     end
 
+    def params
+      @params
+    end
+
     private
 
     def current_timestamp
@@ -102,6 +106,7 @@ module Gush
       @finished_at = options[:finished_at]
       @started_at  = options[:started_at]
       @enqueued_at = options[:enqueued_at]
+      @params      = options[:params] || {}
     end
   end
 end

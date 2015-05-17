@@ -88,16 +88,22 @@ module Gush
       stopped
     end
 
-    def run(klass, deps = {})
-      node = klass.new(self, name: klass.to_s)
+    def run(klass, opts = {})
+      options =
+
+      node = klass.new(self, {
+        name: klass.to_s,
+        params: opts.fetch(:params, {})
+      })
+
       @jobs << node
 
-      deps_after = [*deps[:after]]
+      deps_after = [*opts[:after]]
       deps_after.each do |dep|
         @dependencies << {from: dep.to_s, to: klass.to_s }
       end
 
-      deps_before = [*deps[:before]]
+      deps_before = [*opts[:before]]
       deps_before.each do |dep|
         @dependencies << {from: klass.to_s, to: dep.to_s }
       end
