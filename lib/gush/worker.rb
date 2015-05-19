@@ -8,10 +8,9 @@ module Gush
 
     def perform(workflow_id, job_id, configuration_json)
       configure_client(configuration_json)
+      setup_job(workflow_id, job_id)
 
-      @workflow = client.find_workflow(workflow_id)
-      @job = @workflow.find_job(job_id)
-      @job.payloads = incoming_payloads
+      job.payloads = incoming_payloads
 
       start = Time.now
       report(:started, start)
@@ -21,7 +20,7 @@ module Gush
 
       mark_as_started
       begin
-        @job.work
+        job.work
       rescue Exception => e
         failed = true
         error = e
@@ -39,51 +38,55 @@ module Gush
     end
 
     private
+    attr_reader :client, :workflow, :job
 
-    attr_reader :client
+    def setup_job(workflow_id, job_id)
+      @workflow ||= client.find_workflow(workflow_id)
+      @job ||= workflow.find_job(job_id)
+    end
+
+    def configure_client(config_json)
+      @client ||= Client.new(Configuration.from_json(config_json))
+    end
 
     def incoming_payloads
       payloads = {}
-      @job.incoming.each do |job_name|
-        payloads[job_name] = client.load_job(@workflow.id, job_name).output_payload
+      job.incoming.each do |job_name|
+        payloads[job_name] = client.load_job(workflow.id, job_name).output_payload
       end
 
       payloads
     end
 
-    def configure_client(config_json)
-      @client = Client.new(Configuration.from_json(config_json))
-    end
-
     def mark_as_finished
-      @job.finish!
-      client.persist_job(@workflow.id, @job)
+      job.finish!
+      client.persist_job(workflow.id, job)
     end
 
     def mark_as_failed
-      @job.fail!
-      client.persist_job(@workflow.id, @job)
+      job.fail!
+      client.persist_job(workflow.id, job)
     end
 
     def mark_as_started
-      @job.start!
-      client.persist_job(@workflow.id, @job)
+      job.start!
+      client.persist_job(workflow.id, job)
     end
 
     def report_workflow_status
       client.workflow_report({
-        workflow_id:  @workflow.id,
-        status:       @workflow.status,
-        started_at:   @workflow.started_at,
-        finished_at:  @workflow.finished_at
+        workflow_id:  workflow.id,
+        status:       workflow.status,
+        started_at:   workflow.started_at,
+        finished_at:  workflow.finished_at
       })
     end
 
     def report(status, start, error = nil)
       message = {
         status: status,
-        workflow_id: @workflow.id,
-        job: @job.name,
+        workflow_id: workflow.id,
+        job: job.name,
         duration: elapsed(start)
       }
       message[:error] = error if error
@@ -95,10 +98,10 @@ module Gush
     end
 
     def enqueue_outgoing_jobs
-      @job.outgoing.each do |job_name|
-        out = client.load_job(@workflow.id, job_name)
+      job.outgoing.each do |job_name|
+        out = client.load_job(workflow.id, job_name)
         if out.ready_to_start?
-          client.enqueue_job(@workflow.id, out)
+          client.enqueue_job(workflow.id, out)
         end
       end
     end
