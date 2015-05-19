@@ -70,6 +70,7 @@ describe Gush::Workflow do
 
       result = JSON.parse(klass.new("workflow").to_json)
       expected = {
+        "id" => an_instance_of(String),
         "name" => klass.to_s,
         "klass" => klass.to_s,
         "status" => "pending",
@@ -113,7 +114,7 @@ describe Gush::Workflow do
           }
         ]
       }
-      expect(result).to include(expected)
+      expect(result).to match(expected)
     end
   end
 
