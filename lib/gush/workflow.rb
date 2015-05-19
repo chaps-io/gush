@@ -28,10 +28,6 @@ module Gush
     end
 
     def save
-      if @id.nil?
-        assign_id
-      end
-
       client.persist_workflow(self)
     end
 
@@ -69,7 +65,7 @@ module Gush
     end
 
     def find_job(name)
-      @jobs.find { |node| node.name == name.to_s || node.class.to_s == name.to_s }
+      jobs.find { |node| node.name == name.to_s || node.class.to_s == name.to_s }
     end
 
     def finished?
@@ -96,7 +92,7 @@ module Gush
         params: opts.fetch(:params, {})
       })
 
-      @jobs << node
+      jobs << node
 
       deps_after = [*opts[:after]]
       deps_after.each do |dep|
@@ -110,7 +106,7 @@ module Gush
     end
 
     def reload
-      self.class.find(@id)
+      self.class.find(id)
     end
 
     def initial_jobs
@@ -144,11 +140,11 @@ module Gush
       name = self.class.to_s
       {
         name: name,
-        id: @id,
-        total: @jobs.count,
-        finished: @jobs.count(&:finished?),
+        id: id,
+        total: jobs.count,
+        finished: jobs.count(&:finished?),
         klass: name,
-        jobs: @jobs.map(&:as_json),
+        jobs: jobs.map(&:as_json),
         status: status,
         stopped: stopped,
         started_at: started_at,
@@ -164,11 +160,11 @@ module Gush
       ObjectSpace.each_object(Class).select { |klass| klass < self }
     end
 
-    private
-
-    def assign_id
-      @id = client.next_free_id
+    def id
+      @id ||= client.next_free_id
     end
+
+    private
 
     def client
       @client ||= Client.new

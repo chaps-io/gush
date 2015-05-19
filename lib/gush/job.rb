@@ -2,7 +2,7 @@ module Gush
   class Job
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
       :finished_at, :failed_at, :started_at, :enqueued_at, :payloads
-    attr_reader :name, :output_payload
+    attr_reader :name, :output_payload, :params
 
     def initialize(workflow, opts = {})
       @workflow = workflow
@@ -12,20 +12,20 @@ module Gush
 
     def as_json
       {
-        name: @name,
+        name: name,
         klass: self.class.to_s,
         finished: finished?,
         enqueued: enqueued?,
         failed: failed?,
-        incoming: @incoming,
-        outgoing: @outgoing,
+        incoming: incoming,
+        outgoing: outgoing,
         finished_at: finished_at,
         enqueued_at: enqueued_at,
         started_at: started_at,
         failed_at: failed_at,
         running: running?,
         params: params,
-        output_payload: @output_payload
+        output_payload: output_payload
       }
     end
 
@@ -37,7 +37,7 @@ module Gush
       hash[:klass].constantize.new(flow, hash)
     end
 
-    def output data
+    def output(data)
       @output_payload = data
     end
 
@@ -60,8 +60,7 @@ module Gush
     end
 
     def fail!
-      @finished_at = current_timestamp
-      @failed_at = current_timestamp
+      @finished_at = @failed_at = current_timestamp
     end
 
     def enqueued?
@@ -92,12 +91,7 @@ module Gush
       incoming.empty?
     end
 
-    def params
-      @params
-    end
-
     private
-
     def current_timestamp
       Time.now.to_i
     end

@@ -29,7 +29,6 @@ describe Gush::Workflow do
 
       it "assigns new unique id" do
         flow = TestWorkflow.new
-        expect(flow.id).to eq(nil)
         flow.save
         expect(flow.id).to_not be_nil
       end
@@ -71,7 +70,7 @@ describe Gush::Workflow do
 
       result = JSON.parse(klass.new("workflow").to_json)
       expected = {
-        "id"=>nil,
+        "id" => an_instance_of(String),
         "name" => klass.to_s,
         "klass" => klass.to_s,
         "status" => "pending",
@@ -115,7 +114,7 @@ describe Gush::Workflow do
           }
         ]
       }
-      expect(result).to eq(expected)
+      expect(result).to match(expected)
     end
   end
 
