@@ -2,6 +2,9 @@
 
 Gush is a parallel workflow runner using only Redis as its message broker and Sidekiq for workers.
 
+## Theory
+
+Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing Operations With Dependencies](https://msdn.microsoft.com/en-us/magazine/dd569760.aspx) by Stephen Toub.
 ## Installation
 
 Add this line to your application's Gemfile:
