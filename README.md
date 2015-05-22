@@ -162,6 +162,10 @@ Dir[Rails.root.join("app/workflows/**/*.rb")].each do |file|
   require file
 end
 ```
+## Contributors
+
+- [Mateusz Lenik](https://github.com/mlen)
+- [Michał Krzyżanowski](https://github.com/krzyzak)
 
 ## Contributing
 
