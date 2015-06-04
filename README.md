@@ -92,7 +92,7 @@ end
 Workflows can accept any primitive arguments in their constructor, which then will be availabe in your
 `configure` method.
 
-Here's an example for a workflow responsible for publishing a book:
+Here's an example of a workflow responsible for publishing a book:
 
 ```ruby
 # workflows/sample_workflow.rb
