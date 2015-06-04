@@ -104,7 +104,7 @@ class PublishBookWorkflow < Gush::Workflow
 end
 ```
 
-and then run your workflow with those arguments:
+and then create your workflow with those arguments:
 
 ```ruby
 PublishBookWorkflow.new("http://ur.com/book.pdf", "978-0470081204")
