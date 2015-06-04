@@ -107,7 +107,7 @@ end
 and then create your workflow with those arguments:
 
 ```ruby
-PublishBookWorkflow.new("http://ur.com/book.pdf", "978-0470081204")
+PublishBookWorkflow.new("http://url.com/book.pdf", "978-0470081204")
 ```
 
 
@@ -145,7 +145,6 @@ flow.start!
 Now Gush will start processing jobs in background using Sidekiq
 in the order defined in `configure` method inside Workflow.
 
-
 ### Pipelining
 
 Gush offers a useful feature which lets you pass results of a job to its dependencies, so they can act accordingly.
@@ -166,7 +165,7 @@ class DownloadVideo < Gush::Job
 end
 ```
 
-`output` method is Gush's way of saying: "I want to pass this down to descendants of me".
+`output` method is Gush's way of saying: "I want to pass this down to my descendants".
 
 Now, since `DownloadVideo` finished and its dependant job `EncodeVideo` started, we can access that payload down the (pipe)line:
 
@@ -176,8 +175,10 @@ class EncodeVideo < Gush::Job
     video_path = payloads["DownloadVideo"]
   end
 end
+```
 
 `payloads` is a hash containing outputs from all parent jobs, where job class names are the keys.
+
 **Note:** `payloads` will only contain outputs of the job's ancestors. So if job `A` depends on `B` and `C`,
 the `paylods` hash will look like this:
 
