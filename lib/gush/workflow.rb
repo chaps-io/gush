@@ -4,17 +4,12 @@ module Gush
   class Workflow
     attr_accessor :id, :jobs, :stopped, :persisted
 
-    def initialize(should_run_configure = true)
+    def initialize(*args)
       @id = id
       @jobs = []
       @dependencies = []
       @persisted = false
       @stopped = false
-
-      if should_run_configure
-        configure
-        create_dependencies
-      end
     end
 
     def self.find(id)
@@ -28,6 +23,8 @@ module Gush
     end
 
     def save
+      configure
+      resolve_dependencies
       client.persist_workflow(self)
     end
 
@@ -54,7 +51,7 @@ module Gush
       @stopped = false
     end
 
-    def create_dependencies
+    def resolve_dependencies
       @dependencies.each do |dependency|
         from = find_job(dependency[:from])
         to   = find_job(dependency[:to])

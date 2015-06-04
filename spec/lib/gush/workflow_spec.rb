@@ -1,22 +1,9 @@
 require 'spec_helper'
 
 describe Gush::Workflow do
-  subject { TestWorkflow.new("test-workflow") }
+  subject { TestWorkflow.create }
 
   describe "#initialize" do
-    context "when configure option is true" do
-      it "runs #configure method " do
-        expect_any_instance_of(TestWorkflow).to receive(:configure)
-        TestWorkflow.new(true)
-      end
-    end
-
-    context "when configure option is false" do
-      it "it doesn't run #configure method " do
-        expect_any_instance_of(TestWorkflow).to_not receive(:configure)
-        TestWorkflow.new(false)
-      end
-    end
   end
 
   describe "#save" do
@@ -60,7 +47,6 @@ describe Gush::Workflow do
 
   describe "#to_json" do
     it "returns correct hash" do
-
       klass = Class.new(Gush::Workflow) do
         def configure
           run FetchFirstJob
@@ -68,7 +54,7 @@ describe Gush::Workflow do
         end
       end
 
-      result = JSON.parse(klass.new("workflow").to_json)
+      result = JSON.parse(klass.create.to_json)
       expected = {
         "id" => an_instance_of(String),
         "name" => klass.to_s,
@@ -83,32 +69,24 @@ describe Gush::Workflow do
           {
             "name"=>"FetchFirstJob",
             "klass"=>"FetchFirstJob",
-            "finished"=>false,
-            "enqueued"=>false,
-            "failed"=>false,
             "incoming"=>[],
             "outgoing"=>["PersistFirstJob"],
             "finished_at"=>nil,
             "started_at"=>nil,
             "enqueued_at"=>nil,
             "failed_at"=>nil,
-            "running" => false,
             "params" => {},
             "output_payload" => nil
           },
           {
             "name"=>"PersistFirstJob",
             "klass"=>"PersistFirstJob",
-            "finished"=>false,
-            "enqueued"=>false,
-            "failed"=>false,
             "incoming"=>["FetchFirstJob"],
             "outgoing"=>[],
             "finished_at"=>nil,
             "started_at"=>nil,
             "enqueued_at"=>nil,
             "failed_at"=>nil,
-            "running" => false,
             "params" => {},
             "output_payload" => nil
           }
@@ -120,27 +98,29 @@ describe Gush::Workflow do
 
   describe "#find_job" do
     it "finds job by its name" do
-      expect(TestWorkflow.new("test").find_job("PersistFirstJob")).to be_instance_of(PersistFirstJob)
+      expect(TestWorkflow.create.find_job("PersistFirstJob")).to be_instance_of(PersistFirstJob)
     end
   end
 
   describe "#run" do
     it "allows passing additional params to the job" do
-      flow = Gush::Workflow.new("workflow")
+      flow = Gush::Workflow.new
       flow.run(Gush::Job, params: { something: 1 })
+      flow.save
       expect(flow.jobs.first.params).to eq ({ something: 1 })
     end
 
     context "when graph is empty" do
       it "adds new job with the given class as a node" do
-        flow = Gush::Workflow.new("workflow")
+        flow = Gush::Workflow.new
         flow.run(Gush::Job)
+        flow.save
         expect(flow.jobs.first).to be_instance_of(Gush::Job)
       end
     end
 
     it "allows `after` to accept an array of jobs" do
-      tree = Gush::Workflow.new("workflow")
+      tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
       klass3 = Class.new(Gush::Job)
@@ -148,13 +128,13 @@ describe Gush::Workflow do
       tree.run(klass2, after: [klass1, klass3])
       tree.run(klass3)
 
-      tree.create_dependencies
+      tree.resolve_dependencies
 
       expect(tree.jobs.first.outgoing).to match_array([klass2.to_s])
     end
 
     it "allows `before` to accept an array of jobs" do
-      tree = Gush::Workflow.new("workflow")
+      tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
       klass3 = Class.new(Gush::Job)
@@ -162,29 +142,29 @@ describe Gush::Workflow do
       tree.run(klass2, before: [klass1, klass3])
       tree.run(klass3)
 
-      tree.create_dependencies
+      tree.resolve_dependencies
 
       expect(tree.jobs.first.incoming).to match_array([klass2.to_s])
     end
 
     it "attaches job as a child of the job in `after` key" do
-      tree = Gush::Workflow.new("workflow")
+      tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
       tree.run(klass1)
       tree.run(klass2, after: klass1)
-      tree.create_dependencies
+      tree.resolve_dependencies
       job = tree.jobs.first
       expect(job.outgoing).to match_array([klass2.to_s])
     end
 
     it "attaches job as a parent of the job in `before` key" do
-      tree = Gush::Workflow.new("workflow")
+      tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
       tree.run(klass1)
       tree.run(klass2, before: klass1)
-      tree.create_dependencies
+      tree.resolve_dependencies
       job = tree.jobs.first
       expect(job.incoming).to match_array([klass2.to_s])
     end

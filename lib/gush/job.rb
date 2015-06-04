@@ -14,16 +14,12 @@ module Gush
       {
         name: name,
         klass: self.class.to_s,
-        finished: finished?,
-        enqueued: enqueued?,
-        failed: failed?,
         incoming: incoming,
         outgoing: outgoing,
         finished_at: finished_at,
         enqueued_at: enqueued_at,
         started_at: started_at,
         failed_at: failed_at,
-        running: running?,
         params: params,
         output_payload: output_payload
       }

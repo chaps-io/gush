@@ -66,16 +66,12 @@ describe Gush::Job do
         expected = {
           name: "a-job",
           klass: "Gush::Job",
-          finished: true,
-          enqueued: true,
-          failed: false,
           incoming: [],
           outgoing: [],
           failed_at: nil,
           started_at: nil,
           finished_at: 123,
           enqueued_at: 120,
-          running: false,
           params: {},
           output_payload: nil
         }
@@ -91,9 +87,6 @@ describe Gush::Job do
         {
           klass: 'Gush::Job',
           name: 'gob',
-          finished: true,
-          failed: true,
-          enqueued: true,
           incoming: ['a', 'b'],
           outgoing: ['c'],
           failed_at: 123,

@@ -126,7 +126,7 @@ module Gush
     attr_reader :sidekiq, :redis
 
     def workflow_from_hash(hash, nodes = nil)
-      flow = hash[:klass].constantize.new(false)
+      flow = hash[:klass].constantize.new
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
 
