@@ -76,7 +76,6 @@ See below to learn how to access those params inside your job.
 Jobs are classes inheriting from `Gush::Job`:
 
 ```ruby
-#workflows/sample/fetch_job1.rb
 class FetchJob1 < Gush::Job
   def work
     # do some fetching from remote APIs
@@ -146,6 +145,50 @@ flow.start!
 Now Gush will start processing jobs in background using Sidekiq
 in the order defined in `configure` method inside Workflow.
 
+
+### Pipelining
+
+Gush offers a useful feature which lets you pass results of a job to its dependencies, so they can act accordingly.
+
+**Example:**
+
+Let's assume you have two jobs, `DownloadVideo`, `EncodeVideo`.
+The latter needs to know where the first one downloaded the file to be able to open it.
+
+
+```ruby
+class DownloadVideo < Gush::Job
+  def work
+    downloader = VideoDownloader.fetch("http://youtube.com/?v=someytvideo")
+
+    output(downloader.file_path)
+  end
+end
+```
+
+`output` method is Gush's way of saying: "I want to pass this down to descendants of me".
+
+Now, since `DownloadVideo` finished and its dependant job `EncodeVideo` started, we can access that payload down the (pipe)line:
+
+```ruby
+class EncodeVideo < Gush::Job
+  def work
+    video_path = payloads["DownloadVideo"]
+  end
+end
+
+`payloads` is a hash containing outputs from all parent jobs, where job class names are the keys.
+**Note:** `payloads` will only contain outputs of the job's ancestors. So if job `A` depends on `B` and `C`,
+the `paylods` hash will look like this:
+
+```ruby
+{
+  "B" => (...),
+  "C" => (...)
+}
+```
+
+
 ### Checking status:
 
 #### In Ruby:
@@ -171,6 +214,7 @@ flow.status
   ```
   bundle gush list
   ```
+
 
 ### Requiring workflows inside your projects
 
