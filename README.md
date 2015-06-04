@@ -29,8 +29,8 @@ Here is a complete example of a workflow you can create:
 ```ruby
 # workflows/sample_workflow.rb
 class SampleWorkflow < Gush::Workflow
-  def configure
-    run FetchJob1
+  def configure(url_to_fetch_from)
+    run FetchJob1, params: { url: url_to_fetch_from }
     run FetchJob2, params: {some_flag: true, url: 'http://url.com'}
 
     run PersistJob1, after: FetchJob1
@@ -55,6 +55,7 @@ For the Workflow above, the graph will look like this:
 
 ![SampleWorkflow](http://i.imgur.com/SmeRRVT.png)
 
+
 #### Passing parameters to jobs
 
 You can pass any primitive arguments into jobs while defining your workflow:
@@ -63,14 +64,14 @@ You can pass any primitive arguments into jobs while defining your workflow:
 # workflows/sample_workflow.rb
 class SampleWorkflow < Gush::Workflow
   def configure
-    run FetchJob1, params: {url: "http://some.com/url"}
+    run FetchJob1, params: { url: "http://some.com/url" }
   end
 end
 ```
 
-See below to learn how to access those inside your job.
+See below to learn how to access those params inside your job.
 
-### Defining jobs
+#### Defining jobs
 
 Jobs are classes inheriting from `Gush::Job`:
 
@@ -87,6 +88,30 @@ end
 
 `params` method is a hash containing your (optional) parameters passed to `run` method in the workflow.
 
+#### Passing arguments to workflows
+
+Workflows can accept any primitive arguments in their constructor, which then will be availabe in your
+`configure` method.
+
+Here's an example for a workflow responsible for publishing a book:
+
+```ruby
+# workflows/sample_workflow.rb
+class PublishBookWorkflow < Gush::Workflow
+  def configure(url, isbn)
+    run FetchBook, params: { url: url }
+    run PublishBook, params: { book_isbn: isbn }
+  end
+end
+```
+
+and then run your workflow with those arguments:
+
+```ruby
+PublishBookWorkflow.new("http://ur.com/book.pdf", "978-0470081204")
+```
+
+
 ### Running workflows
 
 Now that we have defined our workflow we can use it:
@@ -94,14 +119,14 @@ Now that we have defined our workflow we can use it:
 #### 1. Initialize and save it
 
 ```ruby
-flow = SampleWorkflow.new
+flow = SampleWorkflow.new(optional, arguments)
 flow.save # saves workflow and its jobs to Redis
 ```
 
 **or:** you can also use a shortcut:
 
 ```ruby
-flow = SampleWorkflow.create
+flow = SampleWorkflow.create(optional, arguments)
 ```
 
 #### 2. Start workflow
@@ -120,7 +145,6 @@ flow.start!
 
 Now Gush will start processing jobs in background using Sidekiq
 in the order defined in `configure` method inside Workflow.
-
 
 ### Checking status:
 
@@ -162,6 +186,7 @@ Dir[Rails.root.join("app/workflows/**/*.rb")].each do |file|
   require file
 end
 ```
+
 ## Contributors
 
 - [Mateusz Lenik](https://github.com/mlen)

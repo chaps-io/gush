@@ -7,6 +7,20 @@ describe Gush::Workflow do
   end
 
   describe "#save" do
+    it "passes constructor arguments to the method" do
+      klass = Class.new(Gush::Workflow) do
+        def configure(*args)
+          run FetchFirstJob
+          run PersistFirstJob, after: FetchFirstJob
+        end
+      end
+
+      flow = klass.new("arg1", "arg2")
+
+      expect(flow).to receive(:configure).with("arg1", "arg2")
+      flow.save
+    end
+
     context "workflow not persisted" do
       it "sets persisted to true" do
         flow = TestWorkflow.new
@@ -48,13 +62,13 @@ describe Gush::Workflow do
   describe "#to_json" do
     it "returns correct hash" do
       klass = Class.new(Gush::Workflow) do
-        def configure
+        def configure(*args)
           run FetchFirstJob
           run PersistFirstJob, after: FetchFirstJob
         end
       end
 
-      result = JSON.parse(klass.create.to_json)
+      result = JSON.parse(klass.create("arg1", "arg2").to_json)
       expected = {
         "id" => an_instance_of(String),
         "name" => klass.to_s,
@@ -65,6 +79,7 @@ describe Gush::Workflow do
         "started_at" => nil,
         "finished_at" => nil,
         "stopped" => false,
+        "arguments" => ["arg1", "arg2"],
         "jobs" => [
           {
             "name"=>"FetchFirstJob",
