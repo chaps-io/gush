@@ -117,7 +117,7 @@ module Gush
       sidekiq.push(
         'class' => Gush::Worker,
         'queue' => configuration.namespace,
-        'args'  => [workflow_id, job.class.to_s, configuration.to_json]
+        'args'  => [workflow_id, job.class.to_s]
       )
     end
 

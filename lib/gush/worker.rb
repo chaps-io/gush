@@ -6,8 +6,7 @@ module Gush
     include ::Sidekiq::Worker
     sidekiq_options retry: false
 
-    def perform(workflow_id, job_id, configuration_json)
-      configure_client(configuration_json)
+    def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
 
       job.payloads = incoming_payloads
@@ -40,13 +39,13 @@ module Gush
     private
     attr_reader :client, :workflow, :job
 
+    def client
+      @client ||= Gush::Client.new(Gush.configuration)
+    end
+
     def setup_job(workflow_id, job_id)
       @workflow ||= client.find_workflow(workflow_id)
       @job ||= workflow.find_job(job_id)
-    end
-
-    def configure_client(config_json)
-      @client ||= Client.new(Configuration.from_json(config_json))
     end
 
     def incoming_payloads

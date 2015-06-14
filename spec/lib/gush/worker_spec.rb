@@ -23,7 +23,7 @@ describe Gush::Worker do
         allow(job).to receive(:work).and_raise(StandardError)
         expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
 
-        subject.perform(workflow.id, "Prepare", config)
+        subject.perform(workflow.id, "Prepare")
         expect(workflow.find_job("Prepare")).to be_failed
       end
 
@@ -31,7 +31,7 @@ describe Gush::Worker do
         allow(job).to receive(:work).and_raise(StandardError)
         expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
 
-        subject.perform(workflow.id, "Prepare", config)
+        subject.perform(workflow.id, "Prepare")
       end
     end
 
@@ -40,13 +40,13 @@ describe Gush::Worker do
         expect(subject).to receive(:mark_as_finished)
         expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
 
-        subject.perform(workflow.id, "Prepare", config)
+        subject.perform(workflow.id, "Prepare")
       end
 
       it "reports that job succedeed" do
         expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
 
-        subject.perform(workflow.id, "Prepare", config)
+        subject.perform(workflow.id, "Prepare")
       end
     end
 
@@ -54,14 +54,14 @@ describe Gush::Worker do
       expect(job).to receive(:work)
       expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
 
-      subject.perform(workflow.id, "Prepare", config)
+      subject.perform(workflow.id, "Prepare")
     end
 
     it "reports when the job is started" do
       allow(client).to receive(:worker_report)
       expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
 
-      subject.perform(workflow.id, "Prepare", config)
+      subject.perform(workflow.id, "Prepare")
     end
   end
 end
