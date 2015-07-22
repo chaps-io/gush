@@ -131,7 +131,7 @@ module Gush
 
     def load_gushfile
       file = client.configuration.gushfile
-      if !@gushfile.exist?
+      if !gushfile.exist?
         raise Thor::Error, "#{file} not found, please add it to your project".colorize(:red)
       end
 
