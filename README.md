@@ -63,7 +63,7 @@ For the Workflow above, the graph will look like this:
 You can pass any primitive arguments into jobs while defining your workflow:
 
 ```ruby
-# workflows/sample_workflow.rb
+# app/workflows/sample_workflow.rb
 class SampleWorkflow < Gush::Workflow
   def configure
     run FetchJob1, params: { url: "http://some.com/url" }
@@ -78,7 +78,8 @@ See below to learn how to access those params inside your job.
 Jobs are classes inheriting from `Gush::Job`:
 
 ```ruby
-class FetchJob1 < Gush::Job
+# app/jobs/fetch_job.rb
+class FetchJob < Gush::Job
   def work
     # do some fetching from remote APIs
 
@@ -97,7 +98,7 @@ Workflows can accept any primitive arguments in their constructor, which then wi
 Here's an example of a workflow responsible for publishing a book:
 
 ```ruby
-# workflows/sample_workflow.rb
+# app/workflows/sample_workflow.rb
 class PublishBookWorkflow < Gush::Workflow
   def configure(url, isbn)
     run FetchBook, params: { url: url }
