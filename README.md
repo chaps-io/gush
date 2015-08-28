@@ -183,7 +183,7 @@ end
 `payloads` is a hash containing outputs from all parent jobs, where job class names are the keys.
 
 **Note:** `payloads` will only contain outputs of the job's ancestors. So if job `A` depends on `B` and `C`,
-the `paylods` hash will look like this:
+the `payloads` hash will look like this:
 
 ```ruby
 {
