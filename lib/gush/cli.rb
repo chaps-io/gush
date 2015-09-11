@@ -126,7 +126,7 @@ module Gush
     end
 
     def gushfile
-      Pathname.pwd.join(options[:gushfile])
+      Gush.configuration.gushfile
     end
 
     def load_gushfile
