@@ -200,7 +200,7 @@ the `payloads` hash will look like this:
 ```ruby
 flow.reload
 flow.status
-#=> :running|:pending|:finished|:failed
+#=> :running|:finished|:failed
 ```
 
 `reload` is needed to see the latest status, since workflows are updated asynchronously.

@@ -21,7 +21,7 @@ module Gush
         elsif workflow.stopped?
           "stopped".red
         else
-          "pending".light_white
+          running_status
         end
       end
 

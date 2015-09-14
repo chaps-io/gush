@@ -60,23 +60,27 @@ module Gush
     end
 
     def enqueued?
-      !!enqueued_at
+      !enqueued_at.nil?
     end
 
     def finished?
-      !!finished_at
+      !finished_at.nil?
     end
 
     def failed?
-      !!failed_at
+      !failed_at.nil?
     end
 
     def succeeded?
       finished? && !failed?
     end
 
+    def started?
+      !started_at.nil?
+    end
+
     def running?
-      !!started_at && !finished?
+      started? && !finished?
     end
 
     def ready_to_start?

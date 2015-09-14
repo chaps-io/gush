@@ -70,8 +70,12 @@ module Gush
       jobs.all?(&:finished?)
     end
 
+    def started?
+      @stopped == false
+    end
+
     def running?
-      !stopped? && jobs.any? {|j| j.enqueued? || j.running? }
+      !finished?
     end
 
     def failed?
@@ -122,7 +126,7 @@ module Gush
         when stopped?
           :stopped
         else
-          :pending
+          :running
       end
     end
 
@@ -174,7 +178,7 @@ module Gush
     end
 
     def last_job
-      jobs.max_by{ |n| n.finished_at || 0 } if jobs.all?(&:finished?)
+      jobs.max_by{ |n| n.finished_at || 0 } if finished?
     end
   end
 end

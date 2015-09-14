@@ -1,7 +1,20 @@
 require 'spec_helper'
 
-
 describe "Workflows" do
+  context "when all jobs finish successfuly" do
+    it "marks workflow as completed" do
+      flow = TestWorkflow.create
+      flow.start!
+      expect(flow.reload).to be_running
+
+      Gush::Worker.drain
+
+      flow = flow.reload
+      expect(flow).to be_finished
+      expect(flow).to_not be_failed
+    end
+  end
+
   it "runs the whole workflow in proper order" do
     flow = TestWorkflow.create
     flow.start!
@@ -23,10 +36,6 @@ describe "Workflows" do
     Gush::Worker.perform_one
 
     expect(Gush::Worker.jobs).to be_empty
-
-    flow = flow.reload
-    expect(flow).to be_finished
-    expect(flow).to_not be_failed
   end
 
   it "passes payloads down the workflow" do

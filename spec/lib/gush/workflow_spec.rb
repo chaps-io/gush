@@ -73,7 +73,7 @@ describe Gush::Workflow do
         "id" => an_instance_of(String),
         "name" => klass.to_s,
         "klass" => klass.to_s,
-        "status" => "pending",
+        "status" => "running",
         "total" => 2,
         "finished" => 0,
         "started_at" => nil,
@@ -203,13 +203,6 @@ describe Gush::Workflow do
   describe "#running?" do
     context "when no enqueued or running jobs" do
       it "returns false" do
-        expect(subject.running?).to be_falsy
-      end
-    end
-
-    context "when some jobs are enqueued" do
-      it "returns true" do
-        subject.find_job('Prepare').enqueue!
         expect(subject.running?).to be_truthy
       end
     end
