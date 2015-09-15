@@ -98,6 +98,7 @@ module Gush
     def viz(name)
       client
       workflow = name.constantize.new
+      workflow.configure
       graph = Graph.new(workflow)
       graph.viz
       Launchy.open graph.path
