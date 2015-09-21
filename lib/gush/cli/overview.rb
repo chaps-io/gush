@@ -21,7 +21,7 @@ module Gush
         elsif workflow.stopped?
           "stopped".red
         else
-          running_status
+          "ready to start".blue
         end
       end
 
@@ -53,6 +53,7 @@ module Gush
           "Enqueued jobs" => enqueued_jobs_count.yellow,
           "Running jobs" => running_jobs_count.blue,
           "Remaining jobs" => remaining_jobs_count,
+          "Started at" => started_at,
           "Status" => status
         }
       end
@@ -61,6 +62,10 @@ module Gush
         finished = succeeded_jobs_count.to_i
         status = "running".yellow
         status += "\n#{finished}/#{total_jobs_count} [#{(finished*100)/total_jobs_count}%]"
+      end
+
+      def started_at
+        workflow.started_at.inspect
       end
 
       def failed_status
@@ -131,7 +136,7 @@ module Gush
       end
 
       def remaining_jobs_count
-        workflow.jobs.count{|j| [j.finished, j.failed, j.enqueued].none? }.to_s
+        workflow.jobs.count{|j| [j.finished?, j.failed?, j.enqueued?].none? }.to_s
       end
     end
   end

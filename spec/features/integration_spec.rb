@@ -5,7 +5,6 @@ describe "Workflows" do
     it "marks workflow as completed" do
       flow = TestWorkflow.create
       flow.start!
-      expect(flow.reload).to be_running
 
       Gush::Worker.drain
 
@@ -28,7 +27,7 @@ describe "Workflows" do
     expect(Gush::Worker).to have_jobs(flow.id, ["FetchSecondJob", "PersistFirstJob"])
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["PersistFirstJob", "NormalizeJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, ["PersistFirstJob"])
 
     Gush::Worker.perform_one
     expect(Gush::Worker).to have_jobs(flow.id, ["NormalizeJob"])

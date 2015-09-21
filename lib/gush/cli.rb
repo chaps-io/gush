@@ -35,7 +35,8 @@ module Gush
     desc "start [workflow_id]", "Starts Workflow with given ID"
     def start(*args)
       id = args.shift
-      client.start_workflow(id, args)
+      workflow = client.find_workflow(id)
+      client.start_workflow(workflow, args)
     end
 
     desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"

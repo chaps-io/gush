@@ -203,7 +203,7 @@ describe Gush::Workflow do
   describe "#running?" do
     context "when no enqueued or running jobs" do
       it "returns false" do
-        expect(subject.running?).to be_truthy
+        expect(subject.running?).to be_falsy
       end
     end
 

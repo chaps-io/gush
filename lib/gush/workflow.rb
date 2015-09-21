@@ -71,11 +71,11 @@ module Gush
     end
 
     def started?
-      @stopped == false
+      !!started_at
     end
 
     def running?
-      !finished?
+      started? && !finished?
     end
 
     def failed?

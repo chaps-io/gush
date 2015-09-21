@@ -84,7 +84,13 @@ module Gush
     end
 
     def ready_to_start?
-      !running? && !enqueued? && !finished? && !failed?
+      !running? && !enqueued? && !finished? && !failed? && parents_succeeded?
+    end
+
+    def parents_succeeded?
+      incoming.all? do |name|
+        @workflow.find_job(name).succeeded?
+      end
     end
 
     def has_no_dependencies?
