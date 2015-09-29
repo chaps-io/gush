@@ -92,7 +92,7 @@ end
 
 #### Passing arguments to workflows
 
-Workflows can accept any primitive arguments in their constructor, which then will be availabe in your
+Workflows can accept any primitive arguments in their constructor, which then will be available in your
 `configure` method.
 
 Here's an example of a workflow responsible for publishing a book:
