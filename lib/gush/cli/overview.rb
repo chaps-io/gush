@@ -112,7 +112,7 @@ module Gush
       end
 
       def failed_job
-        workflow.jobs.find(&:failed).name
+        workflow.jobs.find(&:failed?).name
       end
 
       def total_jobs_count
