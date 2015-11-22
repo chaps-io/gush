@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "gush"
-  spec.version       = "0.2.3"
+  spec.version       = "0.3"
   spec.authors       = ["Piotrek Okoński"]
   spec.email         = ["piotrek@okonski.org"]
   spec.summary       = "Fast and distributed workflow runner using only Sidekiq and Redis"
@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "sidekiq", "~> 3.3.4"
+  spec.add_dependency "sidekiq", "~> 4.0"
   spec.add_dependency "yajl-ruby", "~> 1.2.1"
   spec.add_dependency "redis", "~> 3.2.1"
   spec.add_dependency "hiredis", "~> 0.6.0"
