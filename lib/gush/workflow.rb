@@ -90,7 +90,7 @@ module Gush
       options =
 
       node = klass.new(self, {
-        name: klass.to_s,
+        name: client.next_free_job_id(id,klass.to_s),
         params: opts.fetch(:params, {})
       })
 
@@ -98,13 +98,15 @@ module Gush
 
       deps_after = [*opts[:after]]
       deps_after.each do |dep|
-        @dependencies << {from: dep.to_s, to: klass.to_s }
+        @dependencies << {from: dep.name, to: node.name }
       end
 
       deps_before = [*opts[:before]]
       deps_before.each do |dep|
-        @dependencies << {from: klass.to_s, to: dep.to_s }
+        @dependencies << {from: node.name, to: dep.name }
       end
+
+      return node.name
     end
 
     def reload
@@ -164,7 +166,7 @@ module Gush
     end
 
     def id
-      @id ||= client.next_free_id
+      @id ||= client.next_free_workflow_id
     end
 
     private

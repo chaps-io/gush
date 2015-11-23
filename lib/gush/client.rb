@@ -46,11 +46,21 @@ module Gush
       persist_workflow(workflow)
     end
 
-    def next_free_id
+    def next_free_job_id(workflow_id,job_class)
       id = nil
       loop do
         id = SecureRandom.uuid
-        break if !redis.exists("gush.workflow.#{id}")
+        break if !redis.exists("gush.jobs.#{workflow_id}.#{job_class}-#{id}")
+      end
+
+      "#{job_class}-#{id}"
+    end
+
+    def next_free_workflow_id
+      id = nil
+      loop do
+        id = SecureRandom.uuid
+        break if !redis.exists("gush.workflow.#{id}.")
       end
 
       id
@@ -118,7 +128,7 @@ module Gush
       sidekiq.push(
         'class' => Gush::Worker,
         'queue' => configuration.namespace,
-        'args'  => [workflow_id, job.class.to_s]
+        'args'  => [workflow_id, job.name]
       )
     end
 
