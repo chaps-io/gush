@@ -93,12 +93,14 @@ module Gush
     end
 
     def persist_job(workflow_id, job)
-      redis.set("gush.jobs.#{workflow_id}.#{job.class.to_s}", job.to_json)
+      puts "Persisting job with name: #{job.name}"
+      redis.set("gush.jobs.#{workflow_id}.#{job.name}", job.to_json)
     end
 
     def load_job(workflow_id, job_id)
       workflow = find_workflow(workflow_id)
       data = redis.get("gush.jobs.#{workflow_id}.#{job_id}")
+      puts "#{data.inspect}"
       return nil if data.nil?
       data = Gush::JSON.decode(data, symbolize_keys: true)
       Gush::Job.from_hash(workflow, data)
@@ -110,7 +112,7 @@ module Gush
     end
 
     def destroy_job(workflow_id, job)
-      redis.del("gush.jobs.#{workflow_id}.#{job.class.to_s}")
+      redis.del("gush.jobs.#{workflow_id}.#{job.name}")
     end
 
     def worker_report(message)

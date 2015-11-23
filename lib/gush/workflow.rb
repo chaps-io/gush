@@ -63,7 +63,7 @@ module Gush
     end
 
     def find_job(name)
-      jobs.find { |node| node.name == name.to_s || node.class.to_s == name.to_s }
+      jobs.find { |node| node.name.to_s == name.to_s || node.class.to_s == name.to_s }
     end
 
     def finished?
@@ -106,7 +106,7 @@ module Gush
         @dependencies << {from: node.name, to: dep.name }
       end
 
-      return node.name
+      node.name
     end
 
     def reload
