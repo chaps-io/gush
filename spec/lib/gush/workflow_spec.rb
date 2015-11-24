@@ -66,49 +66,48 @@ describe Gush::Workflow do
           run FetchFirstJob
           run PersistFirstJob, after: FetchFirstJob
         end
-
       end
 
       result = JSON.parse(klass.create("arg1", "arg2").to_json)
       expected = {
-        "id" => an_instance_of(String),
-        "name" => klass.to_s,
-        "klass" => klass.to_s,
-        "status" => "running",
-        "total" => 2,
-        "finished" => 0,
-        "started_at" => nil,
-        "finished_at" => nil,
-        "stopped" => false,
-        "arguments" => ["arg1", "arg2"],
-        "jobs" => [
-          {
-            "name"=>an_instance_of(String),
-            "klass"=>"FetchFirstJob",
-            "incoming"=>[],
-            "outgoing"=>["PersistFirstJob"],
-            "finished_at"=>nil,
-            "started_at"=>nil,
-            "enqueued_at"=>nil,
-            "failed_at"=>nil,
-            "params" => {},
-            "output_payload" => nil
-          },
-          {
-            "name"=>an_instance_of(String),
-            "klass"=>"PersistFirstJob",
-            "incoming"=>["FetchFirstJob"],
-            "outgoing"=>[],
-            "finished_at"=>nil,
-            "started_at"=>nil,
-            "enqueued_at"=>nil,
-            "failed_at"=>nil,
-            "params" => {},
-            "output_payload" => nil
-          }
-        ]
+          "id" => an_instance_of(String),
+          "name" => klass.to_s,
+          "klass" => klass.to_s,
+          "status" => "running",
+          "total" => 2,
+          "finished" => 0,
+          "started_at" => nil,
+          "finished_at" => nil,
+          "stopped" => false,
+          "arguments" => ["arg1", "arg2"],
+          "jobs" => [
+              {
+                  "name"=>a_string_starting_with('FetchFirstJob'),
+                  "klass"=>"FetchFirstJob",
+                  "incoming"=>[],
+                  "outgoing"=>[a_string_starting_with('PersistFirstJob')],
+                  "finished_at"=>nil,
+                  "started_at"=>nil,
+                  "enqueued_at"=>nil,
+                  "failed_at"=>nil,
+                  "params" => {},
+                  "output_payload" => nil
+              },
+              {
+                  "name"=>a_string_starting_with('PersistFirstJob'),
+                  "klass"=>"PersistFirstJob",
+                  "incoming"=>["FetchFirstJob"],
+                  "outgoing"=>[],
+                  "finished_at"=>nil,
+                  "started_at"=>nil,
+                  "enqueued_at"=>nil,
+                  "failed_at"=>nil,
+                  "params" => {},
+                  "output_payload" => nil
+              }
+          ]
       }
-      expect(result).to match(a_hash_including(expected))
+      expect(result).to match(expected)
     end
   end
 
