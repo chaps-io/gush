@@ -46,21 +46,22 @@ module Gush
       persist_workflow(workflow)
     end
 
-    def next_free_job_id(workflow_id,job_class)
-      id = nil
+    def next_free_job_id(workflow_id,job_klass)
+      job_identifier = nil
       loop do
         id = SecureRandom.uuid
-        break if !redis.exists("gush.jobs.#{workflow_id}.#{job_class}-#{id}")
+        job_identifier = "#{job_klass}-#{id}"
+        break if !redis.exists("gush.jobs.#{workflow_id}.#{job_identifier}")
       end
 
-      "#{job_class}-#{id}"
+      job_identifier
     end
 
     def next_free_workflow_id
       id = nil
       loop do
         id = SecureRandom.uuid
-        break if !redis.exists("gush.workflow.#{id}.")
+        break if !redis.exists("gush.workflow.#{id}")
       end
 
       id
@@ -93,14 +94,12 @@ module Gush
     end
 
     def persist_job(workflow_id, job)
-      puts "Persisting job with name: #{job.name}"
       redis.set("gush.jobs.#{workflow_id}.#{job.name}", job.to_json)
     end
 
     def load_job(workflow_id, job_id)
       workflow = find_workflow(workflow_id)
       data = redis.get("gush.jobs.#{workflow_id}.#{job_id}")
-      puts "#{data.inspect}"
       return nil if data.nil?
       data = Gush::JSON.decode(data, symbolize_keys: true)
       Gush::Job.from_hash(workflow, data)

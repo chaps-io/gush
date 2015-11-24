@@ -63,7 +63,7 @@ module Gush
     end
 
     def find_job(name)
-      jobs.find { |node| node.name.to_s == name.to_s || node.class.to_s == name.to_s }
+      jobs.find { |node| node.name.to_s == name.to_s }
     end
 
     def finished?
@@ -98,12 +98,12 @@ module Gush
 
       deps_after = [*opts[:after]]
       deps_after.each do |dep|
-        @dependencies << {from: dep.name, to: node.name }
+        @dependencies << {from: dep, to: node.name }
       end
 
       deps_before = [*opts[:before]]
       deps_before.each do |dep|
-        @dependencies << {from: node.name, to: dep.name }
+        @dependencies << {from: node.name, to: dep }
       end
 
       node.name
