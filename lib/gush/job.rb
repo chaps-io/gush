@@ -38,9 +38,9 @@ module Gush
     end
 
     def payloads
-      pls = {}
-      payloads_hash.each {|k,val| pls[k.to_s] = val.map {|h| h[:payload] }}
-      pls
+      payload_h = {}
+      payloads_hash.each {|k,val| payload_h[k.to_s] = val.map {|h| h[:payload] }}
+      payload_h
     end
 
     def work
