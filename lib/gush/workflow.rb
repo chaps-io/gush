@@ -57,10 +57,6 @@ module Gush
       @nameize_payloads = true
     end
 
-    def nameize_payloads?
-      @nameize_payloads
-    end
-
     def resolve_dependencies
       @dependencies.each do |dependency|
         from = find_job(dependency[:from])
@@ -72,7 +68,7 @@ module Gush
     end
 
     def find_job(name)
-      match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(name)
+      match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(name.to_s)
       if match_data.nil?
         job = jobs.find { |node| node.class.to_s == name.to_s }
       else
@@ -168,7 +164,8 @@ module Gush
         status: status,
         stopped: stopped,
         started_at: started_at,
-        finished_at: finished_at
+        finished_at: finished_at,
+        nameize_payloads: nameize_payloads
       }
     end
 

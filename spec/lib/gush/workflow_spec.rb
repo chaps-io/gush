@@ -80,6 +80,7 @@ describe Gush::Workflow do
           "finished_at" => nil,
           "stopped" => false,
           "arguments" => ["arg1", "arg2"],
+          "nameize_payloads" => false,
           "jobs" => [
               {
                   "name"=>a_string_starting_with('FetchFirstJob'),

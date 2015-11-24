@@ -77,4 +77,47 @@ describe "Workflows" do
     Gush::Worker.perform_one
     expect(flow.reload.find_job("PrependJob").output_payload).to eq("A prefix: SOME TEXT")
   end
+
+  it "passes payloads from workflow that runs multiple same class jobs with nameized payloads" do
+    class RepetitiveJob < Gush::Job
+      def work
+        output params[:input]
+      end
+    end
+
+    class SummaryJob < Gush::Job
+      def work
+        output payloads["RepetitiveJob"]
+      end
+    end
+
+    class PayloadWorkflow < Gush::Workflow
+      def configure
+        nameize_payloads!
+        jobs = []
+        jobs << run(RepetitiveJob, params: {input: 'first'})
+        jobs << run(RepetitiveJob, params: {input: 'second'})
+        jobs << run(RepetitiveJob, params: {input: 'third'})
+        run SummaryJob, after: jobs
+      end
+    end
+
+    flow = PayloadWorkflow.create
+    flow.start!
+
+    Gush::Worker.perform_one
+    expect(flow.reload.find_job(flow.jobs[0].name).output_payload).to eq('first')
+
+    Gush::Worker.perform_one
+    expect(flow.reload.find_job(flow.jobs[1].name).output_payload).to eq('second')
+
+    Gush::Worker.perform_one
+    expect(flow.reload.find_job(flow.jobs[2].name).output_payload).to eq('third')
+
+    Gush::Worker.perform_one
+    output_payload = flow.reload.find_job(flow.jobs[3].name).output_payload
+    expect(output_payload[0]).to eq({:id => flow.jobs[0].name, :payload => 'first'})
+    expect(output_payload[1]).to eq({:id => flow.jobs[1].name, :payload => 'second'})
+    expect(output_payload[2]).to eq({:id => flow.jobs[2].name, :payload => 'third'})
+  end
 end

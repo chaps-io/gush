@@ -53,7 +53,8 @@ module Gush
       job.incoming.each do |job_name|
        job = client.load_job(workflow.id, job_name)
        payloads[job.class.to_s] ||= []
-       if workflow.nameize_payloads?
+
+       if workflow.nameize_payloads
          payload = {:id => job.name, :payload => job.output_payload}
        else
          payload = job.output_payload

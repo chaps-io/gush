@@ -145,6 +145,7 @@ module Gush
     def workflow_from_hash(hash, nodes = nil)
       flow = hash[:klass].constantize.new
       flow.stopped = hash.fetch(:stopped, false)
+      flow.nameize_payloads = hash[:nameize_payloads]
       flow.id = hash[:id]
 
       (nodes || hash[:nodes]).each do |node|
