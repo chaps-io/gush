@@ -5,4 +5,5 @@ gemspec
 
 gem 'pry'
 gem 'yajl-ruby'
+gem 'rspec-json_expectations'
 gem "fakeredis", require: false

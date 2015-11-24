@@ -18,19 +18,19 @@ describe "Workflows" do
     flow = TestWorkflow.create
     flow.start!
 
-    expect(Gush::Worker).to have_jobs(flow.id, ["Prepare"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["FetchFirstJob", "FetchSecondJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["FetchSecondJob", "PersistFirstJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchSecondJob", "PersistFirstJob"]))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["PersistFirstJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["PersistFirstJob"]))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["NormalizeJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["NormalizeJob"]))
 
     Gush::Worker.perform_one
 
@@ -52,7 +52,7 @@ describe "Workflows" do
 
     class PrependJob < Gush::Job
       def work
-        string = "#{payloads["PrefixJob"]}: #{payloads["UpcaseJob"]}"
+        string = "#{payloads["PrefixJob"].first}: #{payloads["UpcaseJob"].first}"
         output string
       end
     end

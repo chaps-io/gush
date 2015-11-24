@@ -1,6 +1,7 @@
 require 'gush'
 require 'pry'
 require 'sidekiq/testing'
+require 'rspec/json_expectations'
 
 Sidekiq::Testing.fake!
 Sidekiq::Logging.logger = nil
@@ -11,6 +12,7 @@ class FetchSecondJob < Gush::Job; end
 class PersistFirstJob < Gush::Job; end
 class PersistSecondJob < Gush::Job; end
 class NormalizeJob < Gush::Job; end
+class BobJob < Gush::Job; end
 
 GUSHFILE  = Pathname.new(__FILE__).parent.join("Gushfile.rb")
 
@@ -38,6 +40,14 @@ REDIS_URL = "redis://localhost:6379/12"
 module GushHelpers
   def redis
     @redis ||= Redis.new(url: REDIS_URL)
+  end
+
+  def jobs_with_id(jobs_array)
+    jobs_array.map {|job_name| job_with_id(job_name) }
+  end
+
+  def job_with_id(job_name)
+    /#{job_name}-(?<identifier>.*)/
   end
 end
 

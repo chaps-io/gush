@@ -44,18 +44,23 @@ module Gush
     end
 
     def setup_job(workflow_id, job_id)
-      puts '=========================================='
-      puts "searching for #{job_id} in #{workflow_id} workflow space"
       @workflow ||= client.find_workflow(workflow_id)
       @job ||= workflow.find_job(job_id)
-      puts "Job found with name: #{job.name.inspect}"
-      puts '=========================================='
     end
 
     def incoming_payloads
       payloads = {}
       job.incoming.each do |job_name|
-       payloads[job_name] = client.load_job(workflow.id, job_name).output_payload
+       job = client.load_job(workflow.id, job_name)
+       payloads[job.class.to_s] ||= []
+       if workflow.nameize_payloads?
+         payload = {:id => job.name, :payload => job.output_payload}
+       else
+         payload = job.output_payload
+       end
+       unless payload.nil?
+         payloads[job.class.to_s] << payload
+       end
       end
 
       payloads

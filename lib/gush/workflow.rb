@@ -2,7 +2,7 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments
+    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :nameize_payloads
 
     def initialize(*args)
       @id = id
@@ -11,6 +11,7 @@ module Gush
       @persisted = false
       @stopped = false
       @arguments = args
+      @nameize_payloads = false
     end
 
     def self.find(id)
@@ -52,6 +53,14 @@ module Gush
       @stopped = false
     end
 
+    def nameize_payloads!
+      @nameize_payloads = true
+    end
+
+    def nameize_payloads?
+      @nameize_payloads
+    end
+
     def resolve_dependencies
       @dependencies.each do |dependency|
         from = find_job(dependency[:from])
@@ -63,7 +72,13 @@ module Gush
     end
 
     def find_job(name)
-      jobs.find { |node| node.name.to_s == name.to_s }
+      match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(name)
+      if match_data.nil?
+        job = jobs.find { |node| node.class.to_s == name.to_s }
+      else
+        job = jobs.find { |node| node.name.to_s == name.to_s }
+      end
+      job
     end
 
     def finished?
@@ -98,12 +113,12 @@ module Gush
 
       deps_after = [*opts[:after]]
       deps_after.each do |dep|
-        @dependencies << {from: dep, to: node.name }
+        @dependencies << {from: dep.to_s, to: node.name.to_s }
       end
 
       deps_before = [*opts[:before]]
       deps_before.each do |dep|
-        @dependencies << {from: node.name, to: dep }
+        @dependencies << {from: node.name.to_s, to: dep.to_s }
       end
 
       node.name

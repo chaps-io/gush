@@ -66,6 +66,7 @@ describe Gush::Workflow do
           run FetchFirstJob
           run PersistFirstJob, after: FetchFirstJob
         end
+
       end
 
       result = JSON.parse(klass.create("arg1", "arg2").to_json)
@@ -82,7 +83,7 @@ describe Gush::Workflow do
         "arguments" => ["arg1", "arg2"],
         "jobs" => [
           {
-            "name"=>"FetchFirstJob",
+            "name"=>an_instance_of(String),
             "klass"=>"FetchFirstJob",
             "incoming"=>[],
             "outgoing"=>["PersistFirstJob"],
@@ -94,7 +95,7 @@ describe Gush::Workflow do
             "output_payload" => nil
           },
           {
-            "name"=>"PersistFirstJob",
+            "name"=>an_instance_of(String),
             "klass"=>"PersistFirstJob",
             "incoming"=>["FetchFirstJob"],
             "outgoing"=>[],
@@ -107,7 +108,7 @@ describe Gush::Workflow do
           }
         ]
       }
-      expect(result).to match(expected)
+      expect(result).to match(a_hash_including(expected))
     end
   end
 
@@ -145,7 +146,7 @@ describe Gush::Workflow do
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.outgoing).to match_array([klass2.to_s])
+      expect(tree.jobs.first.outgoing).to match_array(jobs_with_id([klass2.to_s]))
     end
 
     it "allows `before` to accept an array of jobs" do
@@ -159,7 +160,7 @@ describe Gush::Workflow do
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.incoming).to match_array([klass2.to_s])
+      expect(tree.jobs.first.incoming).to match_array(jobs_with_id([klass2.to_s]))
     end
 
     it "attaches job as a child of the job in `after` key" do
@@ -170,7 +171,7 @@ describe Gush::Workflow do
       tree.run(klass2, after: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.outgoing).to match_array([klass2.to_s])
+      expect(job.outgoing).to match_array(jobs_with_id([klass2.to_s]))
     end
 
     it "attaches job as a parent of the job in `before` key" do
@@ -181,7 +182,7 @@ describe Gush::Workflow do
       tree.run(klass2, before: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.incoming).to match_array([klass2.to_s])
+      expect(job.incoming).to match_array(jobs_with_id([klass2.to_s]))
     end
   end
 

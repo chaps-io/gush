@@ -99,8 +99,13 @@ module Gush
 
     def load_job(workflow_id, job_id)
       workflow = find_workflow(workflow_id)
-      data = redis.get("gush.jobs.#{workflow_id}.#{job_id}")
-      return nil if data.nil?
+
+      keys = redis.keys("gush.jobs.#{workflow_id}.#{job_id}*")
+      return nil if keys.nil?
+
+      data = redis.get(keys.first)
+      return nil if keys.nil?
+
       data = Gush::JSON.decode(data, symbolize_keys: true)
       Gush::Job.from_hash(workflow, data)
     end
