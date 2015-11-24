@@ -99,12 +99,14 @@ module Gush
 
     def load_job(workflow_id, job_id)
       workflow = find_workflow(workflow_id)
+      job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_id)
+      hypen = '-' if job_name_match.nil?
 
-      keys = redis.keys("gush.jobs.#{workflow_id}.#{job_id}*")
+      keys = redis.keys("gush.jobs.#{workflow_id}.#{job_id}#{hypen}*")
       return nil if keys.nil?
 
       data = redis.get(keys.first)
-      return nil if keys.nil?
+      return nil if data.nil?
 
       data = Gush::JSON.decode(data, symbolize_keys: true)
       Gush::Job.from_hash(workflow, data)
@@ -145,7 +147,6 @@ module Gush
     def workflow_from_hash(hash, nodes = nil)
       flow = hash[:klass].constantize.new
       flow.stopped = hash.fetch(:stopped, false)
-      flow.nameize_payloads = hash[:nameize_payloads]
       flow.id = hash[:id]
 
       (nodes || hash[:nodes]).each do |node|

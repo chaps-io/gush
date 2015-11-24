@@ -2,7 +2,7 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :nameize_payloads
+    attr_accessor :id, :jobs, :stopped, :persisted, :arguments
 
     def initialize(*args)
       @id = id
@@ -11,7 +11,6 @@ module Gush
       @persisted = false
       @stopped = false
       @arguments = args
-      @nameize_payloads = false
     end
 
     def self.find(id)
@@ -51,10 +50,6 @@ module Gush
 
     def mark_as_started
       @stopped = false
-    end
-
-    def nameize_payloads!
-      @nameize_payloads = true
     end
 
     def resolve_dependencies
@@ -165,7 +160,6 @@ module Gush
         stopped: stopped,
         started_at: started_at,
         finished_at: finished_at,
-        nameize_payloads: nameize_payloads
       }
     end
 

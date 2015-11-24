@@ -1,7 +1,6 @@
 require 'gush'
 require 'pry'
 require 'sidekiq/testing'
-require 'rspec/json_expectations'
 
 Sidekiq::Testing.fake!
 Sidekiq::Logging.logger = nil

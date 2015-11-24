@@ -9,7 +9,7 @@ module Gush
     def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
 
-      job.payloads = incoming_payloads
+      job.payloads_hash = incoming_payloads
 
       start = Time.now
       report(:started, start)
@@ -52,18 +52,9 @@ module Gush
       payloads = {}
       job.incoming.each do |job_name|
        job = client.load_job(workflow.id, job_name)
-       payloads[job.class.to_s] ||= []
-
-       if workflow.nameize_payloads
-         payload = {:id => job.name, :payload => job.output_payload}
-       else
-         payload = job.output_payload
-       end
-       unless payload.nil?
-         payloads[job.class.to_s] << payload
-       end
+       payloads[job.klass.to_s] ||= []
+       payloads[job.klass.to_s] << {:id => job.name, :payload => job.output_payload}
       end
-
       payloads
     end
 

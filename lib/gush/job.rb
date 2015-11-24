@@ -1,7 +1,7 @@
 module Gush
   class Job
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
-      :finished_at, :failed_at, :started_at, :enqueued_at, :payloads
+      :finished_at, :failed_at, :started_at, :enqueued_at, :payloads, :payloads_hash, :klass
     attr_reader :name, :output_payload, :params
 
     def initialize(workflow, opts = {})
@@ -35,6 +35,12 @@ module Gush
 
     def output(data)
       @output_payload = data
+    end
+
+    def payloads
+      pls = {}
+      payloads_hash.each {|k,val| pls[k.to_s] = val.map {|h| h[:payload] }}
+      pls
     end
 
     def work
@@ -111,6 +117,7 @@ module Gush
       @started_at     = opts[:started_at]
       @enqueued_at    = opts[:enqueued_at]
       @params         = opts[:params] || {}
+      @klass          = opts[:klass]
       @output_payload = opts[:output_payload]
     end
   end
