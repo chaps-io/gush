@@ -98,6 +98,10 @@ module Gush
     end
 
     private
+    def logger
+      Sidekiq.logger
+    end
+
     def current_timestamp
       Time.now.to_i
     end
