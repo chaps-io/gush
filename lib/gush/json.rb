@@ -1,6 +1,5 @@
 module Gush
   class JSON
-
     def self.encode(data)
       Yajl::Encoder.new.encode(data)
     end

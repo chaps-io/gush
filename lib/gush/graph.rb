@@ -2,7 +2,7 @@ module Gush
   class Graph
     attr_reader :workflow, :filename, :path, :start, :end_node
 
-    def initialize(workflow, options: {})
+    def initialize(workflow, options = {})
       @workflow = workflow
       @filename = options.fetch(:filename, "graph.png")
       @path = options.fetch(:path, Pathname.new(Dir.tmpdir).join(filename))
