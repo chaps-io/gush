@@ -11,6 +11,8 @@ module Gush
       @persisted = false
       @stopped = false
       @arguments = args
+
+      setup
     end
 
     def self.find(id)
@@ -23,10 +25,9 @@ module Gush
       flow
     end
 
+
     def save
-      configure(*@arguments)
-      resolve_dependencies
-      client.persist_workflow(self)
+      persist!
     end
 
     def configure(*args)
@@ -168,6 +169,11 @@ module Gush
     end
 
     private
+
+    def setup
+      configure(*@arguments)
+      resolve_dependencies
+    end
 
     def client
       @client ||= Client.new

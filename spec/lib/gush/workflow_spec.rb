@@ -4,9 +4,6 @@ describe Gush::Workflow do
   subject { TestWorkflow.create }
 
   describe "#initialize" do
-  end
-
-  describe "#save" do
     it "passes constructor arguments to the method" do
       klass = Class.new(Gush::Workflow) do
         def configure(*args)
@@ -15,12 +12,24 @@ describe Gush::Workflow do
         end
       end
 
+      expect_any_instance_of(klass).to receive(:configure).with("arg1", "arg2")
       flow = klass.new("arg1", "arg2")
 
-      expect(flow).to receive(:configure).with("arg1", "arg2")
-      flow.save
     end
+  end
 
+  describe "#status" do
+    context "when failed" do
+      it "returns :failed" do
+        flow = TestWorkflow.create
+        flow.find_job("Prepare").fail!
+        flow.persist!
+        expect(flow.reload.status).to eq(:failed)
+      end
+    end
+  end
+
+  describe "#save" do
     context "workflow not persisted" do
       it "sets persisted to true" do
         flow = TestWorkflow.new

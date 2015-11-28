@@ -16,12 +16,10 @@ module Gush
 
     def create_workflow(name)
       begin
-        flow = name.constantize.new
-        flow.save
+        name.constantize.create
       rescue NameError
         raise WorkflowNotFound.new("Workflow with given name doesn't exist")
       end
-
       flow
     end
 
@@ -128,6 +126,7 @@ module Gush
 
     def workflow_from_hash(hash, nodes = nil)
       flow = hash[:klass].constantize.new
+      flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
 

@@ -34,9 +34,9 @@ describe Gush::Client do
     end
 
     it "removes stopped flag when the workflow is started" do
-      workflow = TestWorkflow.new
+      workflow = TestWorkflow.create
       workflow.mark_as_stopped
-      workflow.save
+      workflow.persist!
       expect {
         client.start_workflow(workflow)
       }.to change{client.find_workflow(workflow.id).stopped?}.from(true).to(false)
