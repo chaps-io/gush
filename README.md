@@ -210,13 +210,13 @@ flow.status
 - of a specific workflow:
 
   ```
-  bundle gush show <workflow_id>
+  bundle exec gush show <workflow_id>
   ```
 
 - of all created workflows:
 
   ```
-  bundle gush list
+  bundle exec gush list
   ```
 
 
