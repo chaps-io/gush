@@ -23,7 +23,9 @@ describe Gush::Worker do
         allow(job).to receive(:work).and_raise(StandardError)
         expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
 
-        subject.perform(workflow.id, "Prepare")
+        expect do
+          subject.perform(workflow.id, "Prepare")
+        end.to raise_error(StandardError)
         expect(workflow.find_job("Prepare")).to be_failed
       end
 
@@ -31,7 +33,9 @@ describe Gush::Worker do
         allow(job).to receive(:work).and_raise(StandardError)
         expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
 
-        subject.perform(workflow.id, "Prepare")
+        expect do
+          subject.perform(workflow.id, "Prepare")
+        end.to raise_error(StandardError)
       end
     end
 

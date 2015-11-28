@@ -20,19 +20,15 @@ module Gush
       mark_as_started
       begin
         job.work
-      rescue Exception => e
-        failed = true
-        error = e
-      end
-
-      unless failed
-        report(:finished, start)
-        mark_as_finished
-
-        enqueue_outgoing_jobs
-      else
+      rescue Exception => error
         mark_as_failed
         report(:failed, start, error.message)
+        raise error
+      else
+        mark_as_finished
+        report(:finished, start)
+
+        enqueue_outgoing_jobs
       end
     end
 
