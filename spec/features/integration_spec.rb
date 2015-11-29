@@ -18,19 +18,19 @@ describe "Workflows" do
     flow = TestWorkflow.create
     flow.start!
 
-    expect(Gush::Worker).to have_jobs(flow.id, ["Prepare"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["FetchFirstJob", "FetchSecondJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["FetchSecondJob", "PersistFirstJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchSecondJob", "PersistFirstJob"]))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["PersistFirstJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["PersistFirstJob"]))
 
     Gush::Worker.perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, ["NormalizeJob"])
+    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["NormalizeJob"]))
 
     Gush::Worker.perform_one
 
@@ -52,7 +52,7 @@ describe "Workflows" do
 
     class PrependJob < Gush::Job
       def work
-        string = "#{payloads["PrefixJob"]}: #{payloads["UpcaseJob"]}"
+        string = "#{payloads['PrefixJob'].first}: #{payloads['UpcaseJob'].first}"
         output string
       end
     end
@@ -76,5 +76,47 @@ describe "Workflows" do
 
     Gush::Worker.perform_one
     expect(flow.reload.find_job("PrependJob").output_payload).to eq("A prefix: SOME TEXT")
+
+
+  end
+
+  it "passes payloads from workflow that runs multiple same class jobs with nameized payloads" do
+    class RepetitiveJob < Gush::Job
+      def work
+        output params[:input]
+      end
+    end
+
+    class SummaryJob < Gush::Job
+      def work
+        output payloads['RepetitiveJob']
+      end
+    end
+
+    class PayloadWorkflow < Gush::Workflow
+      def configure
+        jobs = []
+        jobs << run(RepetitiveJob, params: {input: 'first'})
+        jobs << run(RepetitiveJob, params: {input: 'second'})
+        jobs << run(RepetitiveJob, params: {input: 'third'})
+        run SummaryJob, after: jobs
+      end
+    end
+
+    flow = PayloadWorkflow.create
+    flow.start!
+
+    Gush::Worker.perform_one
+    expect(flow.reload.find_job(flow.jobs[0].name).output_payload).to eq('first')
+
+    Gush::Worker.perform_one
+    expect(flow.reload.find_job(flow.jobs[1].name).output_payload).to eq('second')
+
+    Gush::Worker.perform_one
+    expect(flow.reload.find_job(flow.jobs[2].name).output_payload).to eq('third')
+
+    Gush::Worker.perform_one
+    expect(flow.reload.find_job(flow.jobs[3].name).output_payload).to eq(%w(first second third))
+
   end
 end

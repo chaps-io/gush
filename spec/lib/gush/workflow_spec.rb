@@ -79,42 +79,42 @@ describe Gush::Workflow do
 
       result = JSON.parse(klass.create("arg1", "arg2").to_json)
       expected = {
-        "id" => an_instance_of(String),
-        "name" => klass.to_s,
-        "klass" => klass.to_s,
-        "status" => "running",
-        "total" => 2,
-        "finished" => 0,
-        "started_at" => nil,
-        "finished_at" => nil,
-        "stopped" => false,
-        "arguments" => ["arg1", "arg2"],
-        "jobs" => [
-          {
-            "name"=>"FetchFirstJob",
-            "klass"=>"FetchFirstJob",
-            "incoming"=>[],
-            "outgoing"=>["PersistFirstJob"],
-            "finished_at"=>nil,
-            "started_at"=>nil,
-            "enqueued_at"=>nil,
-            "failed_at"=>nil,
-            "params" => {},
-            "output_payload" => nil
-          },
-          {
-            "name"=>"PersistFirstJob",
-            "klass"=>"PersistFirstJob",
-            "incoming"=>["FetchFirstJob"],
-            "outgoing"=>[],
-            "finished_at"=>nil,
-            "started_at"=>nil,
-            "enqueued_at"=>nil,
-            "failed_at"=>nil,
-            "params" => {},
-            "output_payload" => nil
-          }
-        ]
+          "id" => an_instance_of(String),
+          "name" => klass.to_s,
+          "klass" => klass.to_s,
+          "status" => "running",
+          "total" => 2,
+          "finished" => 0,
+          "started_at" => nil,
+          "finished_at" => nil,
+          "stopped" => false,
+          "arguments" => ["arg1", "arg2"],
+          "jobs" => [
+              {
+                  "name"=>a_string_starting_with('FetchFirstJob'),
+                  "klass"=>"FetchFirstJob",
+                  "incoming"=>[],
+                  "outgoing"=>[a_string_starting_with('PersistFirstJob')],
+                  "finished_at"=>nil,
+                  "started_at"=>nil,
+                  "enqueued_at"=>nil,
+                  "failed_at"=>nil,
+                  "params" => {},
+                  "output_payload" => nil
+              },
+              {
+                  "name"=>a_string_starting_with('PersistFirstJob'),
+                  "klass"=>"PersistFirstJob",
+                  "incoming"=>["FetchFirstJob"],
+                  "outgoing"=>[],
+                  "finished_at"=>nil,
+                  "started_at"=>nil,
+                  "enqueued_at"=>nil,
+                  "failed_at"=>nil,
+                  "params" => {},
+                  "output_payload" => nil
+              }
+          ]
       }
       expect(result).to match(expected)
     end
@@ -154,7 +154,7 @@ describe Gush::Workflow do
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.outgoing).to match_array([klass2.to_s])
+      expect(tree.jobs.first.outgoing).to match_array(jobs_with_id([klass2.to_s]))
     end
 
     it "allows `before` to accept an array of jobs" do
@@ -168,7 +168,7 @@ describe Gush::Workflow do
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.incoming).to match_array([klass2.to_s])
+      expect(tree.jobs.first.incoming).to match_array(jobs_with_id([klass2.to_s]))
     end
 
     it "attaches job as a child of the job in `after` key" do
@@ -179,7 +179,7 @@ describe Gush::Workflow do
       tree.run(klass2, after: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.outgoing).to match_array([klass2.to_s])
+      expect(job.outgoing).to match_array(jobs_with_id([klass2.to_s]))
     end
 
     it "attaches job as a parent of the job in `before` key" do
@@ -190,7 +190,7 @@ describe Gush::Workflow do
       tree.run(klass2, before: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.incoming).to match_array([klass2.to_s])
+      expect(job.incoming).to match_array(jobs_with_id([klass2.to_s]))
     end
   end
 

@@ -85,7 +85,9 @@ describe Gush::Client do
 
   describe "#persist_job" do
     it "persists JSON dump of the job in Redis" do
-      job = double("job", to_json: 'json')
+
+      job = BobJob.new(name: 'bob')
+
       client.persist_job('deadbeef', job)
       expect(redis.keys("gush.jobs.deadbeef.*").length).to eq(1)
     end

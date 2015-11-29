@@ -44,7 +44,18 @@ module Gush
       persist_workflow(workflow)
     end
 
-    def next_free_id
+    def next_free_job_id(workflow_id,job_klass)
+      job_identifier = nil
+      loop do
+        id = SecureRandom.uuid
+        job_identifier = "#{job_klass}-#{id}"
+        break if !redis.exists("gush.jobs.#{workflow_id}.#{job_identifier}")
+      end
+
+      job_identifier
+    end
+
+    def next_free_workflow_id
       id = nil
       loop do
         id = SecureRandom.uuid
@@ -81,13 +92,20 @@ module Gush
     end
 
     def persist_job(workflow_id, job)
-      redis.set("gush.jobs.#{workflow_id}.#{job.class.to_s}", job.to_json)
+      redis.set("gush.jobs.#{workflow_id}.#{job.name}", job.to_json)
     end
 
     def load_job(workflow_id, job_id)
       workflow = find_workflow(workflow_id)
-      data = redis.get("gush.jobs.#{workflow_id}.#{job_id}")
+      job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_id)
+      hypen = '-' if job_name_match.nil?
+
+      keys = redis.keys("gush.jobs.#{workflow_id}.#{job_id}#{hypen}*")
+      return nil if keys.nil?
+
+      data = redis.get(keys.first)
       return nil if data.nil?
+
       data = Gush::JSON.decode(data, symbolize_keys: true)
       Gush::Job.from_hash(workflow, data)
     end
@@ -98,7 +116,7 @@ module Gush
     end
 
     def destroy_job(workflow_id, job)
-      redis.del("gush.jobs.#{workflow_id}.#{job.class.to_s}")
+      redis.del("gush.jobs.#{workflow_id}.#{job.name}")
     end
 
     def worker_report(message)
@@ -116,7 +134,7 @@ module Gush
       sidekiq.push(
         'class' => Gush::Worker,
         'queue' => configuration.namespace,
-        'args'  => [workflow_id, job.class.to_s]
+        'args'  => [workflow_id, job.name]
       )
     end
 
