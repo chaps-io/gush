@@ -160,7 +160,7 @@ module Gush
         status: status,
         stopped: stopped,
         started_at: started_at,
-        finished_at: finished_at,
+        finished_at: finished_at
       }
     end
 
