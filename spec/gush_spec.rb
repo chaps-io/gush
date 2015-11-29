@@ -25,7 +25,7 @@ describe Gush do
 
   describe ".root" do
     it "returns root directory of Gush" do
-      expected = Pathname.new(__FILE__).parent.parent.parent
+      expected = Pathname.new(__FILE__).parent.parent
       expect(Gush.root).to eq(expected)
     end
   end

@@ -98,6 +98,7 @@ describe Gush::Job do
 
       expect(job.name).to eq('gob')
       expect(job.class).to eq(Gush::Job)
+      expect(job.klass).to eq("Gush::Job")
       expect(job.finished?).to eq(true)
       expect(job.failed?).to eq(true)
       expect(job.enqueued?).to eq(true)
