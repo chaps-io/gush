@@ -40,8 +40,9 @@ module Gush
       if job.outgoing.empty?
         graph.add_edges(name, end_node)
       else
-        job.outgoing.each do |out|
-          graph.add_edges(name, out)
+        job.outgoing.each do |id|
+          out = workflow.find_job(id)
+          graph.add_edges(name, out.class.to_s)
         end
       end
     end
