@@ -31,18 +31,17 @@ module Gush
     private
     def add_job(graph, job)
       name = job.class.to_s
-      graph.add_nodes(name)
+      graph.add_nodes(job.name, label: name)
 
       if job.incoming.empty?
-        graph.add_edges(start, name)
+        graph.add_edges(start, job.name)
       end
 
       if job.outgoing.empty?
-        graph.add_edges(name, end_node)
+        graph.add_edges(job.name, end_node)
       else
         job.outgoing.each do |id|
-          out = workflow.find_job(id)
-          graph.add_edges(name, out.class.to_s)
+          graph.add_edges(job.name, id)
         end
       end
     end
