@@ -15,19 +15,19 @@ describe Gush::Graph do
 
       expect(graph).to receive(:output).with(png: path.to_s)
 
-      expect(graph).to receive(:add_nodes).with("Prepare")
-      expect(graph).to receive(:add_nodes).with("FetchFirstJob")
-      expect(graph).to receive(:add_nodes).with("FetchSecondJob")
-      expect(graph).to receive(:add_nodes).with("NormalizeJob")
-      expect(graph).to receive(:add_nodes).with("PersistFirstJob")
+      expect(graph).to receive(:add_nodes).with(/Prepare/, label: "Prepare")
+      expect(graph).to receive(:add_nodes).with(/FetchFirstJob/, label: "FetchFirstJob")
+      expect(graph).to receive(:add_nodes).with(/FetchSecondJob/, label: "FetchSecondJob")
+      expect(graph).to receive(:add_nodes).with(/NormalizeJob/, label: "NormalizeJob")
+      expect(graph).to receive(:add_nodes).with(/PersistFirstJob/, label: "PersistFirstJob")
 
-      expect(graph).to receive(:add_edges).with(nil, "Prepare")
-      expect(graph).to receive(:add_edges).with("Prepare", "FetchFirstJob")
-      expect(graph).to receive(:add_edges).with("Prepare", "FetchSecondJob")
-      expect(graph).to receive(:add_edges).with("FetchFirstJob", "PersistFirstJob")
-      expect(graph).to receive(:add_edges).with("FetchSecondJob", "NormalizeJob")
-      expect(graph).to receive(:add_edges).with("PersistFirstJob", "NormalizeJob")
-      expect(graph).to receive(:add_edges).with("NormalizeJob", nil)
+      expect(graph).to receive(:add_edges).with(nil, /Prepare/)
+      expect(graph).to receive(:add_edges).with(/Prepare/, /FetchFirstJob/)
+      expect(graph).to receive(:add_edges).with(/Prepare/, /FetchSecondJob/)
+      expect(graph).to receive(:add_edges).with(/FetchFirstJob/, /PersistFirstJob/)
+      expect(graph).to receive(:add_edges).with(/FetchSecondJob/, /NormalizeJob/)
+      expect(graph).to receive(:add_edges).with(/PersistFirstJob/, /NormalizeJob/)
+      expect(graph).to receive(:add_edges).with(/NormalizeJob/, nil)
 
       expect(GraphViz).to receive(:new).and_yield(graph)
 
