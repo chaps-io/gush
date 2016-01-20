@@ -25,6 +25,14 @@ module Gush
       flow
     end
 
+    def continue
+      client = Gush::Client.new
+      failed_jobs = jobs.select(&:failed?)
+
+      failed_jobs.each do |job|
+        client.enqueue_job(id, job)
+      end
+    end
 
     def save
       persist!
