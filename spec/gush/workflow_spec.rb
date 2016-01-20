@@ -55,6 +55,20 @@ describe Gush::Workflow do
     end
   end
 
+  describe "#continue" do
+    it "enqueues failed jobs" do
+      flow = TestWorkflow.create
+      flow.find_job('Prepare').fail!
+
+      expect(flow.jobs.select(&:failed?)).not_to be_empty
+
+      flow.continue
+
+      expect(flow.jobs.select(&:failed?)).to be_empty
+      expect(flow.find_job('Prepare').failed_at).to be_nil
+    end
+  end
+
   describe "#mark_as_stopped" do
     it "marks workflow as stopped" do
       expect{ subject.mark_as_stopped }.to change{subject.stopped?}.from(false).to(true)
