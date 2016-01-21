@@ -237,6 +237,8 @@ end
 
 - [Mateusz Lenik](https://github.com/mlen)
 - [Michał Krzyżanowski](https://github.com/krzyzak)
+- [Maciej Nowak](https://github.com/keqi)
+- [Maciej Kołek](https://github.com/ferusinfo)
 
 ## Contributing
 
