@@ -15,12 +15,23 @@ describe Gush::Client do
     end
 
     context "when given workflow exists" do
+
       it "returns Workflow object" do
         expected_workflow = TestWorkflow.create
         workflow = client.find_workflow(expected_workflow.id)
 
         expect(workflow.id).to eq(expected_workflow.id)
         expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+      end
+
+      context "when workflow has parameters" do
+        it "returns Workflow object" do
+          expected_workflow = ParameterTestWorkflow.create(true)
+          workflow = client.find_workflow(expected_workflow.id)
+
+          expect(workflow.id).to eq(expected_workflow.id)
+          expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+        end
       end
     end
   end
