@@ -1,5 +1,4 @@
 require 'sidekiq'
-require 'yajl'
 
 module Gush
   class Worker

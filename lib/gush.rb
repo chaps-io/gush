@@ -6,6 +6,7 @@ require "pathname"
 require "redis"
 require "securerandom"
 require "sidekiq"
+require "multi_json"
 
 require "gush/json"
 require "gush/cli"

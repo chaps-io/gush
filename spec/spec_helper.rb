@@ -1,5 +1,5 @@
 require 'gush'
-require 'pry'
+require 'fakeredis'
 require 'sidekiq/testing'
 
 Sidekiq::Testing.fake!

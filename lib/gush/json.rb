@@ -1,11 +1,11 @@
 module Gush
   class JSON
-    def self.encode(data)
-      Yajl::Encoder.new.encode(data)
+    def self.encode(data, options = {})
+      MultiJson.dump(data, options)
     end
 
     def self.decode(data, options = {})
-      Yajl::Parser.parse(data, options)
+      MultiJson.load(data, options)
     end
   end
 end

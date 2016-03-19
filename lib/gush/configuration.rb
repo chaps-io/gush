@@ -1,5 +1,3 @@
-require 'yajl'
-
 module Gush
   class Configuration
     attr_accessor :concurrency, :namespace, :redis_url, :environment
