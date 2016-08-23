@@ -52,11 +52,11 @@ module Gush
       elsif workflow.running?
         running_status
       elsif workflow.finished?
-        "done".green
+        "done"
       elsif workflow.stopped?
-        "stopped".red
+        "stopped"
       else
-        "ready to start".blue
+        "ready to start"
       end
     end
 
