@@ -1,0 +1,37 @@
+<h3><%= t('workflows') %></h3>
+
+<div class="table_container">
+  <table class="table table-hover table-bordered table-striped table-white">
+    <thead>
+      <tr>
+        <th><%= t('id') %></th>
+        <th><%= t('name') %></th>
+        <th><%= t('jobs') %></th>
+        <th><%= t('failed_jobs') %></th>
+        <th><%= t('succeeded_jobs') %></th>
+        <th><%= t('enqueued_jobs') %></th>
+        <th><%= t('running_jobs') %></th>
+        <th><%= t('remaining_jobs') %></th>
+        <th><%= t('started_at') %></th>
+        <th><%= t('status') %></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @workflow_presenters.each do |presenter| %>
+        <tr>
+          <td><%= presenter.id %></td>
+          <td><%= presenter.name %></td>
+          <td><%= presenter.jobs %></td>
+          <td><%= presenter.failed_jobs %></td>
+          <td><%= presenter.succeeded_jobs %></td>
+          <td><%= presenter.enqueued_jobs %></td>
+          <td><%= presenter.running_jobs %></td>
+          <td><%= presenter.remaining_jobs %></td>
+          <td><%= presenter.started_at %></td>
+          <td><%= presenter.status %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
