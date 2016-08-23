@@ -1,0 +1,12 @@
+en:
+  workflows: Workflows
+  id: ID
+  name: Name
+  jobs: Jobs
+  failed_jobs: Failed jobs
+  succeeded_jobs: Succeeded jobs
+  enqueued_jobs: Enqueued jobs
+  running_jobs: Running jobs
+  remaining_jobs: Remaining jobs
+  started_at: Started at
+  status: Status
