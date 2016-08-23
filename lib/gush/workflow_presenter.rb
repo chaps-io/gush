@@ -64,21 +64,27 @@ module Gush
     #
     # @return [Array<Gush::CLI::Overview>]
     def self.build_collection
-      # TODO: Should "gush." be dynamic based on namespace?
-      workflow_keys = Sidekiq.redis { |r| r.keys('gush.workflows.*') }
+      workflows_query = 'gush.workflows.*'
+      workflow_keys = Sidekiq.redis { |r| r.keys(workflows_query) }
 
       workflow_keys.map do |workflow_key|
-        workflow_id = workflow_key.split('.')[-1]
-
-        begin
-          new(Gush::Workflow.find(workflow_id))
-        rescue
-          nil
-        end
+        workflow_presenter_or_nil(workflow_id(workflow_key))
       end.compact
     end
 
     private
+    def workflow_presenter_or_nil(workflow_id)
+      begin
+        new(Gush::Workflow.find(workflow_id))
+      rescue
+        nil
+      end
+    end
+
+    def workflow_id(workflow_key)
+      workflow_key.split('.')[-1]
+    end
+
     def total_jobs_count
       workflow.jobs.count
     end
