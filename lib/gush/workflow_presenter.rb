@@ -73,7 +73,7 @@ module Gush
     end
 
     private
-    def workflow_presenter_or_nil(workflow_id)
+    def self.workflow_presenter_or_nil(workflow_id)
       begin
         new(Gush::Workflow.find(workflow_id))
       rescue
@@ -81,7 +81,7 @@ module Gush
       end
     end
 
-    def workflow_id(workflow_key)
+    def self.workflow_id(workflow_key)
       workflow_key.split('.')[-1]
     end
 
