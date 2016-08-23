@@ -43,7 +43,7 @@ module Gush
     end
 
     def started_at
-      started_at
+      relative_time(Time.at(workflow.started_at))
     end
 
     def status
@@ -58,10 +58,6 @@ module Gush
       else
         "ready to start".blue
       end
-    end
-
-    def started_at
-      relative_time(Time.at(workflow.started_at))
     end
 
     # Builds the array used to display the workflows web page
