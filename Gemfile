@@ -4,4 +4,3 @@ gemspec
 platforms :mri, :ruby do
   gem 'yajl-ruby'
 end
-
