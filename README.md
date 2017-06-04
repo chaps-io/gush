@@ -176,21 +176,28 @@ Now, since `DownloadVideo` finished and its dependant job `EncodeVideo` started,
 ```ruby
 class EncodeVideo < Gush::Job
   def work
-    video_path = payloads["DownloadVideo"]
+    video_path = payloads.first[:output]
   end
 end
 ```
 
-`payloads` is a hash containing outputs from all parent jobs, where job class names are the keys.
+`payloads` is an array containing outputs from all ancestor jobs. So if job `A` depends on `B` and `C`,
+the `payloads` array will look like this:
 
-**Note:** `payloads` will only contain outputs of the job's ancestors. So if job `A` depends on `B` and `C`,
-the `payloads` hash will look like this:
 
 ```ruby
-{
-  "B" => (...),
-  "C" => (...)
-}
+[
+  {
+    id: "B-deafd12352"
+    class: "B",
+    output: "some output job B returned"
+  },
+  {
+    id: "C-feadfga23"
+    class: "C",
+    output: "some other output job C returned"
+  }
+]
 ```
 
 

@@ -53,7 +53,7 @@ describe "Workflows" do
 
     class PrependJob < Gush::Job
       def work
-        string = "#{payloads['PrefixJob'].first}: #{payloads['UpcaseJob'].first}"
+        string = "#{payloads.find { |j| j[:class] == 'PrefixJob'}[:output]}: #{payloads.find { |j| j[:class] == 'UpcaseJob'}[:output]}"
         output string
       end
     end
@@ -90,7 +90,7 @@ describe "Workflows" do
 
     class SummaryJob < Gush::Job
       def work
-        output payloads['RepetitiveJob']
+        output payloads.map { |payload| payload[:output] }
       end
     end
 
