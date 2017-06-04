@@ -41,7 +41,7 @@ describe Gush::Client do
       workflow = TestWorkflow.create
       expect {
         client.start_workflow(workflow)
-      }.to change{Gush::Worker.jobs.count}.from(0).to(1)
+      }.to change{ActiveJob::Base.queue_adapter.enqueued_jobs.size}.from(0).to(1)
     end
 
     it "removes stopped flag when the workflow is started" do

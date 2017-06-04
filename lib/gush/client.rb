@@ -1,15 +1,15 @@
+require 'connection_pool'
+
 module Gush
   class Client
-    attr_reader :configuration, :sidekiq
+    attr_reader :configuration
 
     def initialize(config = Gush.configuration)
       @configuration = config
-      @sidekiq = build_sidekiq
     end
 
     def configure
       yield configuration
-      @sidekiq = build_sidekiq
     end
 
     def create_workflow(name)
@@ -157,17 +157,13 @@ module Gush
       job.enqueue!
       persist_job(workflow_id, job)
 
-      sidekiq.push(
-        'class' => Gush::Worker,
-        'queue' => configuration.namespace,
-        'args'  => [workflow_id, job.name]
-      )
+      Gush::Worker.set(queue: configuration.namespace).perform_later(*[workflow_id, job.name])
     end
 
     private
 
     def workflow_from_hash(hash, nodes = nil)
-      flow = hash[:klass].constantize.new *hash[:arguments]
+      flow = hash[:klass].constantize.new(*hash[:arguments])
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
@@ -183,11 +179,6 @@ module Gush
       connection_pool.with do |redis|
         redis.publish(key, Gush::JSON.encode(message))
       end
-    end
-
-
-    def build_sidekiq
-      Sidekiq::Client.new(connection_pool)
     end
 
     def build_redis

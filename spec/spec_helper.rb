@@ -1,9 +1,9 @@
 require 'gush'
 require 'fakeredis'
-require 'sidekiq/testing'
+require 'json'
 
-Sidekiq::Testing.fake!
-Sidekiq::Logging.logger = nil
+ActiveJob::Base.queue_adapter = :test
+ActiveJob::Base.logger = nil
 
 class Prepare < Gush::Job; end
 class FetchFirstJob < Gush::Job; end
@@ -47,6 +47,15 @@ module GushHelpers
     @redis ||= Redis.new(url: REDIS_URL)
   end
 
+  def perform_one
+    job = ActiveJob::Base.queue_adapter.enqueued_jobs.first
+    if job
+      Gush::Worker.new.perform(*job[:args])
+      ActiveJob::Base.queue_adapter.performed_jobs << job
+      ActiveJob::Base.queue_adapter.enqueued_jobs.shift
+    end
+  end
+
   def jobs_with_id(jobs_array)
     jobs_array.map {|job_name| job_with_id(job_name) }
   end
@@ -59,17 +68,18 @@ end
 RSpec::Matchers.define :have_jobs do |flow, jobs|
   match do |actual|
     expected = jobs.map do |job|
-      hash_including("args" => include(flow, job))
+      hash_including(args: include(flow, job))
     end
-    expect(Gush::Worker.jobs).to match_array(expected)
+    expect(ActiveJob::Base.queue_adapter.enqueued_jobs).to match_array(expected)
   end
 
   failure_message do |actual|
-    "expected queue to have #{jobs}, but instead has: #{actual.jobs.map{ |j| j["args"][1]}}"
+    "expected queue to have #{jobs}, but instead has: #{ActiveJob::Base.queue_adapter.enqueued_jobs.map{ |j| j[:args][1]}}"
   end
 end
 
 RSpec.configure do |config|
+  config.include ActiveJob::TestHelper
   config.include GushHelpers
 
   config.mock_with :rspec do |mocks|
@@ -77,6 +87,9 @@ RSpec.configure do |config|
   end
 
   config.before(:each) do
+    clear_enqueued_jobs
+    clear_performed_jobs
+
     Gush.configure do |config|
       config.redis_url = REDIS_URL
       config.environment = 'test'
@@ -86,7 +99,8 @@ RSpec.configure do |config|
 
 
   config.after(:each) do
-    Sidekiq::Worker.clear_all
+    clear_enqueued_jobs
+    clear_performed_jobs
     redis.flushdb
   end
 end

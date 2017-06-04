@@ -1,12 +1,13 @@
 require 'spec_helper'
+require 'pry'
 
 describe "Workflows" do
   context "when all jobs finish successfuly" do
     it "marks workflow as completed" do
       flow = TestWorkflow.create
-      flow.start!
-
-      Gush::Worker.drain
+      perform_enqueued_jobs do
+        flow.start!
+      end
 
       flow = flow.reload
       expect(flow).to be_finished
@@ -20,21 +21,21 @@ describe "Workflows" do
 
     expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
 
-    Gush::Worker.perform_one
+    perform_one
     expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
 
-    Gush::Worker.perform_one
+    perform_one
     expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchSecondJob", "PersistFirstJob"]))
 
-    Gush::Worker.perform_one
+    perform_one
     expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["PersistFirstJob"]))
 
-    Gush::Worker.perform_one
+    perform_one
     expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["NormalizeJob"]))
 
-    Gush::Worker.perform_one
+    perform_one
 
-    expect(Gush::Worker.jobs).to be_empty
+    expect(ActiveJob::Base.queue_adapter.enqueued_jobs).to be_empty
   end
 
   it "passes payloads down the workflow" do
@@ -68,13 +69,13 @@ describe "Workflows" do
     flow = PayloadWorkflow.create
     flow.start!
 
-    Gush::Worker.perform_one
+    perform_one
     expect(flow.reload.find_job("UpcaseJob").output_payload).to eq("SOME TEXT")
 
-    Gush::Worker.perform_one
+    perform_one
     expect(flow.reload.find_job("PrefixJob").output_payload).to eq("A prefix")
 
-    Gush::Worker.perform_one
+    perform_one
     expect(flow.reload.find_job("PrependJob").output_payload).to eq("A prefix: SOME TEXT")
 
 
@@ -106,16 +107,16 @@ describe "Workflows" do
     flow = PayloadWorkflow.create
     flow.start!
 
-    Gush::Worker.perform_one
+    perform_one
     expect(flow.reload.find_job(flow.jobs[0].name).output_payload).to eq('first')
 
-    Gush::Worker.perform_one
+    perform_one
     expect(flow.reload.find_job(flow.jobs[1].name).output_payload).to eq('second')
 
-    Gush::Worker.perform_one
+    perform_one
     expect(flow.reload.find_job(flow.jobs[2].name).output_payload).to eq('third')
 
-    Gush::Worker.perform_one
+    perform_one
     expect(flow.reload.find_job(flow.jobs[3].name).output_payload).to eq(%w(first second third))
 
   end

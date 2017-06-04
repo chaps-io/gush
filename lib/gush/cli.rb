@@ -2,16 +2,12 @@ require 'terminal-table'
 require 'colorize'
 require 'thor'
 require 'launchy'
-require 'sidekiq'
-require 'sidekiq/api'
 
 module Gush
   class CLI < Thor
     class_option :gushfile, desc: "configuration file to use", aliases: "-f"
-    class_option :concurrency, desc: "concurrency setting for Sidekiq", aliases: "-c"
     class_option :redis, desc: "Redis URL to use", aliases: "-r"
     class_option :namespace, desc: "namespace to run jobs in", aliases: "-n"
-    class_option :env, desc: "Sidekiq environment", aliases: "-e"
 
     def initialize(*)
       super
@@ -52,11 +48,6 @@ module Gush
       client.stop_workflow(id)
     end
 
-    desc "clear", "Clears all jobs from Sidekiq queue"
-    def clear
-      Sidekiq::Queue.new(client.configuration.namespace).clear
-    end
-
     desc "show [workflow_id]", "Shows details about workflow with given ID"
     option :skip_overview, type: :boolean
     option :skip_jobs, type: :boolean
@@ -87,12 +78,6 @@ module Gush
         {alignment: :center, value: 'status'}
       ]
       puts Terminal::Table.new(headings: headers, rows: rows)
-    end
-
-    desc "workers", "Starts Sidekiq workers"
-    def workers
-      config = client.configuration
-      Kernel.exec "bundle exec sidekiq -r #{config.gushfile} -c #{config.concurrency} -q #{config.namespace} -e #{config.environment} -v"
     end
 
     desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
