@@ -41,17 +41,14 @@ module Gush
     end
 
     def incoming_payloads
-      payloads = []
-      job.incoming.each do |job_name|
+      job.incoming.map do |job_name|
         job = client.load_job(workflow.id, job_name)
-        payloads << {
+        {
           id: job.name,
           class: job.klass.to_s,
           output: job.output_payload
         }
       end
-
-      payloads
     end
 
     def mark_as_finished
