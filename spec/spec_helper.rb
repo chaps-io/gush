@@ -92,7 +92,6 @@ RSpec.configure do |config|
 
     Gush.configure do |config|
       config.redis_url = REDIS_URL
-      config.environment = 'test'
       config.gushfile = GUSHFILE
     end
   end
