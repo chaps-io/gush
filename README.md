@@ -16,16 +16,21 @@ This README is about the `1.0.0` version, which has breaking changes compared to
 
 Add this line to your application's Gemfile:
 
-    gem 'gush'
+```ruby
+  gem 'gush', '~> 1.0.0'
+```
 
 And then execute:
 
-    $ bundle
+```
+bundle
+```
 
-Or install it yourself as:
+Or install it yourself with:
 
-    $ gem install gush
-
+```
+gem install gush
+```
 
 ### Requiring workflows inside your project
 
@@ -173,9 +178,10 @@ The command to start background workers depends on the backend you chose for Act
 For example, in case of Sidekiq this would be:
 
 ```
-bundle exec sidekiq
+bundle exec sidekiq -q gush
 ```
 
+**Hint**: gush uses `gush` queue name by default. Keep that in mind, because some backends will only run jobs from explicitly configured queue names.
 
 #### 3. Start the workflow
 
@@ -183,8 +189,7 @@ bundle exec sidekiq
 flow.start!
 ```
 
-Now Gush will start processing jobs in background using ActiveJob
-in the order defined in `configure` method inside Workflow.
+Now Gush will start processing jobs in background using ActiveJob.
 
 **[See Backends section in official ActiveJob documentation about configuring backends](http://guides.rubyonrails.org/v4.2/active_job_basics.html#backends)**
 
