@@ -40,19 +40,19 @@ describe "Workflows" do
 
   it "passes payloads down the workflow" do
     class UpcaseJob < Gush::Job
-      def work
+      def perform
         output params[:input].upcase
       end
     end
 
     class PrefixJob < Gush::Job
-      def work
+      def perform
         output params[:prefix].capitalize
       end
     end
 
     class PrependJob < Gush::Job
-      def work
+      def perform
         string = "#{payloads.find { |j| j[:class] == 'PrefixJob'}[:output]}: #{payloads.find { |j| j[:class] == 'UpcaseJob'}[:output]}"
         output string
       end
@@ -83,13 +83,13 @@ describe "Workflows" do
 
   it "passes payloads from workflow that runs multiple same class jobs with nameized payloads" do
     class RepetitiveJob < Gush::Job
-      def work
+      def perform
         output params[:input]
       end
     end
 
     class SummaryJob < Gush::Job
-      def work
+      def perform
         output payloads.map { |payload| payload[:output] }
       end
     end

@@ -20,7 +20,7 @@ describe Gush::Worker do
   describe "#perform" do
     context "when job fails" do
       it "should mark it as failed" do
-        allow(job).to receive(:work).and_raise(StandardError)
+        allow(job).to receive(:perform).and_raise(StandardError)
         expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
 
         expect do
@@ -30,7 +30,7 @@ describe Gush::Worker do
       end
 
       it "reports that job failed" do
-        allow(job).to receive(:work).and_raise(StandardError)
+        allow(job).to receive(:perform).and_raise(StandardError)
         expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
 
         expect do
@@ -55,7 +55,7 @@ describe Gush::Worker do
     end
 
     it "calls job.work method" do
-      expect(job).to receive(:work)
+      expect(job).to receive(:perform)
       expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
 
       subject.perform(workflow.id, "Prepare")

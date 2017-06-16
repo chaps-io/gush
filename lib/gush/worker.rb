@@ -15,7 +15,7 @@ module Gush
 
       mark_as_started
       begin
-        job.work
+        job.perform
       rescue Exception => error
         mark_as_failed
         report(:failed, start, error.message)

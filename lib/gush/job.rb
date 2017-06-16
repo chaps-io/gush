@@ -37,7 +37,7 @@ module Gush
       @output_payload = data
     end
 
-    def work
+    def perform
     end
 
     def start!
