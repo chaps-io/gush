@@ -2,11 +2,11 @@
 
 ## [![](http://i.imgur.com/ya8Wnyl.png)](https://chaps.io) proudly made by [Chaps](https://chaps.io)
 
-Gush is a parallel workflow runner using only Redis as storage and ActiveJob for scheduling and executing jobs.
+Gush is a parallel workflow runner using only Redis as storage and [ActiveJob](http://guides.rubyonrails.org/v4.2/active_job_basics.html#introduction) for scheduling and executing jobs.
 
 ## Theory
 
-Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing Operations With Dependencies](https://msdn.microsoft.com/en-us/magazine/dd569760.aspx) by Stephen Toub.
+Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing Operations With Dependencies](https://msdn.microsoft.com/en-us/magazine/dd569760.aspx) by Stephen Toub to learn more about this method.
 
 ## Installation
 
@@ -123,7 +123,7 @@ Now that we have defined our workflow we can use it:
 
 ```ruby
 flow = SampleWorkflow.new(optional, arguments)
-flow.save # saves workflow and its jobs to Redis
+flow.save # saves workflow and its jobs to Redis storage
 ```
 
 **or:** you can also use a shortcut:
@@ -132,22 +132,26 @@ flow.save # saves workflow and its jobs to Redis
 flow = SampleWorkflow.create(optional, arguments)
 ```
 
-#### 2. Start workflow
+#### 2. Run background worker processes
 
-First you need to start Sidekiq workers:
+The command to start background workers depends on the backend you chose for ActiveJob.
+For example, in case of Sidekiq this would be:
 
 ```
-bundle exec gush workers
+bundle exec sidekiq
 ```
 
-and then start your workflow:
+
+#### 3. Start the workflow
 
 ```ruby
 flow.start!
 ```
 
-Now Gush will start processing jobs in background using Sidekiq
+Now Gush will start processing jobs in background using ActiveJob
 in the order defined in `configure` method inside Workflow.
+
+**[See Backends section in official ActiveJob documentation about configuring backends](http://guides.rubyonrails.org/v4.2/active_job_basics.html#backends)**
 
 ### Pipelining
 
