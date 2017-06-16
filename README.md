@@ -8,6 +8,10 @@ Gush is a parallel workflow runner using only Redis as storage and [ActiveJob](h
 
 Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing Operations With Dependencies](https://msdn.microsoft.com/en-us/magazine/dd569760.aspx) by Stephen Toub to learn more about this method.
 
+## **WARNING - version notice **
+
+This README is about the `1.0.0` version, which has breaking changes compared to < 1.0.0 versions. [See here for 0.4.1 documentation](https://github.com/chaps-io/gush/blob/349c5aff0332fd14b1cb517115c26d415aa24841/README.md).
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -63,7 +67,7 @@ Here is a complete example of a workflow you can create:
 class SampleWorkflow < Gush::Workflow
   def configure(url_to_fetch_from)
     run FetchJob1, params: { url: url_to_fetch_from }
-    run FetchJob2, params: {some_flag: true, url: 'http://url.com'}
+    run FetchJob2, params: { some_flag: true, url: 'http://url.com' }
 
     run PersistJob1, after: FetchJob1
     run PersistJob2, after: FetchJob2
