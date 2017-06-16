@@ -10,7 +10,7 @@ module Gush
       self.concurrency = hash.fetch(:concurrency, 5)
       self.namespace   = hash.fetch(:namespace, 'gush')
       self.redis_url   = hash.fetch(:redis_url, 'redis://localhost:6379')
-      self.gushfile    = hash.fetch(:gushfile, 'Gushfile.rb')
+      self.gushfile    = hash.fetch(:gushfile, 'Gushfile')
     end
 
     def gushfile=(path)

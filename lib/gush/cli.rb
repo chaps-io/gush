@@ -16,7 +16,6 @@ module Gush
         config.concurrency = options.fetch("concurrency", config.concurrency)
         config.redis_url   = options.fetch("redis",       config.redis_url)
         config.namespace   = options.fetch("namespace",   config.namespace)
-        config.environment = options.fetch("environment", config.environment)
       end
       load_gushfile
     end
@@ -121,7 +120,7 @@ module Gush
         raise Thor::Error, "#{file} not found, please add it to your project".colorize(:red)
       end
 
-      require file
+      load file.to_s
     rescue LoadError
       raise Thor::Error, "failed to require #{file}".colorize(:red)
     end

@@ -22,6 +22,35 @@ Or install it yourself as:
 
     $ gem install gush
 
+
+### Requiring workflows inside your project
+
+When using Gush and its CLI commands you need a `Gushfile` in root directory.
+`Gushfile` should require all your workflows and jobs.
+
+#### Ruby on Rails
+
+```ruby
+require_relative './config/environment.rb'
+```
+
+and make sure your jobs and workflows are correctly loaded by adding their directories to autoload_paths, inside `config/application.rb`:
+
+```ruby
+config.autoload_paths += ["#{Rails.root}/app/jobs", "#{Rails.root}/app/workflows"]
+```
+
+#### Non-Rails apps
+
+Simply require any jobs and workflows manually in `Gushfile`:
+
+```ruby
+require_relative 'lib/workflows/example_workflow.rb'
+require_relative 'lib/jobs/some_job.rb'
+require_relative 'lib/jobs/some_other_job.rb'
+```
+
+
 ## Usage
 
 ### Defining workflows
@@ -30,7 +59,7 @@ The DSL for defining jobs consists of a single `run` method.
 Here is a complete example of a workflow you can create:
 
 ```ruby
-# workflows/sample_workflow.rb
+# app/workflows/sample_workflow.rb
 class SampleWorkflow < Gush::Workflow
   def configure(url_to_fetch_from)
     run FetchJob1, params: { url: url_to_fetch_from }
@@ -65,6 +94,7 @@ You can pass any primitive arguments into jobs while defining your workflow:
 
 ```ruby
 # app/workflows/sample_workflow.rb
+
 class SampleWorkflow < Gush::Workflow
   def configure
     run FetchJob1, params: { url: "http://some.com/url" }
@@ -80,6 +110,7 @@ Jobs are classes inheriting from `Gush::Job`:
 
 ```ruby
 # app/jobs/fetch_job.rb
+
 class FetchJob < Gush::Job
   def work
     # do some fetching from remote APIs
@@ -230,20 +261,6 @@ flow.status
   ```
   bundle exec gush list
   ```
-
-
-### Requiring workflows inside your projects
-
-When using Gush and its CLI commands you need a Gushfile.rb in root directory.
-Gushfile should require all your Workflows and jobs, for example:
-
-```ruby
-require_relative './lib/your_project'
-
-Dir[Rails.root.join("app/workflows/**/*.rb")].each do |file|
-  require file
-end
-```
 
 ## Contributors
 

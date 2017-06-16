@@ -1,6 +1,7 @@
 # 1.0 - WIP
 
 - *BREAKING CHANGE* Gush is now based on ActiveJob instead of directly on Sidekiq, this allows programmers to use multiple backends, instead of just one. Including in-process or even synchronous backends. This implies following changes:
+  - `Gushfile.rb` is now renamed to `Gushfile`
   - `gush` no longer knows or provides a way for starting background processes in its CLI (the `gush workers` command is now gone). This is now up to the developer.
   - `environment` option in configuration is no longer needed so was removed (it was Sidekiq specific)
 - *BREAKING CHANGE* - jobs are expected to have a `perform` method instead of `work` like in < 1.0.0 versions.

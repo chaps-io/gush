@@ -13,7 +13,7 @@ class PersistSecondJob < Gush::Job; end
 class NormalizeJob < Gush::Job; end
 class BobJob < Gush::Job; end
 
-GUSHFILE  = Pathname.new(__FILE__).parent.join("Gushfile.rb")
+GUSHFILE  = Pathname.new(__FILE__).parent.join("Gushfile")
 
 class TestWorkflow < Gush::Workflow
   def configure
