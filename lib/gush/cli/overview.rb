@@ -65,7 +65,7 @@ module Gush
       end
 
       def started_at
-        workflow.started_at.inspect
+        Time.at(workflow.started_at) if workflow.started_at
       end
 
       def failed_status

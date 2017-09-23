@@ -69,10 +69,11 @@ module Gush
     def list
       workflows = client.all_workflows
       rows = workflows.map do |workflow|
-        [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
+        [workflow.id, (Time.at(workflow.started_at) if workflow.started_at), workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
       headers = [
         {alignment: :center, value: 'id'},
+        {alignment: :center, value: 'started at'},
         {alignment: :center, value: 'name'},
         {alignment: :center, value: 'status'}
       ]
