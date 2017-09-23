@@ -121,7 +121,7 @@ Jobs are classes inheriting from `Gush::Job`:
 # app/jobs/fetch_job.rb
 
 class FetchJob < Gush::Job
-  def work
+  def perform
     # do some fetching from remote APIs
 
     params #=> {url: "http://some.com/url"}
@@ -205,7 +205,7 @@ The latter needs to know where the first one downloaded the file to be able to o
 
 ```ruby
 class DownloadVideo < Gush::Job
-  def work
+  def perform
     downloader = VideoDownloader.fetch("http://youtube.com/?v=someytvideo")
 
     output(downloader.file_path)
@@ -219,7 +219,7 @@ Now, since `DownloadVideo` finished and its dependant job `EncodeVideo` started,
 
 ```ruby
 class EncodeVideo < Gush::Job
-  def work
+  def perform
     video_path = payloads.first[:output]
   end
 end
