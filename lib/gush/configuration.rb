@@ -18,7 +18,7 @@ module Gush
     end
 
     def gushfile
-      @gushfile.realpath
+      @gushfile.realpath if @gushfile.exist?
     end
 
     def to_hash
