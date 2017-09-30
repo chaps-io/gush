@@ -166,7 +166,7 @@ flow = SampleWorkflow.new(optional, arguments)
 flow.save # saves workflow and its jobs to Redis storage
 ```
 
-**or:** you can also use a shortcut:
+**or**:  you can also use a shortcut:
 
 ```ruby
 flow = SampleWorkflow.create(optional, arguments)
@@ -181,7 +181,7 @@ For example, in case of Sidekiq this would be:
 bundle exec sidekiq -q gush
 ```
 
-**Hint**: gush uses `gush` queue name by default. Keep that in mind, because some backends will only run jobs from explicitly configured queue names.
+**Hint**: gush uses `gush` queue name by default. Keep that in mind, because some backends (like Sidekiq) will only run jobs from explicitly given queues.
 
 #### 3. Start the workflow
 
@@ -189,7 +189,7 @@ bundle exec sidekiq -q gush
 flow.start!
 ```
 
-Now Gush will start processing jobs in background using ActiveJob.
+Now Gush will start processing jobs in the background using ActiveJob.
 
 **[See Backends section in official ActiveJob documentation about configuring backends](http://guides.rubyonrails.org/v4.2/active_job_basics.html#backends)**
 
@@ -225,21 +225,15 @@ class EncodeVideo < Gush::Job
 end
 ```
 
-`payloads` is an array containing outputs from all ancestor jobs. So if job `A` depends on `B` and `C`,
-the `payloads` array will look like this:
+`payloads` is an array containing outputs from all ancestor jobs. So for our `EncodeVide` job from above, the array will look like:
 
 
 ```ruby
 [
   {
-    id: "B-deafd12352"
-    class: "B",
-    output: "some output job B returned"
-  },
-  {
-    id: "C-feadfga23"
-    class: "C",
-    output: "some other output job C returned"
+    id: "DownloadVideo-41bfb730-b49f-42ac-a808-156327989294" # unique id of the ancestor job
+    class: "DownloadVideo",
+    output: "https://s3.amazonaws.com/somebucket/downloaded-file.mp4" #the payload returned by DownloadVideo job using `output()` method
   }
 ]
 ```
