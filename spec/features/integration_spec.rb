@@ -120,41 +120,42 @@ describe "Workflows" do
     expect(flow.reload.find_job(flow.jobs[3].name).output_payload).to eq(%w(first second third))
   end
 
-  it "handles gigantic workflows with dynamic jobs" do
+  it "does not execute `configure` on each job for huge workflows" do
+    INTERNAL_SPY = double('spy')
+    INTERNAL_CONFIGURE_SPY = double('configure spy')
+    expect(INTERNAL_SPY).to receive(:some_method).exactly(110).times
+
+    # One time when persisting, second time when reloading in the spec
+    expect(INTERNAL_CONFIGURE_SPY).to receive(:some_method).exactly(2).times
+
     class SimpleJob < Gush::Job
       def perform
+        INTERNAL_SPY.some_method
       end
     end
+
     class GiganticWorkflow < Gush::Workflow
       def configure
-        i = 0
-        puts "running configure"
-        puts caller.join("\n")
+        INTERNAL_CONFIGURE_SPY.some_method
+
         10.times do
           main = run(SimpleJob)
-          i += 1
           10.times do
-            #sub = run(SimpleJob, after: main)
-            #i += 1
-            #10.times do
-            #  run(SimpleJob, after: sub)
-            #end
+            run(SimpleJob, after: main)
           end
         end
-        puts i
       end
     end
 
     flow = GiganticWorkflow.create
     flow.start!
 
-    perform_one
-    10.times do
+    110.times do
       perform_one
     end
 
-    #flow = flow.reload
-    #expect(flow).to be_finished
-    #expect(flow).to_not be_failed
+    flow = flow.reload
+    expect(flow).to be_finished
+    expect(flow).to_not be_failed
   end
 end

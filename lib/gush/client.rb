@@ -144,14 +144,6 @@ module Gush
       end
     end
 
-    def worker_report(message)
-      report("gush.workers.status", message)
-    end
-
-    def workflow_report(message)
-      report("gush.workflows.status", message)
-    end
-
     def enqueue_job(workflow_id, job)
       job.enqueue!
       persist_job(workflow_id, job)
@@ -172,12 +164,6 @@ module Gush
       end
 
       flow
-    end
-
-    def report(key, message)
-      connection_pool.with do |redis|
-        redis.publish(key, Gush::JSON.encode(message))
-      end
     end
 
     def build_redis

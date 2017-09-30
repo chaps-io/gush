@@ -1,6 +1,7 @@
 require 'gush'
 require 'fakeredis'
 require 'json'
+require 'pry'
 
 ActiveJob::Base.queue_adapter = :test
 ActiveJob::Base.logger = nil
