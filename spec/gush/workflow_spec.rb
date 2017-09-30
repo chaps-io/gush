@@ -114,7 +114,8 @@ describe Gush::Workflow do
                   "enqueued_at"=>nil,
                   "failed_at"=>nil,
                   "params" => {},
-                  "output_payload" => nil
+                  "output_payload" => nil,
+                  "workflow_id" => an_instance_of(String)
               },
               {
                   "name"=>a_string_starting_with('PersistFirstJob'),
@@ -126,7 +127,8 @@ describe Gush::Workflow do
                   "enqueued_at"=>nil,
                   "failed_at"=>nil,
                   "params" => {},
-                  "output_payload" => nil
+                  "output_payload" => nil,
+                  "workflow_id" => an_instance_of(String)
               }
           ]
       }

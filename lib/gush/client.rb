@@ -111,8 +111,7 @@ module Gush
       end
     end
 
-    def load_job(workflow_id, job_id)
-      workflow = find_workflow(workflow_id)
+    def find_job(workflow_id, job_id)
       job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_id)
       hypen = '-' if job_name_match.nil?
 
@@ -129,7 +128,7 @@ module Gush
       return nil if data.nil?
 
       data = Gush::JSON.decode(data, symbolize_keys: true)
-      Gush::Job.from_hash(workflow, data)
+      Gush::Job.from_hash(data)
     end
 
     def destroy_workflow(workflow)
@@ -169,7 +168,7 @@ module Gush
       flow.id = hash[:id]
 
       (nodes || hash[:nodes]).each do |node|
-        flow.jobs << Gush::Job.from_hash(flow, node)
+        flow.jobs << Gush::Job.from_hash(node)
       end
 
       flow

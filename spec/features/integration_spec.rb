@@ -118,6 +118,43 @@ describe "Workflows" do
 
     perform_one
     expect(flow.reload.find_job(flow.jobs[3].name).output_payload).to eq(%w(first second third))
+  end
 
+  it "handles gigantic workflows with dynamic jobs" do
+    class SimpleJob < Gush::Job
+      def perform
+      end
+    end
+    class GiganticWorkflow < Gush::Workflow
+      def configure
+        i = 0
+        puts "running configure"
+        puts caller.join("\n")
+        10.times do
+          main = run(SimpleJob)
+          i += 1
+          10.times do
+            #sub = run(SimpleJob, after: main)
+            #i += 1
+            #10.times do
+            #  run(SimpleJob, after: sub)
+            #end
+          end
+        end
+        puts i
+      end
+    end
+
+    flow = GiganticWorkflow.create
+    flow.start!
+
+    perform_one
+    10.times do
+      perform_one
+    end
+
+    #flow = flow.reload
+    #expect(flow).to be_finished
+    #expect(flow).to_not be_failed
   end
 end

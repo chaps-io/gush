@@ -102,8 +102,9 @@ module Gush
     end
 
     def run(klass, opts = {})
-      node = klass.new(self, {
-        name: client.next_free_job_id(id,klass.to_s),
+      node = klass.new({
+        workflow_id: id,
+        name: client.next_free_job_id(id, klass.to_s),
         params: opts.fetch(:params, {})
       })
 

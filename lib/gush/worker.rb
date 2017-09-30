@@ -16,7 +16,7 @@ module Gush
       mark_as_started
       begin
         job.perform
-      rescue Exception => error
+      rescue StandardError => error
         mark_as_failed
         report(:failed, start, error.message)
         raise error
@@ -29,6 +29,7 @@ module Gush
     end
 
     private
+
     attr_reader :client, :workflow, :job
 
     def client
@@ -42,7 +43,7 @@ module Gush
 
     def incoming_payloads
       job.incoming.map do |job_name|
-        job = client.load_job(workflow.id, job_name)
+        job = client.find_job(workflow.id, job_name)
         {
           id: job.name,
           class: job.klass.to_s,
@@ -92,7 +93,7 @@ module Gush
 
     def enqueue_outgoing_jobs
       job.outgoing.each do |job_name|
-        out = client.load_job(workflow.id, job_name)
+        out = client.find_job(workflow.id, job_name)
         if out.ready_to_start?
           client.enqueue_job(workflow.id, out)
         end
