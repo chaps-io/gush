@@ -320,7 +320,7 @@ We can achieve that because `run` method returns the id of the created job, whic
 Now, when we create the workflow like this:
 
 ```ruby
-flow = NotifyWorkflow.create([54, 21, 24, 154])
+flow = NotifyWorkflow.create([54, 21, 24, 154, 65]) # 5 user ids as an argument
 ```
 
 it will generate a workflow with 5 `NotificationJob`s and one `AdminNotificationJob` which will depend on all of them:
