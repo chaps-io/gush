@@ -8,7 +8,7 @@ Gush is a parallel workflow runner using only Redis as storage and [ActiveJob](h
 
 Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing Operations With Dependencies](https://msdn.microsoft.com/en-us/magazine/dd569760.aspx) by Stephen Toub to learn more about this method.
 
-## **WARNING - version notice **
+## **WARNING - version notice**
 
 This README is about the `1.0.0` version, which has breaking changes compared to < 1.0.0 versions. [See here for 0.4.1 documentation](https://github.com/chaps-io/gush/blob/349c5aff0332fd14b1cb517115c26d415aa24841/README.md).
 
@@ -77,10 +77,6 @@ end
 and this is how the graph will look like:
 
 ![SampleWorkflow](http://i.imgur.com/SmeRRVT.png)
-
-```
-bundle exec gush viz SampleWorkflow
-```
 
 
 ## Defining workflows
