@@ -17,7 +17,7 @@ This README is about the `1.0.0` version, which has breaking changes compared to
 ### 1. Add `gush` to Gemfile
 
 ```ruby
-  gem 'gush', '~> 1.0.0'
+gem 'gush', '~> 1.0.0'
 ```
 
 ### 2. Create `Gushfile`
@@ -108,7 +108,7 @@ end
 
 We just told Gush to execute `SaveJob` right after `DownloadJob` finishes **successfully**.
 
-But what if your job must depend on more than one ancestor? Easy, just provide an array to the `after` attribute:
+But what if your job must have multiple dependencies? That's easy, just provide an array to the `after` attribute:
 
 ```ruby
 class SimpleWorkflow < Gush::Workflow
@@ -121,7 +121,7 @@ class SimpleWorkflow < Gush::Workflow
 end
 ```
 
-Now `SaveJob` will only execute after both its ancestor finish without errors.
+Now `SaveJob` will only execute after both its parents finish without errors.
 
 With this simple syntax you can build any complex workflows you can imagine!
 
@@ -192,7 +192,7 @@ run FetchBook, params: {url: "http://url.com/book.pdf"}
 (...)
 ```
 
-and in the job we can access them like this:
+and within the job we can access them like this:
 
 ```ruby
 class FetchBook < Gush::Job
@@ -206,20 +206,21 @@ end
 
 ## Executing workflows
 
-Now that we have defined our workflow and its jobs we can use it:
+Now that we have defined our workflow and its jobs, we can use it:
 
 ### 1. Start background worker process
 
-The command to start background workers depends on the backend you chose for ActiveJob.
+**Important**: The command to start background workers depends on the backend you chose for ActiveJob.
 For example, in case of Sidekiq this would be:
 
 ```
 bundle exec sidekiq -q gush
 ```
 
+**[Click here to see backends section in official ActiveJob documentation about configuring backends](http://guides.rubyonrails.org/v4.2/active_job_basics.html#backends)**
+
 **Hint**: gush uses `gush` queue name by default. Keep that in mind, because some backends (like Sidekiq) will only run jobs from explicitly stated queues.
 
-**[Click here to see backends section in official ActiveJob documentation about configuring backends](http://guides.rubyonrails.org/v4.2/active_job_basics.html#backends)**
 
 ### 2. Create the workflow instance
 
@@ -233,7 +234,7 @@ flow = PublishBookWorkflow.create("http://url.com/book.pdf", "978-0470081204")
 flow.start!
 ```
 
-Now Gush will start processing jobs in the background using ActiveJob.
+Now Gush will start processing jobs in the background using ActiveJob and your chosen backend.
 
 ### 4. Monitor its progress:
 
@@ -254,7 +255,7 @@ Gush offers a useful tool to pass results of a job to its dependencies, so they 
 **Example:**
 
 Let's assume you have two jobs, `DownloadVideo`, `EncodeVideo`.
-The latter needs to know where the first one save the file to be able to open it.
+The latter needs to know where the first one saved the file to be able to open it.
 
 
 ```ruby
@@ -281,7 +282,6 @@ end
 
 `payloads` is an array containing outputs from all ancestor jobs. So for our `EncodeVide` job from above, the array will look like:
 
-**Note:** Keep in mind that payloads can only contain data which **can be serialized as JSON**, because that's how Gush saves them to storage.
 
 ```ruby
 [
@@ -293,9 +293,41 @@ end
 ]
 ```
 
+**Note:** Keep in mind that payloads can only contain data which **can be serialized as JSON**, because that's how Gush stores them internally.
+
+### Dynamic workflows
+
+There might be a case when you have to construct the workflow dynamically depending on the input.
+
+As an example, let's write a workflow which accepts an array of users and has to send an email to each one. Additionally after it sends the e-mail to every user, it also has to notify the admin about finishing.
+
+
+```ruby
+
+class NotifyWorkflow < Gush::Workflow
+  def configure(user_ids)
+    notification_jobs = user_ids.map do |user_id|
+      run NotificationJob, params: {user_id: user_id}
+    end
+
+    run AdminNotificationJob, after: notification_jobs
+  end
+end
+```
+
+We can achieve that because `run` method returns the id of the created job, which we can use for chaining dependencies.
+
+Now, when we create the workflow like this:
+
+```ruby
+flow = NotifyWorkflow.create([54, 21, 24, 154])
+```
+
+it will generate a workflow with 5 `NotificationJob`s and one `AdminNotificationJob` which will depend on all of them:
+
+![DynamicWorkflow](https://i.imgur.com/HOI3fjc.png)
 
 ## Command line interface (CLI)
-
 
 ### Checking status
 
