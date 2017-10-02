@@ -41,7 +41,8 @@ module Gush
         graph.add_edges(job.name, end_node)
       else
         job.outgoing.each do |id|
-          graph.add_edges(job.name, id)
+          outgoing_job = workflow.find_job(id)
+          graph.add_edges(job.name, outgoing_job.name)
         end
       end
     end

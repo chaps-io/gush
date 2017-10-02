@@ -76,7 +76,7 @@ end
 
 and this is how the graph will look like:
 
-![SampleWorkflow](http://i.imgur.com/SmeRRVT.png)
+![SampleWorkflow](https://i.imgur.com/DFh6j51.png)
 
 
 ## Defining workflows
