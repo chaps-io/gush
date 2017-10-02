@@ -1,15 +1,15 @@
+require 'connection_pool'
+
 module Gush
   class Client
-    attr_reader :configuration, :sidekiq
+    attr_reader :configuration
 
     def initialize(config = Gush.configuration)
       @configuration = config
-      @sidekiq = build_sidekiq
     end
 
     def configure
       yield configuration
-      @sidekiq = build_sidekiq
     end
 
     def create_workflow(name)
@@ -111,8 +111,7 @@ module Gush
       end
     end
 
-    def load_job(workflow_id, job_id)
-      workflow = find_workflow(workflow_id)
+    def find_job(workflow_id, job_id)
       job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_id)
       hypen = '-' if job_name_match.nil?
 
@@ -129,7 +128,7 @@ module Gush
       return nil if data.nil?
 
       data = Gush::JSON.decode(data, symbolize_keys: true)
-      Gush::Job.from_hash(workflow, data)
+      Gush::Job.from_hash(data)
     end
 
     def destroy_workflow(workflow)
@@ -145,49 +144,26 @@ module Gush
       end
     end
 
-    def worker_report(message)
-      report("gush.workers.status", message)
-    end
-
-    def workflow_report(message)
-      report("gush.workflows.status", message)
-    end
-
     def enqueue_job(workflow_id, job)
       job.enqueue!
       persist_job(workflow_id, job)
 
-      sidekiq.push(
-        'class' => Gush::Worker,
-        'queue' => configuration.namespace,
-        'args'  => [workflow_id, job.name]
-      )
+      Gush::Worker.set(queue: configuration.namespace).perform_later(*[workflow_id, job.name])
     end
 
     private
 
     def workflow_from_hash(hash, nodes = nil)
-      flow = hash[:klass].constantize.new *hash[:arguments]
+      flow = hash[:klass].constantize.new(*hash[:arguments])
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
 
       (nodes || hash[:nodes]).each do |node|
-        flow.jobs << Gush::Job.from_hash(flow, node)
+        flow.jobs << Gush::Job.from_hash(node)
       end
 
       flow
-    end
-
-    def report(key, message)
-      connection_pool.with do |redis|
-        redis.publish(key, Gush::JSON.encode(message))
-      end
-    end
-
-
-    def build_sidekiq
-      Sidekiq::Client.new(connection_pool)
     end
 
     def build_redis

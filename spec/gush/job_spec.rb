@@ -62,7 +62,7 @@ describe Gush::Job do
   describe "#as_json" do
     context "finished and enqueued set to true" do
       it "returns correct hash" do
-        job = described_class.new(double('flow'), name: "a-job", finished_at: 123, enqueued_at: 120)
+        job = described_class.new(workflow_id: 123, name: "a-job", finished_at: 123, enqueued_at: 120)
         expected = {
           name: "a-job",
           klass: "Gush::Job",
@@ -73,7 +73,8 @@ describe Gush::Job do
           finished_at: 123,
           enqueued_at: 120,
           params: {},
-          output_payload: nil
+          output_payload: nil,
+          workflow_id: 123
         }
         expect(job.as_json).to eq(expected)
       end
@@ -83,7 +84,6 @@ describe Gush::Job do
   describe ".from_hash" do
     it "properly restores state of the job from hash" do
       job = described_class.from_hash(
-        double('flow'),
         {
           klass: 'Gush::Job',
           name: 'gob',

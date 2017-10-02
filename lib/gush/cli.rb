@@ -2,16 +2,12 @@ require 'terminal-table'
 require 'colorize'
 require 'thor'
 require 'launchy'
-require 'sidekiq'
-require 'sidekiq/api'
 
 module Gush
   class CLI < Thor
     class_option :gushfile, desc: "configuration file to use", aliases: "-f"
-    class_option :concurrency, desc: "concurrency setting for Sidekiq", aliases: "-c"
     class_option :redis, desc: "Redis URL to use", aliases: "-r"
     class_option :namespace, desc: "namespace to run jobs in", aliases: "-n"
-    class_option :env, desc: "Sidekiq environment", aliases: "-e"
 
     def initialize(*)
       super
@@ -20,7 +16,6 @@ module Gush
         config.concurrency = options.fetch("concurrency", config.concurrency)
         config.redis_url   = options.fetch("redis",       config.redis_url)
         config.namespace   = options.fetch("namespace",   config.namespace)
-        config.environment = options.fetch("environment", config.environment)
       end
       load_gushfile
     end
@@ -52,11 +47,6 @@ module Gush
       client.stop_workflow(id)
     end
 
-    desc "clear", "Clears all jobs from Sidekiq queue"
-    def clear
-      Sidekiq::Queue.new(client.configuration.namespace).clear
-    end
-
     desc "show [workflow_id]", "Shows details about workflow with given ID"
     option :skip_overview, type: :boolean
     option :skip_jobs, type: :boolean
@@ -79,20 +69,15 @@ module Gush
     def list
       workflows = client.all_workflows
       rows = workflows.map do |workflow|
-        [workflow.id, workflow.class, {alignment: :center, value: status_for(workflow)}]
+        [workflow.id, (Time.at(workflow.started_at) if workflow.started_at), workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
       headers = [
         {alignment: :center, value: 'id'},
+        {alignment: :center, value: 'started at'},
         {alignment: :center, value: 'name'},
         {alignment: :center, value: 'status'}
       ]
       puts Terminal::Table.new(headings: headers, rows: rows)
-    end
-
-    desc "workers", "Starts Sidekiq workers"
-    def workers
-      config = client.configuration
-      Kernel.exec "bundle exec sidekiq -r #{config.gushfile} -c #{config.concurrency} -q #{config.namespace} -e #{config.environment} -v"
     end
 
     desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
@@ -136,7 +121,7 @@ module Gush
         raise Thor::Error, "#{file} not found, please add it to your project".colorize(:red)
       end
 
-      require file
+      load file.to_s
     rescue LoadError
       raise Thor::Error, "failed to require #{file}".colorize(:red)
     end

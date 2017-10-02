@@ -4,68 +4,60 @@ describe Gush::Worker do
   subject { described_class.new }
 
   let!(:workflow)   { TestWorkflow.create }
-  let(:job)         { workflow.find_job("Prepare")  }
+  let!(:job)        { client.find_job(workflow.id, "Prepare")  }
   let(:config)      { Gush.configuration.to_json  }
-  let!(:client)     { double("client") }
-
-  before :each do
-    allow(subject).to receive(:client).and_return(client)
-    allow(subject).to receive(:enqueue_outgoing_jobs)
-
-    allow(client).to receive(:find_workflow).with(workflow.id).and_return(workflow)
-    expect(client).to receive(:persist_job).at_least(1).times
-    expect(client).to receive(:worker_report).with(hash_including(status: :started)).ordered
-  end
+  let!(:client)     { Gush::Client.new }
 
   describe "#perform" do
     context "when job fails" do
       it "should mark it as failed" do
-        allow(job).to receive(:work).and_raise(StandardError)
-        expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
+        class FailingJob < Gush::Job
+          def perform
+            invalid.code_to_raise.error
+          end
+        end
 
+        class FailingWorkflow < Gush::Workflow
+          def configure
+            run FailingJob
+          end
+        end
+
+        workflow = FailingWorkflow.create
         expect do
-          subject.perform(workflow.id, "Prepare")
-        end.to raise_error(StandardError)
-        expect(workflow.find_job("Prepare")).to be_failed
-      end
-
-      it "reports that job failed" do
-        allow(job).to receive(:work).and_raise(StandardError)
-        expect(client).to receive(:worker_report).with(hash_including(status: :failed)).ordered
-
-        expect do
-          subject.perform(workflow.id, "Prepare")
-        end.to raise_error(StandardError)
+          subject.perform(workflow.id, "FailingJob")
+        end.to raise_error(NameError)
+        expect(client.find_job(workflow.id, "FailingJob")).to be_failed
       end
     end
 
     context "when job completes successfully" do
       it "should mark it as succedeed" do
         expect(subject).to receive(:mark_as_finished)
-        expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
-
-        subject.perform(workflow.id, "Prepare")
-      end
-
-      it "reports that job succedeed" do
-        expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
 
         subject.perform(workflow.id, "Prepare")
       end
     end
 
-    it "calls job.work method" do
-      expect(job).to receive(:work)
-      expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
+    it "calls job.perform method" do
+      SPY = double()
+      expect(SPY).to receive(:some_method)
 
-      subject.perform(workflow.id, "Prepare")
-    end
+      class OkayJob < Gush::Job
+        def perform
+          SPY.some_method
+        end
+      end
 
-    it "reports when the job is started" do
-      allow(client).to receive(:worker_report)
-      expect(client).to receive(:worker_report).with(hash_including(status: :finished)).ordered
+      class OkayWorkflow < Gush::Workflow
+        def configure
+          run OkayJob
+        end
+      end
 
-      subject.perform(workflow.id, "Prepare")
+      workflow = OkayWorkflow.create
+
+      subject.perform(workflow.id, 'OkayJob')
     end
   end
 end

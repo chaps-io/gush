@@ -4,16 +4,16 @@ describe Gush do
   describe ".gushfile" do
     let(:path) { Pathname("/tmp/Gushfile.rb") }
 
-    context "Gushfile.rb is missing from pwd" do
-      it "raises an exception" do
+    context "Gushfile is missing from pwd" do
+      it "returns nil" do
         path.delete if path.exist?
         Gush.configuration.gushfile = path
 
-        expect { Gush.gushfile }.to raise_error(Errno::ENOENT)
+        expect(Gush.gushfile).to eq(nil)
       end
     end
 
-    context "Gushfile.rb exists" do
+    context "Gushfile exists" do
       it "returns Pathname to it" do
         FileUtils.touch(path)
         Gush.configuration.gushfile = path

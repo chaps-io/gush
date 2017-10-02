@@ -2,38 +2,65 @@
 
 ## [![](http://i.imgur.com/ya8Wnyl.png)](https://chaps.io) proudly made by [Chaps](https://chaps.io)
 
-Gush is a parallel workflow runner using only Redis as its message broker and Sidekiq for workers.
+Gush is a parallel workflow runner using only Redis as storage and [ActiveJob](http://guides.rubyonrails.org/v4.2/active_job_basics.html#introduction) for scheduling and executing jobs.
 
 ## Theory
 
-Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing Operations With Dependencies](https://msdn.microsoft.com/en-us/magazine/dd569760.aspx) by Stephen Toub.
+Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing Operations With Dependencies](https://msdn.microsoft.com/en-us/magazine/dd569760.aspx) by Stephen Toub to learn more about this method.
+
+## **WARNING - version notice**
+
+This README is about the `1.0.0` version, which has breaking changes compared to < 1.0.0 versions. [See here for 0.4.1 documentation](https://github.com/chaps-io/gush/blob/349c5aff0332fd14b1cb517115c26d415aa24841/README.md).
+
 ## Installation
 
-Add this line to your application's Gemfile:
+### 1. Add `gush` to Gemfile
 
-    gem 'gush'
+```ruby
+gem 'gush', '~> 1.0.0'
+```
 
-And then execute:
+### 2. Create `Gushfile`
 
-    $ bundle
+When using Gush and its CLI commands you need a `Gushfile` in the root directory.
+`Gushfile` should require all your workflows and jobs.
 
-Or install it yourself as:
+#### Ruby on Rails
 
-    $ gem install gush
+For RoR it is enough to require the full environment:
 
-## Usage
+```ruby
+require_relative './config/environment.rb'
+```
 
-### Defining workflows
+and make sure your jobs and workflows are correctly loaded by adding their directories to autoload_paths, inside `config/application.rb`:
+
+```ruby
+config.autoload_paths += ["#{Rails.root}/app/jobs", "#{Rails.root}/app/workflows"]
+```
+
+#### Ruby
+
+Simply require any jobs and workflows manually in `Gushfile`:
+
+```ruby
+require_relative 'lib/workflows/example_workflow.rb'
+require_relative 'lib/jobs/some_job.rb'
+require_relative 'lib/jobs/some_other_job.rb'
+```
+
+
+## Example
 
 The DSL for defining jobs consists of a single `run` method.
 Here is a complete example of a workflow you can create:
 
 ```ruby
-# workflows/sample_workflow.rb
+# app/workflows/sample_workflow.rb
 class SampleWorkflow < Gush::Workflow
   def configure(url_to_fetch_from)
     run FetchJob1, params: { url: url_to_fetch_from }
-    run FetchJob2, params: {some_flag: true, url: 'http://url.com'}
+    run FetchJob2, params: { some_flag: true, url: 'http://url.com' }
 
     run PersistJob1, after: FetchJob1
     run PersistJob2, after: FetchJob2
@@ -47,62 +74,82 @@ class SampleWorkflow < Gush::Workflow
 end
 ```
 
-**Hint:** For debugging purposes you can vizualize the graph using `viz` command:
+and this is how the graph will look like:
 
-```
-bundle exec gush viz SampleWorkflow
-```
-
-For the Workflow above, the graph will look like this:
-
-![SampleWorkflow](http://i.imgur.com/SmeRRVT.png)
+![SampleWorkflow](https://i.imgur.com/DFh6j51.png)
 
 
-#### Passing parameters to jobs
+## Defining workflows
 
-You can pass any primitive arguments into jobs while defining your workflow:
+Let's start with the simplest workflow possible, consisting of a single job:
 
 ```ruby
-# app/workflows/sample_workflow.rb
-class SampleWorkflow < Gush::Workflow
+class SimpleWorkflow < Gush::Workflow
   def configure
-    run FetchJob1, params: { url: "http://some.com/url" }
+    run DownloadJob
   end
 end
 ```
 
-See below to learn how to access those params inside your job.
-
-#### Defining jobs
-
-Jobs are classes inheriting from `Gush::Job`:
+Of course having a workflow with only a single job does not make sense, so it's time to define dependencies:
 
 ```ruby
-# app/jobs/fetch_job.rb
-class FetchJob < Gush::Job
-  def work
-    # do some fetching from remote APIs
-
-    params #=> {url: "http://some.com/url"}
+class SimpleWorkflow < Gush::Workflow
+  def configure
+    run DownloadJob
+    run SaveJob, after: DownloadJob
   end
 end
 ```
 
-`params` method is a hash containing your (optional) parameters passed to `run` method in the workflow.
+We just told Gush to execute `SaveJob` right after `DownloadJob` finishes **successfully**.
 
-#### Passing arguments to workflows
+But what if your job must have multiple dependencies? That's easy, just provide an array to the `after` attribute:
+
+```ruby
+class SimpleWorkflow < Gush::Workflow
+  def configure
+    run FirstDownloadJob
+    run SecondDownloadJob
+
+    run SaveJob, after: [FirstDownloadJob, SecondDownloadJob]
+  end
+end
+```
+
+Now `SaveJob` will only execute after both its parents finish without errors.
+
+With this simple syntax you can build any complex workflows you can imagine!
+
+#### Alternative way
+
+`run` method also accepts `before:` attribute to define the opposite association. So we can write the same workflow as above, but like this:
+
+```ruby
+class SimpleWorkflow < Gush::Workflow
+  def configure
+    run FirstDownloadJob, before: SaveJob
+    run SecondDownloadJob, before: SaveJob
+
+    run SaveJob
+  end
+end
+```
+
+You can use whatever way you find more readable or even both at once :)
+
+### Passing arguments to workflows
 
 Workflows can accept any primitive arguments in their constructor, which then will be available in your
 `configure` method.
 
-Here's an example of a workflow responsible for publishing a book:
+Let's assume we are writing a book publishing workflow which needs to know where the PDF of the book is and under what ISBN it will be released:
 
 ```ruby
-# app/workflows/sample_workflow.rb
 class PublishBookWorkflow < Gush::Workflow
   def configure(url, isbn)
     run FetchBook, params: { url: url }
-    run PublishBook, params: { book_isbn: isbn }
+    run PublishBook, params: { book_isbn: isbn }, after: FetchBook
   end
 end
 ```
@@ -110,92 +157,82 @@ end
 and then create your workflow with those arguments:
 
 ```ruby
-PublishBookWorkflow.new("http://url.com/book.pdf", "978-0470081204")
+PublishBookWorkflow.create("http://url.com/book.pdf", "978-0470081204")
 ```
 
+and that's basically it for defining workflows, see below on how to define jobs:
 
-### Running workflows
+## Defining jobs
 
-Now that we have defined our workflow we can use it:
-
-#### 1. Initialize and save it
+The simplest job is a class inheriting from `Gush::Job` and responding to `perform` method. Much like any other ActiveJob class.
 
 ```ruby
-flow = SampleWorkflow.new(optional, arguments)
-flow.save # saves workflow and its jobs to Redis
+class FetchBook < Gush::Job
+  def perform
+    # do some fetching from remote APIs
+  end
+end
 ```
 
-**or:** you can also use a shortcut:
+But what about those params we passed in the previous step?
+
+## Passing parameters into jobs
+
+To do that, simply provide a `params:` attribute with a hash of parameters you'd like to have available inside the `perform` method of the job.
+
+So, inside workflow:
 
 ```ruby
-flow = SampleWorkflow.create(optional, arguments)
+(...)
+run FetchBook, params: {url: "http://url.com/book.pdf"}
+(...)
 ```
 
-#### 2. Start workflow
+and within the job we can access them like this:
 
-First you need to start Sidekiq workers:
+```ruby
+class FetchBook < Gush::Job
+  def perform
+    # you can access `params` method here, for example:
+
+    params #=> {url: "http://url.com/book.pdf"}
+  end
+end
+```
+
+## Executing workflows
+
+Now that we have defined our workflow and its jobs, we can use it:
+
+### 1. Start background worker process
+
+**Important**: The command to start background workers depends on the backend you chose for ActiveJob.
+For example, in case of Sidekiq this would be:
 
 ```
-bundle exec gush workers
+bundle exec sidekiq -q gush
 ```
 
-and then start your workflow:
+**[Click here to see backends section in official ActiveJob documentation about configuring backends](http://guides.rubyonrails.org/v4.2/active_job_basics.html#backends)**
+
+**Hint**: gush uses `gush` queue name by default. Keep that in mind, because some backends (like Sidekiq) will only run jobs from explicitly stated queues.
+
+
+### 2. Create the workflow instance
+
+```ruby
+flow = PublishBookWorkflow.create("http://url.com/book.pdf", "978-0470081204")
+```
+
+### 3. Start the workflow
 
 ```ruby
 flow.start!
 ```
 
-Now Gush will start processing jobs in background using Sidekiq
-in the order defined in `configure` method inside Workflow.
+Now Gush will start processing jobs in the background using ActiveJob and your chosen backend.
 
-### Pipelining
-
-Gush offers a useful feature which lets you pass results of a job to its dependencies, so they can act accordingly.
-
-**Example:**
-
-Let's assume you have two jobs, `DownloadVideo`, `EncodeVideo`.
-The latter needs to know where the first one downloaded the file to be able to open it.
-
-
-```ruby
-class DownloadVideo < Gush::Job
-  def work
-    downloader = VideoDownloader.fetch("http://youtube.com/?v=someytvideo")
-
-    output(downloader.file_path)
-  end
-end
-```
-
-`output` method is Gush's way of saying: "I want to pass this down to my descendants".
-
-Now, since `DownloadVideo` finished and its dependant job `EncodeVideo` started, we can access that payload down the (pipe)line:
-
-```ruby
-class EncodeVideo < Gush::Job
-  def work
-    video_path = payloads["DownloadVideo"]
-  end
-end
-```
-
-`payloads` is a hash containing outputs from all parent jobs, where job class names are the keys.
-
-**Note:** `payloads` will only contain outputs of the job's ancestors. So if job `A` depends on `B` and `C`,
-the `payloads` hash will look like this:
-
-```ruby
-{
-  "B" => (...),
-  "C" => (...)
-}
-```
-
-
-### Checking status:
-
-#### In Ruby:
+### 4. Monitor its progress:
 
 ```ruby
 flow.reload
@@ -205,7 +242,90 @@ flow.status
 
 `reload` is needed to see the latest status, since workflows are updated asynchronously.
 
-#### Via CLI:
+## Advanced features
+
+### Pipelining
+
+Gush offers a useful tool to pass results of a job to its dependencies, so they can act differently.
+
+**Example:**
+
+Let's assume you have two jobs, `DownloadVideo`, `EncodeVideo`.
+The latter needs to know where the first one saved the file to be able to open it.
+
+
+```ruby
+class DownloadVideo < Gush::Job
+  def perform
+    downloader = VideoDownloader.fetch("http://youtube.com/?v=someytvideo")
+
+    output(downloader.file_path)
+  end
+end
+```
+
+`output` method is used to ouput data from the job to all dependant jobs.
+
+Now, since `DownloadVideo` finished and its dependant job `EncodeVideo` started, we can access that payload inside it:
+
+```ruby
+class EncodeVideo < Gush::Job
+  def perform
+    video_path = payloads.first[:output]
+  end
+end
+```
+
+`payloads` is an array containing outputs from all ancestor jobs. So for our `EncodeVide` job from above, the array will look like:
+
+
+```ruby
+[
+  {
+    id: "DownloadVideo-41bfb730-b49f-42ac-a808-156327989294" # unique id of the ancestor job
+    class: "DownloadVideo",
+    output: "https://s3.amazonaws.com/somebucket/downloaded-file.mp4" #the payload returned by DownloadVideo job using `output()` method
+  }
+]
+```
+
+**Note:** Keep in mind that payloads can only contain data which **can be serialized as JSON**, because that's how Gush stores them internally.
+
+### Dynamic workflows
+
+There might be a case when you have to construct the workflow dynamically depending on the input.
+
+As an example, let's write a workflow which accepts an array of users and has to send an email to each one. Additionally after it sends the e-mail to every user, it also has to notify the admin about finishing.
+
+
+```ruby
+
+class NotifyWorkflow < Gush::Workflow
+  def configure(user_ids)
+    notification_jobs = user_ids.map do |user_id|
+      run NotificationJob, params: {user_id: user_id}
+    end
+
+    run AdminNotificationJob, after: notification_jobs
+  end
+end
+```
+
+We can achieve that because `run` method returns the id of the created job, which we can use for chaining dependencies.
+
+Now, when we create the workflow like this:
+
+```ruby
+flow = NotifyWorkflow.create([54, 21, 24, 154, 65]) # 5 user ids as an argument
+```
+
+it will generate a workflow with 5 `NotificationJob`s and one `AdminNotificationJob` which will depend on all of them:
+
+![DynamicWorkflow](https://i.imgur.com/HOI3fjc.png)
+
+## Command line interface (CLI)
+
+### Checking status
 
 - of a specific workflow:
 
@@ -219,18 +339,13 @@ flow.status
   bundle exec gush list
   ```
 
+### Vizualizing workflows as image
 
-### Requiring workflows inside your projects
+This requires that you have imagemagick installed on your computer:
 
-When using Gush and its CLI commands you need a Gushfile.rb in root directory.
-Gushfile should require all your Workflows and jobs, for example:
 
-```ruby
-require_relative './lib/your_project'
-
-Dir[Rails.root.join("app/workflows/**/*.rb")].each do |file|
-  require file
-end
+```
+bundle exec gush viz <NameOfTheWorkflow>
 ```
 
 ## Contributors

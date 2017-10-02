@@ -1,11 +1,10 @@
 module Gush
   class Job
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
-      :finished_at, :failed_at, :started_at, :enqueued_at, :payloads_hash, :klass
-    attr_reader :name, :output_payload, :params, :payloads
+      :finished_at, :failed_at, :started_at, :enqueued_at, :payloads, :klass
+    attr_reader :name, :output_payload, :params
 
-    def initialize(workflow, opts = {})
-      @workflow = workflow
+    def initialize(opts = {})
       options = opts.dup
       assign_variables(options)
     end
@@ -21,6 +20,7 @@ module Gush
         started_at: started_at,
         failed_at: failed_at,
         params: params,
+        workflow_id: workflow_id,
         output_payload: output_payload
       }
     end
@@ -29,21 +29,15 @@ module Gush
       Gush::JSON.encode(as_json)
     end
 
-    def self.from_hash(flow, hash)
-      hash[:klass].constantize.new(flow, hash)
+    def self.from_hash(hash)
+      hash[:klass].constantize.new(hash)
     end
 
     def output(data)
       @output_payload = data
     end
 
-    def payloads
-      payload_h = {}
-      payloads_hash.each {|k,val| payload_h[k.to_s] = val.map {|h| h[:payload] }}
-      payload_h
-    end
-
-    def work
+    def perform
     end
 
     def start!
@@ -95,7 +89,7 @@ module Gush
 
     def parents_succeeded?
       incoming.all? do |name|
-        @workflow.find_job(name).succeeded?
+        client.find_job(workflow_id, name).succeeded?
       end
     end
 
@@ -104,8 +98,9 @@ module Gush
     end
 
     private
-    def logger
-      Sidekiq.logger
+
+    def client
+      @client ||= Client.new
     end
 
     def current_timestamp
@@ -123,6 +118,7 @@ module Gush
       @params         = opts[:params] || {}
       @klass          = opts[:klass]
       @output_payload = opts[:output_payload]
+      @workflow_id    = opts[:workflow_id]
     end
   end
 end
