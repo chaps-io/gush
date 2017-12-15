@@ -144,6 +144,21 @@ module Gush
       end
     end
 
+    def expire_workflow(workflow, ttl=nil)
+      ttl = ttl || configuration.ttl
+      connection_pool.with do |redis|
+        redis.expire("gush.workflows.#{workflow.id}", ttl)
+      end
+      workflow.jobs.each {|job| expire_job(workflow.id, job, ttl) }
+    end
+
+    def expire_job(workflow_id, job, ttl=nil)
+      ttl = ttl || configuration.ttl
+      connection_pool.with do |redis|
+        redis.expire("gush.jobs.#{workflow_id}.#{job.name}", ttl)
+      end
+    end
+
     def enqueue_job(workflow_id, job)
       job.enqueue!
       persist_job(workflow_id, job)
