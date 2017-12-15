@@ -363,6 +363,22 @@ end
 
 And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.  
 
+### Avoid overlapping workflows
+
+Since we do not know how long our workflow execution will take we might want to avoid starting the next scheduled workflow iteration while the current one with same class is still running.  Long term this could be moved into core library, perhaps `Workflow.find_by_class(klass)`
+
+```ruby
+# config/initializers/gush.rb
+GUSH_CLIENT = Gush::Client.new
+# call this method before NotifyWorkflow.create
+def find_by_class klass
+  GUSH_CLIENT.all_workflows.each do |flow|
+    return true if flow.to_hash[:name] == klass && flow.running?
+  end
+  return false
+end
+```
+
 ## Contributors
 
 - [Mateusz Lenik](https://github.com/mlen)
