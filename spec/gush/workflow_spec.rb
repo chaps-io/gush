@@ -13,8 +13,7 @@ describe Gush::Workflow do
       end
 
       expect_any_instance_of(klass).to receive(:configure).with("arg1", "arg2")
-      flow = klass.new("arg1", "arg2")
-
+      klass.new("arg1", "arg2")
     end
   end
 
