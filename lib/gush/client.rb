@@ -153,14 +153,14 @@ module Gush
 
     private
 
-    def workflow_from_hash(hash, nodes = nil)
+    def workflow_from_hash(hash, nodes = [])
       flow = hash[:klass].constantize.new(*hash[:arguments])
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
 
-      (nodes || hash[:nodes]).each do |node|
-        flow.jobs << Gush::Job.from_hash(node)
+      flow.jobs = nodes.map do |node|
+        Gush::Job.from_hash(node)
       end
 
       flow
