@@ -20,7 +20,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "activejob", "~> 5.0"
   spec.add_dependency "connection_pool", "~> 2.2.1"
   spec.add_dependency "multi_json", "~> 1.11"
-  spec.add_dependency "redis", "~> 3.2"
+  spec.add_dependency "redis", ">= 3.2", "< 5"
   spec.add_dependency "hiredis", "~> 0.6"
   spec.add_dependency "ruby-graphviz", "~> 1.2"
   spec.add_dependency "terminal-table", "~> 1.4"
