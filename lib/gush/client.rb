@@ -73,7 +73,7 @@ module Gush
 
     def all_workflows
       connection_pool.with do |redis|
-        redis.keys("gush.workflows.*").map do |key|
+        redis.scan_each(match: "gush.workflows.*").map do |key|
           id = key.sub("gush.workflows.", "")
           find_workflow(id)
         end
@@ -86,7 +86,7 @@ module Gush
 
         unless data.nil?
           hash = Gush::JSON.decode(data, symbolize_keys: true)
-          keys = redis.keys("gush.jobs.#{id}.*")
+          keys = redis.scan_each(match: "gush.jobs.#{id}.*")
           nodes = redis.mget(*keys).map { |json| Gush::JSON.decode(json, symbolize_keys: true) }
           workflow_from_hash(hash, nodes)
         else
@@ -116,7 +116,7 @@ module Gush
       hypen = '-' if job_name_match.nil?
 
       keys = connection_pool.with do |redis|
-        redis.keys("gush.jobs.#{workflow_id}.#{job_id}#{hypen}*")
+        redis.scan_each(match: "gush.jobs.#{workflow_id}.#{job_id}#{hypen}*").to_a
       end
 
       return nil if keys.nil?
@@ -153,14 +153,14 @@ module Gush
 
     private
 
-    def workflow_from_hash(hash, nodes = nil)
+    def workflow_from_hash(hash, nodes = [])
       flow = hash[:klass].constantize.new(*hash[:arguments])
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
 
-      (nodes || hash[:nodes]).each do |node|
-        flow.jobs << Gush::Job.from_hash(node)
+      flow.jobs = nodes.map do |node|
+        Gush::Job.from_hash(node)
       end
 
       flow

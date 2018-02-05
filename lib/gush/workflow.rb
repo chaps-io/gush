@@ -168,7 +168,6 @@ module Gush
         total: jobs.count,
         finished: jobs.count(&:finished?),
         klass: name,
-        jobs: jobs.map(&:as_json),
         status: status,
         stopped: stopped,
         started_at: started_at,

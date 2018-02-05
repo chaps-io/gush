@@ -13,8 +13,7 @@ describe Gush::Workflow do
       end
 
       expect_any_instance_of(klass).to receive(:configure).with("arg1", "arg2")
-      flow = klass.new("arg1", "arg2")
-
+      klass.new("arg1", "arg2")
     end
   end
 
@@ -102,35 +101,7 @@ describe Gush::Workflow do
           "started_at" => nil,
           "finished_at" => nil,
           "stopped" => false,
-          "arguments" => ["arg1", "arg2"],
-          "jobs" => [
-              {
-                  "name"=>a_string_starting_with('FetchFirstJob'),
-                  "klass"=>"FetchFirstJob",
-                  "incoming"=>[],
-                  "outgoing"=>[a_string_starting_with('PersistFirstJob')],
-                  "finished_at"=>nil,
-                  "started_at"=>nil,
-                  "enqueued_at"=>nil,
-                  "failed_at"=>nil,
-                  "params" => {},
-                  "output_payload" => nil,
-                  "workflow_id" => an_instance_of(String)
-              },
-              {
-                  "name"=>a_string_starting_with('PersistFirstJob'),
-                  "klass"=>"PersistFirstJob",
-                  "incoming"=>["FetchFirstJob"],
-                  "outgoing"=>[],
-                  "finished_at"=>nil,
-                  "started_at"=>nil,
-                  "enqueued_at"=>nil,
-                  "failed_at"=>nil,
-                  "params" => {},
-                  "output_payload" => nil,
-                  "workflow_id" => an_instance_of(String)
-              }
-          ]
+          "arguments" => ["arg1", "arg2"]
       }
       expect(result).to match(expected)
     end

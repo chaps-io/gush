@@ -88,8 +88,8 @@ module Gush
     end
 
     def parents_succeeded?
-      incoming.all? do |name|
-        client.find_job(workflow_id, name).succeeded?
+      !incoming.any? do |name|
+        !client.find_job(workflow_id, name).succeeded?
       end
     end
 
