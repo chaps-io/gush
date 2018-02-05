@@ -16,6 +16,7 @@ module Gush
         config.concurrency = options.fetch("concurrency", config.concurrency)
         config.redis_url   = options.fetch("redis",       config.redis_url)
         config.namespace   = options.fetch("namespace",   config.namespace)
+        config.ttl         = options.fetch("ttl",         config.ttl)
       end
       load_gushfile
     end

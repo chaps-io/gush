@@ -53,6 +53,10 @@ module Gush
       client.persist_workflow(self)
     end
 
+    def expire! (ttl=nil)
+      client.expire_workflow(self, ttl)
+    end
+
     def mark_as_persisted
       @persisted = true
     end

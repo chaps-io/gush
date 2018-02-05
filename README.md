@@ -348,6 +348,37 @@ This requires that you have imagemagick installed on your computer:
 bundle exec gush viz <NameOfTheWorkflow>
 ```
 
+### Cleaning up afterwards
+
+Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is ran.  This data might be useful for analysis but at a certain point it can be purged via Redis TTL.  By default gush and Redis will keep keys forever.  To configure expiration you need to 2 things.  Create initializer (specify config.ttl in seconds, be different per environment).  
+
+```ruby
+# config/initializers/gush.rb
+Gush.configure do |config|
+  config.redis_url = "redis://localhost:6379"
+  config.concurrency = 5
+  config.ttl = 3600*24*7
+end
+```
+
+And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.  
+
+### Avoid overlapping workflows
+
+Since we do not know how long our workflow execution will take we might want to avoid starting the next scheduled workflow iteration while the current one with same class is still running.  Long term this could be moved into core library, perhaps `Workflow.find_by_class(klass)`
+
+```ruby
+# config/initializers/gush.rb
+GUSH_CLIENT = Gush::Client.new
+# call this method before NotifyWorkflow.create
+def find_by_class klass
+  GUSH_CLIENT.all_workflows.each do |flow|
+    return true if flow.to_hash[:name] == klass && flow.running?
+  end
+  return false
+end
+```
+
 ## Contributors
 
 - [Mateusz Lenik](https://github.com/mlen)
