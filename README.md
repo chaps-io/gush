@@ -1,4 +1,5 @@
 # Gush [![Build Status](https://travis-ci.org/chaps-io/gush.svg?branch=master)](https://travis-ci.org/chaps-io/gush)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fchaps-io%2Fgush.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fchaps-io%2Fgush?ref=badge_shield)
 
 ## [![](http://i.imgur.com/ya8Wnyl.png)](https://chaps.io) proudly made by [Chaps](https://chaps.io)
 
@@ -393,3 +394,7 @@ end
 3. Commit your changes (`git commit -am 'Add some feature'`)
 4. Push to the branch (`git push origin my-new-feature`)
 5. Create new Pull Request
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fchaps-io%2Fgush.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fchaps-io%2Fgush?ref=badge_large)
