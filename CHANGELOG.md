@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 1.1.0 - 2018-02-05
+
+## Added
+
+- Added ability to specify TTL for Redis keys and manually expire whole workflows (Thanks to @dmitrypol! [See pull request](https://github.com/chaps-io/gush/pull/48))
+- Loosened dependency on redis-rb library to >= 3.2 and < 5.0 (Thanks to @mofumofu3n! [See pull request](https://github.com/chaps-io/gush/pull/52))
+
+## Fixed
+
+- Improved performance of (de)serializing workflows by not storing job array inside workflow JSON and other smaller improvements ([See pull request](https://github.com/chaps-io/gush/pull/53))
+
+
 ## 1.0.0 - 2017-10-02
 
 ### Added
