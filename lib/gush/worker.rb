@@ -1,4 +1,5 @@
 require 'active_job'
+require 'redis-mutex'
 
 module Gush
   class Worker < ::ActiveJob::Base
@@ -66,9 +67,12 @@ module Gush
 
     def enqueue_outgoing_jobs
       job.outgoing.each do |job_name|
-        out = client.find_job(workflow_id, job_name)
-        if out.ready_to_start?
-          client.enqueue_job(workflow_id, out)
+        RedisMutex.with_lock("gush_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.3, block: 2) do
+          out = client.find_job(workflow_id, job_name)
+
+          if out.ready_to_start?
+            client.enqueue_job(workflow_id, out)
+          end
         end
       end
     end

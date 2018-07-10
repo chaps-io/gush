@@ -158,4 +158,45 @@ describe "Workflows" do
     expect(flow).to be_finished
     expect(flow).to_not be_failed
   end
+
+  it 'executes job with multiple ancestors only once' do
+    NO_DUPS_INTERNAL_SPY = double('spy')
+    expect(NO_DUPS_INTERNAL_SPY).to receive(:some_method).exactly(1).times
+
+    class FirstAncestor < Gush::Job
+      def perform
+      end
+    end
+
+    class SecondAncestor < Gush::Job
+      def perform
+      end
+    end
+
+    class FinalJob < Gush::Job
+      def perform
+        NO_DUPS_INTERNAL_SPY.some_method
+      end
+    end
+
+    class NoDuplicatesWorkflow < Gush::Workflow
+      def configure
+        run FirstAncestor
+        run SecondAncestor
+
+        run FinalJob, after: [FirstAncestor, SecondAncestor]
+      end
+    end
+
+    flow = NoDuplicatesWorkflow.create
+    flow.start!
+
+    5.times do
+      perform_one
+    end
+
+    flow = flow.reload
+    expect(flow).to be_finished
+    expect(flow).to_not be_failed
+  end
 end

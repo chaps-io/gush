@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "gush"
-  spec.version       = "1.1.1"
+  spec.version       = "1.2.0"
   spec.authors       = ["Piotrek Okoński"]
   spec.email         = ["piotrek@okonski.org"]
   spec.summary       = "Fast and distributed workflow runner based on ActiveJob and Redis"
@@ -21,6 +21,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "connection_pool", "~> 2.2.1"
   spec.add_dependency "multi_json", "~> 1.11"
   spec.add_dependency "redis", ">= 3.2", "< 5"
+  spec.add_dependency "redis-mutex", "~> 4.0.1"
   spec.add_dependency "hiredis", "~> 0.6"
   spec.add_dependency "ruby-graphviz", "~> 1.2"
   spec.add_dependency "terminal-table", "~> 1.4"

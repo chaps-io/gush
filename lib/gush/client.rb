@@ -182,7 +182,9 @@ module Gush
     end
 
     def build_redis
-      Redis.new(url: configuration.redis_url)
+      Redis.new(url: configuration.redis_url).tap do |instance|
+        RedisClassy.redis = instance
+      end
     end
 
     def connection_pool
