@@ -135,6 +135,7 @@ describe Gush::Workflow do
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
       klass3 = Class.new(Gush::Job)
+
       tree.run(klass1)
       tree.run(klass2, after: [klass1, klass3])
       tree.run(klass3)

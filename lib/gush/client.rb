@@ -42,19 +42,19 @@ module Gush
       persist_workflow(workflow)
     end
 
-    def next_free_job_id(workflow_id,job_klass)
-      job_identifier = nil
+    def next_free_job_id(workflow_id, job_klass)
+      job_id = nil
+
       loop do
-        id = SecureRandom.uuid
-        job_identifier = "#{job_klass}-#{id}"
+        job_id = SecureRandom.uuid
         available = connection_pool.with do |redis|
-          !redis.exists("gush.jobs.#{workflow_id}.#{job_identifier}")
+          !redis.hexists("gush.jobs.#{workflow_id}.#{job_klass}", job_id)
         end
 
         break if available
       end
 
-      job_identifier
+      job_id
     end
 
     def next_free_workflow_id
@@ -87,7 +87,11 @@ module Gush
         unless data.nil?
           hash = Gush::JSON.decode(data, symbolize_keys: true)
           keys = redis.scan_each(match: "gush.jobs.#{id}.*")
-          nodes = redis.mget(*keys).map { |json| Gush::JSON.decode(json, symbolize_keys: true) }
+
+          nodes = keys.each_with_object([]) do |key, array|
+            array.concat redis.hvals(key).map { |json| Gush::JSON.decode(json, symbolize_keys: true) }
+          end
+
           workflow_from_hash(hash, nodes)
         else
           raise WorkflowNotFound.new("Workflow with given id doesn't exist")
@@ -102,28 +106,24 @@ module Gush
 
       workflow.jobs.each {|job| persist_job(workflow.id, job) }
       workflow.mark_as_persisted
+
       true
     end
 
     def persist_job(workflow_id, job)
       connection_pool.with do |redis|
-        redis.set("gush.jobs.#{workflow_id}.#{job.name}", job.to_json)
+        redis.hset("gush.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
       end
     end
 
-    def find_job(workflow_id, job_id)
-      job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_id)
-      hypen = '-' if job_name_match.nil?
+    def find_job(workflow_id, job_name)
+      job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_name)
 
-      keys = connection_pool.with do |redis|
-        redis.scan_each(match: "gush.jobs.#{workflow_id}.#{job_id}#{hypen}*").to_a
-      end
-
-      return nil if keys.nil?
-
-      data = connection_pool.with do |redis|
-        redis.get(keys.first)
-      end
+      data = if job_name_match
+               find_job_by_klass_and_id(workflow_id, job_name)
+             else
+               find_job_by_klass(workflow_id, job_name)
+             end
 
       return nil if data.nil?
 
@@ -140,7 +140,7 @@ module Gush
 
     def destroy_job(workflow_id, job)
       connection_pool.with do |redis|
-        redis.del("gush.jobs.#{workflow_id}.#{job.name}")
+        redis.del("gush.jobs.#{workflow_id}.#{job.klass}")
       end
     end
 
@@ -167,6 +167,26 @@ module Gush
     end
 
     private
+
+    def find_job_by_klass_and_id(workflow_id, job_name)
+      job_klass, job_id = job_name.split('|')
+
+      connection_pool.with do |redis|
+        redis.hget("gush.jobs.#{workflow_id}.#{job_klass}", job_id)
+      end
+    end
+
+    def find_job_by_klass(workflow_id, job_name)
+      new_cursor, result = connection_pool.with do |redis|
+        redis.hscan("gush.jobs.#{workflow_id}.#{job_name}", 0, count: 1)
+      end
+
+      return nil if result.empty?
+
+      job_id, job = *result[0]
+
+      job
+    end
 
     def workflow_from_hash(hash, nodes = [])
       flow = hash[:klass].constantize.new(*hash[:arguments])

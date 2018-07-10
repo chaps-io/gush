@@ -77,11 +77,13 @@ module Gush
 
     def find_job(name)
       match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(name.to_s)
+
       if match_data.nil?
-        job = jobs.find { |node| node.class.to_s == name.to_s }
+        job = jobs.find { |node| node.klass.to_s == name.to_s }
       else
         job = jobs.find { |node| node.name.to_s == name.to_s }
       end
+
       job
     end
 
@@ -108,18 +110,20 @@ module Gush
     def run(klass, opts = {})
       node = klass.new({
         workflow_id: id,
-        name: client.next_free_job_id(id, klass.to_s),
+        id: client.next_free_job_id(id, klass.to_s),
         params: opts.fetch(:params, {})
       })
 
       jobs << node
 
       deps_after = [*opts[:after]]
+
       deps_after.each do |dep|
         @dependencies << {from: dep.to_s, to: node.name.to_s }
       end
 
       deps_before = [*opts[:before]]
+
       deps_before.each do |dep|
         @dependencies << {from: node.name.to_s, to: dep.to_s }
       end

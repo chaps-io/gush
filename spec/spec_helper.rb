@@ -26,7 +26,6 @@ class TestWorkflow < Gush::Workflow
     run FetchSecondJob,  after: Prepare, before: NormalizeJob
 
     run PersistFirstJob, after: FetchFirstJob, before: NormalizeJob
-
   end
 end
 
@@ -62,7 +61,7 @@ module GushHelpers
   end
 
   def job_with_id(job_name)
-    /#{job_name}-(?<identifier>.*)/
+    /#{job_name}|(?<identifier>.*)/
   end
 end
 

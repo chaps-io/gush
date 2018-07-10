@@ -2,7 +2,7 @@ module Gush
   class Job
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
       :finished_at, :failed_at, :started_at, :enqueued_at, :payloads, :klass
-    attr_reader :name, :output_payload, :params
+    attr_reader :id, :klass, :output_payload, :params
 
     def initialize(opts = {})
       options = opts.dup
@@ -11,8 +11,8 @@ module Gush
 
     def as_json
       {
-        name: name,
-        klass: self.class.to_s,
+        id: id,
+        klass: klass.to_s,
         incoming: incoming,
         outgoing: outgoing,
         finished_at: finished_at,
@@ -23,6 +23,10 @@ module Gush
         workflow_id: workflow_id,
         output_payload: output_payload
       }
+    end
+
+    def name
+      @name ||= "#{klass}|#{id}"
     end
 
     def to_json(options = {})
@@ -108,7 +112,7 @@ module Gush
     end
 
     def assign_variables(opts)
-      @name           = opts[:name]
+      @id             = opts[:id]
       @incoming       = opts[:incoming] || []
       @outgoing       = opts[:outgoing] || []
       @failed_at      = opts[:failed_at]
@@ -116,7 +120,7 @@ module Gush
       @started_at     = opts[:started_at]
       @enqueued_at    = opts[:enqueued_at]
       @params         = opts[:params] || {}
-      @klass          = opts[:klass]
+      @klass          = opts[:klass] || self.class
       @output_payload = opts[:output_payload]
       @workflow_id    = opts[:workflow_id]
     end
