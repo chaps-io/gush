@@ -73,6 +73,7 @@ describe Gush::Job do
           finished_at: 123,
           enqueued_at: 120,
           params: {},
+          queue: nil,
           output_payload: nil,
           workflow_id: 123
         }
