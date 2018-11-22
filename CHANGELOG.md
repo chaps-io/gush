@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 2.0.0
+
+## Changed
+
+- *[BREAKING]* Store gush jobs on redis hash instead of plain keys - this improves performance when retrieving keys (Thanks to @Saicheg! [See pull request](https://github.com/chaps-io/gush/pull/56))
+
+
+## Added
+
+- Allow setting queue for each job via `:queue` option in `run` method (Thanks to @devilankur18! [See pull request](https://github.com/chaps-io/gush/pull/58))
+
+
 ## 1.1.1 - 2018-06-09
 
 ## Changed
