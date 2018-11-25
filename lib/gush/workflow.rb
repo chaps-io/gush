@@ -21,7 +21,7 @@ module Gush
 
     def self.create(*args)
       flow = new(*args)
-      flow.save
+      flow.create
       flow
     end
 
@@ -32,6 +32,11 @@ module Gush
       failed_jobs.each do |job|
         client.enqueue_job(id, job)
       end
+    end
+
+    def create
+      client.persist_workflow(self)
+      client.create_relationships(self)
     end
 
     def save
@@ -53,7 +58,7 @@ module Gush
       client.persist_workflow(self)
     end
 
-    def expire! (ttl=nil)
+    def expire!(ttl=nil)
       client.expire_workflow(self, ttl)
     end
 
@@ -66,12 +71,12 @@ module Gush
     end
 
     def resolve_dependencies
-      @dependencies.each do |dependency|
+      @dependencies = @dependencies.map do |dependency|
         from = find_job(dependency[:from])
         to   = find_job(dependency[:to])
 
-        to.incoming << dependency[:from]
-        from.outgoing << dependency[:to]
+        to.incoming << from.name
+        from.outgoing << to.name
       end
     end
 

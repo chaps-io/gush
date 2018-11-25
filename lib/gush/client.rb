@@ -45,13 +45,13 @@ module Gush
     def next_free_job_id(workflow_id, job_klass)
       job_id = nil
 
-      loop do
-        job_id = SecureRandom.uuid
-        available = connection_pool.with do |redis|
-          !redis.hexists("gush.jobs.#{workflow_id}.#{job_klass}", job_id)
-        end
+      connection_pool.with do |redis|
+        loop do
+          job_id = SecureRandom.uuid
+          available = !redis.hexists("gush.jobs.#{workflow_id}.#{job_klass}", job_id)
 
-        break if available
+          break if available
+        end
       end
 
       job_id
@@ -102,6 +102,9 @@ module Gush
     def persist_workflow(workflow)
       connection_pool.with do |redis|
         redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
+        # Make sure graph exists in RedisGraph
+        # TODO make it optional
+        redis.call("GRAPH.QUERY", "gush.graphs.#{workflow.id}", "MERGE (:workflow {id: '#{workflow.id}'})")
       end
 
       workflow.jobs.each {|job| persist_job(workflow.id, job) }
@@ -113,6 +116,68 @@ module Gush
     def persist_job(workflow_id, job)
       connection_pool.with do |redis|
         redis.hset("gush.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
+
+        # Update job status in RedisGraph
+        # TODO make it optional
+        list, properties =  redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", "MATCH (j {id: '#{job.name}'}) SET j.status = '#{job.status}'")
+
+        # Create job if not exists
+        if !properties.include?("Properties set: 1")
+          #puts "-- does not exist, creating job"
+          redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", "CREATE (:job {id: '#{job.name}', status: '#{job.status}'})")
+        end
+      end
+    end
+
+    def create_relationships(workflow)
+      connection_pool.with do |redis|
+        workflow.jobs.each do |job|
+          job.outgoing.each do |outgoing_name|
+            create_relationship(redis, workflow, job.name, outgoing_name)
+          end
+        end
+      end
+    end
+
+    def create_relationship(redis, workflow, incoming, outgoing)
+      query = <<-CYPHER
+        MATCH (in:job {id: '#{incoming}'}), (out:job {id: '#{outgoing}'})
+        CREATE (in)-[:outgoing]->(out)
+      CYPHER
+
+      redis.call("GRAPH.QUERY", "gush.graphs.#{workflow.id}", query)
+    end
+
+    def job_has_dependencies_satisfied?(workflow_id, job_name)
+      okay = successful_job_dependencies_count(workflow_id, job_name)
+      total = total_job_dependencies_count(workflow_id, job_name)
+
+      okay ==  total
+    end
+
+    def successful_job_dependencies_count(workflow_id, job_name)
+      connection_pool.with do |redis|
+        query = <<-CYPHER
+          MATCH (in:job {status: 'succeeded'})-[:outgoing]->(out:job {id: '#{job_name}', status: 'pending'})
+          RETURN count(in.id)
+        CYPHER
+
+        result = redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", query)
+
+        return result[0][1][0].to_i rescue 0
+      end
+    end
+
+    def total_job_dependencies_count(workflow_id, job_name)
+      connection_pool.with do |redis|
+        query = <<-CYPHER
+          MATCH (in:job)-[:outgoing]->(out:job {id: '#{job_name}', status: 'pending'})
+          RETURN count(in.id)
+        CYPHER
+
+        result = redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", query)
+
+        return result[0][1][0].to_i rescue 0
       end
     end
 

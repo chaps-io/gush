@@ -1,5 +1,4 @@
 require 'gush'
-require 'fakeredis'
 require 'json'
 require 'pry'
 
@@ -32,11 +31,6 @@ end
 class ParameterTestWorkflow < Gush::Workflow
   def configure(param)
     run Prepare if param
-  end
-end
-
-class Redis
-  def publish(*)
   end
 end
 

@@ -2,7 +2,7 @@ module Gush
   class Job
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
       :finished_at, :failed_at, :started_at, :enqueued_at, :payloads, :klass, :queue
-    attr_reader :id, :klass, :output_payload, :params
+    attr_reader :id, :klass, :output_payload, :params, :status
 
     def initialize(opts = {})
       options = opts.dup
@@ -90,6 +90,20 @@ module Gush
 
     def ready_to_start?
       !running? && !enqueued? && !finished? && !failed? && parents_succeeded?
+    end
+
+    def status
+      if succeeded?
+        "succeeded"
+      elsif failed?
+        "failed"
+      elsif running?
+        "running"
+      elsif started?
+        "started"
+      else
+        "pending"
+      end
     end
 
     def parents_succeeded?

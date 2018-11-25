@@ -98,16 +98,24 @@ describe Gush::Client do
     it "sets TTL for all Redis keys related to the workflow" do
       workflow = TestWorkflow.create
 
-      client.expire_workflow(workflow, -1)
+      #expect_any_instance_of(Redis).to receive(:expire).with("gush.workflows.#{workflow.id}", -1).once
 
-      # => TODO - I believe fakeredis does not handle TTL the same.   
+      client.expire_workflow(workflow, -1)
     end
   end
 
   describe "#persist_job" do
-    it "persists JSON dump of the job in Redis" do
+    before do
+      # Create a fake workflow for the job
 
+    end
+
+    it "persists JSON dump of the job in Redis" do
       job = BobJob.new(name: 'bob')
+
+      # TODO for RedisGraph only, make a seperate spec
+      workflow = double("workflow", id: 'deadbeef', jobs: [job], to_json: '"json"', mark_as_persisted: true)
+      client.persist_workflow(workflow)
 
       client.persist_job('deadbeef', job)
       expect(redis.keys("gush.jobs.deadbeef.*").length).to eq(1)
