@@ -26,7 +26,7 @@ end
 
 class BigWorkflow < Gush::Workflow
   def configure
-    jobs = 1000.times.map do
+    jobs = 500.times.map do
       a = run(SmallJob)
       run(MediumJob, after: a)
     end
