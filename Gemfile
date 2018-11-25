@@ -8,4 +8,5 @@ end
 
 group :test, :development do
   gem 'benchmark-ips'
+  gem 'stackprof'
 end

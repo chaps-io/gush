@@ -1,12 +1,13 @@
 require 'active_job'
 require 'redis-mutex'
+require 'lazy_object'
 
 module Gush
   class Worker < ::ActiveJob::Base
     def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
 
-      job.payloads = incoming_payloads
+      job.payloads = LazyObject.new { incoming_payloads }
 
       error = nil
 
@@ -59,10 +60,6 @@ module Gush
     def mark_as_started
       job.start!
       client.persist_job(workflow_id, job)
-    end
-
-    def elapsed(start)
-      (Time.now - start).to_f.round(3)
     end
 
     def enqueue_outgoing_jobs

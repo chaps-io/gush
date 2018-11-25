@@ -113,6 +113,12 @@ module Gush
       true
     end
 
+    def update_job_status(workflow_id, job)
+      connection_pool.with do |redis|
+
+      end
+    end
+
     def persist_job(workflow_id, job)
       connection_pool.with do |redis|
         redis.hset("gush.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
@@ -149,36 +155,34 @@ module Gush
     end
 
     def job_has_dependencies_satisfied?(workflow_id, job_name)
-      okay = successful_job_dependencies_count(workflow_id, job_name)
-      total = total_job_dependencies_count(workflow_id, job_name)
-
-      okay ==  total
-    end
-
-    def successful_job_dependencies_count(workflow_id, job_name)
       connection_pool.with do |redis|
-        query = <<-CYPHER
-          MATCH (in:job {status: 'succeeded'})-[:outgoing]->(out:job {id: '#{job_name}', status: 'pending'})
-          RETURN count(in.id)
-        CYPHER
+        okay = successful_job_dependencies_count(redis, workflow_id, job_name)
+        total = total_job_dependencies_count(redis, workflow_id, job_name)
 
-        result = redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", query)
-
-        return result[0][1][0].to_i rescue 0
+        okay ==  total
       end
     end
 
-    def total_job_dependencies_count(workflow_id, job_name)
-      connection_pool.with do |redis|
-        query = <<-CYPHER
-          MATCH (in:job)-[:outgoing]->(out:job {id: '#{job_name}', status: 'pending'})
-          RETURN count(in.id)
-        CYPHER
+    def successful_job_dependencies_count(redis, workflow_id, job_name)
+      query = <<-CYPHER
+        MATCH (in:job {status: 'succeeded'})-[:outgoing]->(out:job {id: '#{job_name}', status: 'pending'})
+        RETURN count(in.id)
+      CYPHER
 
-        result = redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", query)
+      result = redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", query)
 
-        return result[0][1][0].to_i rescue 0
-      end
+      return result[0][1][0].to_i rescue 0
+    end
+
+    def total_job_dependencies_count(redis, workflow_id, job_name)
+      query = <<-CYPHER
+        MATCH (in:job)-[:outgoing]->(out:job {id: '#{job_name}', status: 'pending'})
+        RETURN count(in.id)
+      CYPHER
+
+      result = redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", query)
+
+      return result[0][1][0].to_i rescue 0
     end
 
     def find_job(workflow_id, job_name)
