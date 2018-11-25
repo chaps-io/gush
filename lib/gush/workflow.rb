@@ -81,7 +81,7 @@ module Gush
     end
 
     def find_job(name)
-      match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(name.to_s)
+      match_data = /(?<klass>\w*[^|])\|(?<identifier>.*)/.match(name.to_s)
 
       if match_data.nil?
         job = jobs.find { |node| node.klass.to_s == name.to_s }
