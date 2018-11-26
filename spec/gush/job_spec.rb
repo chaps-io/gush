@@ -88,8 +88,8 @@ describe Gush::Job do
         {
           klass: 'Gush::Job',
           id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
-          incoming: ['a', 'b'],
-          outgoing: ['c'],
+          incoming: ['a', 'b'].to_json,
+          outgoing: ['c'].to_json,
           failed_at: 123,
           finished_at: 122,
           started_at: 55,

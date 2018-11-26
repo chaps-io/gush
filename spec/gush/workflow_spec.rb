@@ -116,9 +116,9 @@ describe Gush::Workflow do
   describe "#run" do
     it "allows passing additional params to the job" do
       flow = Gush::Workflow.new
-      flow.run(Gush::Job, params: { something: 1 })
+      flow.run(Gush::Job, params: { something: 1 }.to_json)
       flow.save
-      expect(flow.jobs.first.params).to eq ({ something: 1 })
+      expect(flow.jobs.first.params).to eq ({ something: 1 }.to_json)
     end
 
     context "when graph is empty" do

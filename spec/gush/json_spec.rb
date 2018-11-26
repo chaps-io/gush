@@ -11,11 +11,11 @@ describe Gush::JSON do
 
   describe ".decode" do
     it "decodes JSON to data" do
-      expect(subject.decode("{\"a\":123}")).to eq({"a" => 123})
+      expect(subject.decode("{\"a\":123}")).to eq({a: 123})
     end
 
     it "passes options to the internal parser" do
-      expect(subject.decode("{\"a\":123}", symbolize_keys: true)).to eq({a: 123})
+      expect(subject.decode("{\"a\":123}", symbolize_keys: false)).to eq({"a" => 123})
     end
   end
 end

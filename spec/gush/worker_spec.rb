@@ -24,18 +24,23 @@ describe Gush::Worker do
         end
 
         workflow = FailingWorkflow.create
+        job_name = workflow.jobs.first.name
+
         expect do
-          subject.perform(workflow.id, "FailingJob")
+          subject.perform(workflow.id, job_name)
         end.to raise_error(NameError)
-        expect(client.find_job(workflow.id, "FailingJob")).to be_failed
+
+        expect(client.find_job(workflow.id, job_name)).to be_failed
       end
     end
 
     context "when job completes successfully" do
       it "should mark it as succedeed" do
+        job_name = workflow.jobs.find { |j| j.klass == Prepare }.name
+
         expect(subject).to receive(:mark_as_finished)
 
-        subject.perform(workflow.id, "Prepare")
+        subject.perform(workflow.id, job_name)
       end
     end
 
@@ -56,8 +61,7 @@ describe Gush::Worker do
       end
 
       workflow = OkayWorkflow.create
-
-      subject.perform(workflow.id, 'OkayJob')
+      subject.perform(workflow.id, workflow.jobs.first.name)
     end
   end
 end

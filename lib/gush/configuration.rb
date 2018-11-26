@@ -3,7 +3,7 @@ module Gush
     attr_accessor :concurrency, :namespace, :redis_url, :ttl
 
     def self.from_json(json)
-      new(Gush::JSON.decode(json, symbolize_keys: true))
+      new(Gush::JSON.decode(json))
     end
 
     def initialize(hash = {})

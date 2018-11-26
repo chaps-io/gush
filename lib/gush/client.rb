@@ -85,14 +85,16 @@ module Gush
         data = redis.get("gush.workflows.#{id}")
 
         unless data.nil?
-          hash = Gush::JSON.decode(data, symbolize_keys: true)
-          keys = redis.scan_each(match: "gush.jobs.#{id}.*")
+          hash = Gush::JSON.decode(data)
+          keys = redis.scan_each(match: "gush.jobs.#{id}.*").to_a
 
-          nodes = keys.each_with_object([]) do |key, array|
-            array.concat redis.hvals(key).map { |json| Gush::JSON.decode(json, symbolize_keys: true) }
+          nodes = redis.multi do |multi|
+            keys.map do |key|
+              multi.hgetall(key)
+            end
           end
 
-          workflow_from_hash(hash, nodes)
+          workflow_from_hash(hash, nodes.map(&:symbolize_keys))
         else
           raise WorkflowNotFound.new("Workflow with given id doesn't exist")
         end
@@ -101,7 +103,7 @@ module Gush
 
     def persist_workflow(workflow)
       connection_pool.with do |redis|
-        redis.set("gush.workflows.#{workflow.id}", workflow.to_json)
+        redis.set("gush.workflows.#{workflow.id}", Gush::JSON.encode(workflow))
         # Make sure graph exists in RedisGraph
         # TODO make it optional
         redis.call("GRAPH.QUERY", "gush.graphs.#{workflow.id}", "MERGE (:workflow {id: '#{workflow.id}'})")
@@ -121,8 +123,7 @@ module Gush
 
     def persist_job(workflow_id, job)
       connection_pool.with do |redis|
-        redis.hset("gush.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json)
-
+        redis.hmset("gush.jobs.#{workflow_id}.#{job.name}", *job.attributes.to_a.flatten)
         # Update job status in RedisGraph
         # TODO make it optional
         list, properties =  redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", "MATCH (j {id: '#{job.name}'}) SET j.status = '#{job.status}'")
@@ -196,8 +197,7 @@ module Gush
 
       return nil if data.nil?
 
-      data = Gush::JSON.decode(data, symbolize_keys: true)
-      Gush::Job.from_hash(data)
+      Gush::Job.from_hash(data.symbolize_keys)
     end
 
     def destroy_workflow(workflow)
@@ -209,7 +209,7 @@ module Gush
 
     def destroy_job(workflow_id, job)
       connection_pool.with do |redis|
-        redis.del("gush.jobs.#{workflow_id}.#{job.klass}")
+        redis.del("gush.jobs.#{workflow_id}.#{job.name}")
       end
     end
 
@@ -242,7 +242,7 @@ module Gush
       job_klass, job_id = job_name.split('|')
 
       connection_pool.with do |redis|
-        redis.hget("gush.jobs.#{workflow_id}.#{job_klass}", job_id)
+        redis.hgetall("gush.jobs.#{workflow_id}.#{job_name}")
       end
     end
 

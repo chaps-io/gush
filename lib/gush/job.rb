@@ -26,6 +26,23 @@ module Gush
       }
     end
 
+    def attributes
+      {
+        id: id,
+        klass: klass.to_s,
+        queue: queue,
+        incoming: Gush::JSON.encode(incoming),
+        outgoing: Gush::JSON.encode(outgoing),
+        finished_at: finished_at,
+        enqueued_at: enqueued_at,
+        started_at: started_at,
+        failed_at: failed_at,
+        params: Gush::JSON.encode(params),
+        workflow_id: workflow_id,
+        output_payload: Gush::JSON.encode(output_payload)
+      }
+    end
+
     def name
       @name ||= "#{klass}|#{id}"
     end
@@ -128,15 +145,15 @@ module Gush
 
     def assign_variables(opts)
       @id             = opts[:id]
-      @incoming       = opts[:incoming] || []
-      @outgoing       = opts[:outgoing] || []
-      @failed_at      = opts[:failed_at]
-      @finished_at    = opts[:finished_at]
-      @started_at     = opts[:started_at]
-      @enqueued_at    = opts[:enqueued_at]
-      @params         = opts[:params] || {}
+      @incoming       = Gush::JSON.decode(opts[:incoming] || '[]')
+      @outgoing       = Gush::JSON.decode(opts[:outgoing] || '[]')
+      @failed_at      = opts[:failed_at].presence
+      @finished_at    = opts[:finished_at].presence
+      @started_at     = opts[:started_at].presence
+      @enqueued_at    = opts[:enqueued_at].presence
+      @params         = Gush::JSON.decode(opts[:params] || '{}')
       @klass          = opts[:klass] || self.class
-      @output_payload = opts[:output_payload]
+      @output_payload = Gush::JSON.decode(opts[:output_payload] || 'null')
       @workflow_id    = opts[:workflow_id]
       @queue          = opts[:queue]
     end
