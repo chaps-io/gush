@@ -10,6 +10,7 @@ describe "Workflows" do
       end
 
       flow = flow.reload
+
       expect(flow).to be_finished
       expect(flow).to_not be_failed
     end

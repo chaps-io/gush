@@ -155,7 +155,7 @@ module Gush
       @klass          = opts[:klass] || self.class
       @output_payload = Gush::JSON.decode(opts[:output_payload] || 'null')
       @workflow_id    = opts[:workflow_id]
-      @queue          = opts[:queue]
+      @queue          = opts[:queue].presence
     end
   end
 end

@@ -115,12 +115,6 @@ module Gush
       true
     end
 
-    def update_job_status(workflow_id, job)
-      connection_pool.with do |redis|
-
-      end
-    end
-
     def persist_job(workflow_id, job)
       connection_pool.with do |redis|
         redis.hmset("gush.jobs.#{workflow_id}.#{job.name}", *job.attributes.to_a.flatten)
@@ -130,7 +124,6 @@ module Gush
 
         # Create job if not exists
         if !properties.include?("Properties set: 1")
-          #puts "-- does not exist, creating job"
           redis.call("GRAPH.QUERY", "gush.graphs.#{workflow_id}", "CREATE (:job {id: '#{job.name}', status: '#{job.status}'})")
         end
       end
@@ -188,7 +181,6 @@ module Gush
 
     def find_job(workflow_id, job_name)
       job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_name)
-
       data = if job_name_match
                find_job_by_klass_and_id(workflow_id, job_name)
              else
@@ -198,6 +190,16 @@ module Gush
       return nil if data.nil?
 
       Gush::Job.from_hash(data.symbolize_keys)
+    end
+
+    def find_job_attributes(workflow_id, job_names, attribute_names)
+      connection_pool.with do |redis|
+        results = redis.multi do |multi|
+          job_names.each do |job_name|
+            multi.hmget("gush.jobs.#{workflow_id}.#{job_name}", attribute_names)
+          end
+        end
+      end
     end
 
     def destroy_workflow(workflow)
@@ -231,9 +233,12 @@ module Gush
     def enqueue_job(workflow_id, job)
       job.enqueue!
       persist_job(workflow_id, job)
-      queue = job.queue || configuration.namespace
 
-      Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.name])
+      enqueue_job_by_name_and_queue(workflow_id, job.name, job.queue)
+    end
+
+    def enqueue_job_by_name_and_queue(workflow_id, job_name, queue)
+      Gush::Worker.set(queue: queue.presence || configuration.namespace).perform_later(workflow_id, job_name)
     end
 
     private
