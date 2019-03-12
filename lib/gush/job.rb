@@ -47,6 +47,7 @@ module Gush
 
     def start!
       @started_at = current_timestamp
+      @failed_at = nil
     end
 
     def enqueue!

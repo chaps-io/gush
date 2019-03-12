@@ -52,10 +52,18 @@ describe Gush::Job do
   describe "#start!" do
     it "resets flags and marks as running" do
       job = described_class.new(name: "a-job")
+
+      job.enqueue!
+      job.fail!
+
+      now = Time.now.to_i
+      expect(job.started_at).to eq(nil)
+      expect(job.failed_at).to eq(now)
+
       job.start!
+
       expect(job.started_at).to eq(Time.now.to_i)
-      expect(job.enqueued?).to eq(false)
-      expect(job.running?).to eq(true)
+      expect(job.failed_at).to eq(nil)
     end
   end
 

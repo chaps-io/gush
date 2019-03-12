@@ -15,6 +15,53 @@ describe "Workflows" do
     end
   end
 
+  context 'when one of the jobs fails initally' do
+    it 'succeeds when the job retries' do
+      FAIL_THEN_SUCCEED_SPY = double()
+      allow(FAIL_THEN_SUCCEED_SPY).to receive(:foo).and_return('failure', 'success')
+
+      class FailsThenSucceeds < Gush::Job
+        def perform
+          if FAIL_THEN_SUCCEED_SPY.foo == 'failure'
+            raise NameError
+          end
+        end
+      end
+
+      class SecondChanceWorkflow < Gush::Workflow
+        def configure
+          run Prepare
+          run FailsThenSucceeds, after: Prepare
+          run NormalizeJob, after: FailsThenSucceeds
+        end
+      end
+
+      flow = SecondChanceWorkflow.create
+      flow.start!
+
+      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
+      perform_one
+
+      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
+      expect do
+        perform_one
+      end.to raise_error(NameError)
+
+      expect(flow.reload).to be_failed
+      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
+
+      # Retry the same job again, but this time succeeds
+      perform_one
+
+      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['NormalizeJob']))
+      perform_one
+
+      flow = flow.reload
+      expect(flow).to be_finished
+      expect(flow).to_not be_failed
+    end
+  end
+
   it "runs the whole workflow in proper order" do
     flow = TestWorkflow.create
     flow.start!
@@ -77,8 +124,6 @@ describe "Workflows" do
 
     perform_one
     expect(flow.reload.find_job("PrependJob").output_payload).to eq("A prefix: SOME TEXT")
-
-
   end
 
   it "passes payloads from workflow that runs multiple same class jobs with nameized payloads" do
