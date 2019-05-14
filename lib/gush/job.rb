@@ -67,6 +67,11 @@ module Gush
       @finished_at = @failed_at = current_timestamp
     end
 
+    def skip!
+      @finished_at = @skipped_at = current_timestamp
+      throw(:skipped_job)
+    end
+
     def enqueued?
       !enqueued_at.nil?
     end
