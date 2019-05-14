@@ -78,6 +78,7 @@ describe Gush::Job do
           outgoing: [],
           failed_at: nil,
           started_at: nil,
+          skipped_at: nil,
           finished_at: 123,
           enqueued_at: 120,
           params: {},
