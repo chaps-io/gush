@@ -12,7 +12,9 @@ module Gush
 
       mark_as_started
       begin
-        job.perform
+        catch(:skipped_job) do
+          job.perform
+        end
       rescue StandardError => error
         mark_as_failed
         raise error
