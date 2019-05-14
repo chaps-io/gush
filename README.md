@@ -323,6 +323,25 @@ it will generate a workflow with 5 `NotificationJob`s and one `AdminNotification
 
 ![DynamicWorkflow](https://i.imgur.com/HOI3fjc.png)
 
+### Skipping a Job
+
+Sometimes you'd like to skip a job, which doesn't mean that job/workflow has failed. You can call `self.skip!` inside the job to mark it as a `skipped`:
+
+```ruby
+class ProcessUserJob < Gush::Job
+  def perform
+    user = User.find params[:id]
+
+    self.skip! if user.processed?
+
+    # Code beneath here will not be called anymore
+    # and the job will be marked as 'skipped'
+    # 
+    # The workflow will continue on normally to the other jobs
+  end
+end
+```
+
 ## Command line interface (CLI)
 
 ### Checking status
@@ -350,7 +369,7 @@ bundle exec gush viz <NameOfTheWorkflow>
 
 ### Cleaning up afterwards
 
-Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is ran.  This data might be useful for analysis but at a certain point it can be purged via Redis TTL.  By default gush and Redis will keep keys forever.  To configure expiration you need to 2 things.  Create initializer (specify config.ttl in seconds, be different per environment).  
+Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is ran.  This data might be useful for analysis but at a certain point it can be purged via Redis TTL.  By default gush and Redis will keep keys forever.  To configure expiration you need to 2 things.  Create initializer (specify config.ttl in seconds, be different per environment).
 
 ```ruby
 # config/initializers/gush.rb
@@ -361,7 +380,7 @@ Gush.configure do |config|
 end
 ```
 
-And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.  
+And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.
 
 ### Avoid overlapping workflows
 
