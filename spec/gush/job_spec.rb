@@ -9,12 +9,25 @@ describe Gush::Job do
       expect(job.output_payload).to eq("something")
     end
   end
+
   describe "#fail!" do
     it "sets finished and failed to true and records time" do
       job = described_class.new(name: "a-job")
       job.fail!
       expect(job.failed_at).to eq(Time.now.to_i)
       expect(job.failed?).to eq(true)
+      expect(job.finished?).to eq(true)
+      expect(job.running?).to eq(false)
+      expect(job.enqueued?).to eq(false)
+    end
+  end
+
+  describe "#skip!" do
+    it "sets finished and skipped to true and records time" do
+      job = described_class.new(name: "a-job")
+      expect { job.skip! }.to throw_symbol(:skipped_job)
+      expect(job.skipped_at).to eq(Time.now.to_i)
+      expect(job.skipped?).to eq(true)
       expect(job.finished?).to eq(true)
       expect(job.running?).to eq(false)
       expect(job.enqueued?).to eq(false)
