@@ -19,3 +19,5 @@ tmp
 test.rb
 /Gushfile
 dump.rdb
+.ruby-version
+.ruby-gemset
