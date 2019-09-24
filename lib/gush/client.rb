@@ -149,7 +149,7 @@ module Gush
 
     def expire_job(workflow_id, job, ttl=nil)
       ttl = ttl || configuration.ttl
-      redis.expire("gush.jobs.#{workflow_id}.#{job.name}", ttl)
+      redis.expire("gush.jobs.#{workflow_id}.#{job.klass}", ttl)
     end
 
     def enqueue_job(workflow_id, job)
