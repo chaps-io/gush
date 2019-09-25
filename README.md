@@ -276,7 +276,7 @@ class EncodeVideo < Gush::Job
 end
 ```
 
-`payloads` is an array containing outputs from all ancestor jobs. So for our `EncodeVide` job from above, the array will look like:
+`payloads` is an array containing outputs from all ancestor jobs. So for our `EncodeVideo` job from above, the array will look like:
 
 
 ```ruby
