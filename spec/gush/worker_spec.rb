@@ -39,6 +39,18 @@ describe Gush::Worker do
       end
     end
 
+    context 'when job failed to enqueue outgoing jobs' do
+      it 'enqeues another job to handling enqueue_outgoing_jobs' do
+        allow(RedisMutex).to receive(:with_lock).and_raise(RedisMutex::LockError)
+        subject.perform(workflow.id, 'Prepare')
+        expect(Gush::Worker).to have_no_jobs(workflow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
+
+        allow(RedisMutex).to receive(:with_lock).and_call_original
+        perform_one
+        expect(Gush::Worker).to have_jobs(workflow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
+      end
+    end
+
     it "calls job.perform method" do
       SPY = double()
       expect(SPY).to receive(:some_method)
