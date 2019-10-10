@@ -6,6 +6,12 @@ module Gush
     def perform(workflow_id, job_id)
       setup_job(workflow_id, job_id)
 
+      if job.succeeded?
+        # Try to enqueue outgoing jobs again because the last job has redis mutex lock error
+        enqueue_outgoing_jobs
+        return
+      end
+
       job.payloads = incoming_payloads
 
       error = nil
@@ -75,6 +81,8 @@ module Gush
           end
         end
       end
+    rescue RedisMutex::LockError
+      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
     end
   end
 end
