@@ -82,7 +82,7 @@ module Gush
         end
       end
     rescue RedisMutex::LockError
-      Worker.perform_later(*[workflow_id, job.name])
+      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
     end
   end
 end
