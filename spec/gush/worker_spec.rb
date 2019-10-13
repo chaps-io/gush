@@ -4,6 +4,8 @@ describe Gush::Worker do
   subject { described_class.new }
 
   let!(:workflow)   { TestWorkflow.create }
+  let(:locking_duration) { 5 }
+  let(:polling_interval) { 0.5 }
   let!(:job)        { client.find_job(workflow.id, "Prepare")  }
   let(:config)      { Gush.configuration.to_json  }
   let!(:client)     { Gush::Client.new }
@@ -70,6 +72,12 @@ describe Gush::Worker do
       workflow = OkayWorkflow.create
 
       subject.perform(workflow.id, 'OkayJob')
+    end
+
+    it 'calls RedisMutex.with_lock with customizable locking_duration and polling_interval' do
+      expect(RedisMutex).to receive(:with_lock)
+        .with(anything, block: 5, sleep: 0.5).twice
+      subject.perform(workflow.id, 'Prepare')
     end
   end
 end
