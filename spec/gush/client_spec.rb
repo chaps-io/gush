@@ -95,12 +95,18 @@ describe Gush::Client do
   end
 
   describe "#expire_workflow" do
+    let(:ttl) { 2000 }
+
     it "sets TTL for all Redis keys related to the workflow" do
       workflow = TestWorkflow.create
 
-      client.expire_workflow(workflow, -1)
+      client.expire_workflow(workflow, ttl)
 
-      # => TODO - I believe fakeredis does not handle TTL the same.   
+      expect(redis.ttl("gush.workflows.#{workflow.id}")).to eq(ttl)
+
+      workflow.jobs.each do |job|
+        expect(redis.ttl("gush.jobs.#{workflow.id}.#{job.klass}")).to eq(ttl)
+      end
     end
   end
 
