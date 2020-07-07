@@ -17,7 +17,7 @@ describe Gush::Configuration do
         config.concurrency = 25
       end
 
-      expect(Gush.configuration.redis_url).to eq("redis://localhost")
+      expect(Gush.configuration.redis_opts[:url]).to eq("redis://localhost")
       expect(Gush.configuration.concurrency).to eq(25)
     end
   end
