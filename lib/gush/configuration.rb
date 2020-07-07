@@ -1,18 +1,17 @@
 module Gush
   class Configuration
-    attr_accessor :concurrency, :namespace, :redis_url, :ttl
+    attr_accessor :concurrency, :namespace, :redis_opts, :ttl
 
     def self.from_json(json)
       new(Gush::JSON.decode(json, symbolize_keys: true))
     end
 
     def initialize(hash = {})
-      self.concurrency   = hash.fetch(:concurrency, 5)
-      self.namespace     = hash.fetch(:namespace, 'gush')
-      self.redis_url     = hash.fetch(:redis_url, 'redis://localhost:6379')
-      self.redis_options = {}
-      self.gushfile      = hash.fetch(:gushfile, 'Gushfile')
-      self.ttl           = hash.fetch(:ttl, -1)
+      self.concurrency = hash.fetch(:concurrency, 5)
+      self.namespace   = hash.fetch(:namespace, 'gush')
+      self.redis_opts  = hash.fetch(:redis_opts, { url: 'redis://localhost:6379' })
+      self.gushfile    = hash.fetch(:gushfile, 'Gushfile')
+      self.ttl         = hash.fetch(:ttl, -1)
     end
 
     def gushfile=(path)
@@ -25,11 +24,10 @@ module Gush
 
     def to_hash
       {
-        concurrency:   concurrency,
-        namespace:     namespace,
-        redis_url:     redis_url,
-        redis_options: redis_options,
-        ttl:           ttl
+        concurrency: concurrency,
+        namespace:   namespace,
+        redis_opts:  redis_opts,
+        ttl:         ttl
       }
     end
 

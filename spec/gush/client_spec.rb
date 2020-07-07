@@ -2,7 +2,7 @@ require 'spec_helper'
 
 describe Gush::Client do
   let(:client) do
-    Gush::Client.new(Gush::Configuration.new(gushfile: GUSHFILE, redis_url: REDIS_URL))
+    Gush::Client.new(Gush::Configuration.new(gushfile: GUSHFILE, redis_opts: { url: REDIS_URL }))
   end
 
   describe "#find_workflow" do

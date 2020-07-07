@@ -104,8 +104,8 @@ RSpec.configure do |config|
     clear_performed_jobs
 
     Gush.configure do |config|
-      config.redis_url = REDIS_URL
-      config.gushfile = GUSHFILE
+      config.redis_opts = { url: REDIS_URL }
+      config.gushfile   = GUSHFILE
     end
   end
 

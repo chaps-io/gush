@@ -355,7 +355,7 @@ Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it i
 ```ruby
 # config/initializers/gush.rb
 Gush.configure do |config|
-  config.redis_url = "redis://localhost:6379"
+  config.redis_opts = { url: "redis://localhost:6379" } # see https://github.com/redis/redis-rb for a full list of options
   config.concurrency = 5
   config.ttl = 3600*24*7
 end

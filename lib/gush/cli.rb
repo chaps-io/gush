@@ -6,7 +6,7 @@ require 'launchy'
 module Gush
   class CLI < Thor
     class_option :gushfile, desc: "configuration file to use", aliases: "-f"
-    class_option :redis, desc: "Redis URL to use", aliases: "-r"
+    class_option :redis, desc: "Redis configs to use", aliases: "-r"
     class_option :namespace, desc: "namespace to run jobs in", aliases: "-n"
 
     def initialize(*)
@@ -14,7 +14,7 @@ module Gush
       Gush.configure do |config|
         config.gushfile    = options.fetch("gushfile",    config.gushfile)
         config.concurrency = options.fetch("concurrency", config.concurrency)
-        config.redis_url   = options.fetch("redis",       config.redis_url)
+        config.redis_opts  = options.fetch("redis",       config.redis_opts)
         config.namespace   = options.fetch("namespace",   config.namespace)
         config.ttl         = options.fetch("ttl",         config.ttl)
       end

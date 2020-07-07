@@ -8,13 +8,12 @@ module Gush
     @@redis_connection = Concurrent::ThreadLocalVar.new(nil)
 
     def self.redis_connection(config)
-      cached = (@@redis_connection.value ||= { url: config.redis_url, connection: nil })
-      return cached[:connection] if !cached[:connection].nil? && config.redis_url == cached[:url]
+      cached = (@@redis_connection.value ||= config.redis_opts.merge({ connection: nil }))
+      return cached[:connection] if !cached[:connection].nil? && config.redis_opts[:url] == cached[:url]
 
-      redis_options = config.redis_options.merge!(url: config.redis_url)
-      Redis.new(redis_options).tap do |instance|
+      Redis.new(config.redis_opts).tap do |instance|
         RedisClassy.redis = instance
-        @@redis_connection.value = { url: config.redis_url, connection: instance }
+        @@redis_connection.value = config.redis_opts.merge({ connection: instance })
       end
     end
 
