@@ -12,7 +12,10 @@ module Gush
       return cached[:connection] if !cached[:connection].nil? && config.redis_opts[:url] == cached[:url]
 
       # Support 4.2 and 4.1 https://github.com/redis/redis-rb/blame/v4.2.1/CHANGELOG.md
-      Redis.exists_returns_integer = true
+      # These versions support ruby > 2.2
+      if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('2.3.0')
+        Redis.exists_returns_integer = true
+      end
 
       Redis.new(config.redis_opts).tap do |instance|
         RedisClassy.redis = instance
