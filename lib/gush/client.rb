@@ -11,6 +11,9 @@ module Gush
       cached = (@@redis_connection.value ||= config.redis_opts.merge({ connection: nil }))
       return cached[:connection] if !cached[:connection].nil? && config.redis_opts[:url] == cached[:url]
 
+      # Support 4.2 and 4.1 https://github.com/redis/redis-rb/blame/v4.2.1/CHANGELOG.md
+      Redis.exists_returns_integer = true
+
       Redis.new(config.redis_opts).tap do |instance|
         RedisClassy.redis = instance
         @@redis_connection.value = config.redis_opts.merge({ connection: instance })
