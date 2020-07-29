@@ -12,7 +12,7 @@ require 'gush'
 begin
   Gush::CLI.start(ARGV)
 rescue Gush::WorkflowNotFound
-  puts "Workflow not found".red
+  puts Paint["Workflow not found", :red]
 rescue Gush::DependencyLevelTooDeep
-  puts "Dependency level too deep. Perhaps you have a dependency cycle?".red
+  puts Paint["Dependency level too deep. Perhaps you have a dependency cycle?", :red]
 end

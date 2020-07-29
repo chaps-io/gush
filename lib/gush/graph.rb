@@ -1,6 +1,10 @@
+# frozen_string_literal: true
+
+require 'tmpdir'
+
 module Gush
   class Graph
-    attr_reader :workflow, :filename, :path, :start, :end_node
+    attr_reader :workflow, :filename, :path, :start_node, :end_node
 
     def initialize(workflow, options = {})
       @workflow = workflow
@@ -9,19 +13,26 @@ module Gush
     end
 
     def viz
-      GraphViz.new(:G, graph_options) do |graph|
-        set_node_options!(graph)
-        set_edge_options!(graph)
+      @graph = Graphviz::Graph.new(**graph_options)
+      @start_node = add_node('start', shape: 'diamond', fillcolor: '#CFF09E')
+      @end_node = add_node('end', shape: 'diamond', fillcolor: '#F56991')
 
-        @start = graph.start(shape: 'diamond', fillcolor: '#CFF09E')
-        @end_node = graph.end(shape: 'diamond', fillcolor: '#F56991')
-
-        workflow.jobs.each do |job|
-          add_job(graph, job)
-        end
-
-        graph.output(png: path)
+      # First, create nodes for all jobs
+      @job_name_to_node_map = {}
+      workflow.jobs.each do |job|
+        add_job_node(job)
       end
+
+      # Next, link up the jobs with edges
+      workflow.jobs.each do |job|
+        link_job_edges(job)
+      end
+
+      format = 'png'
+      file_format = path.split('.')[-1]
+      format = file_format if file_format.length == 3
+
+      Graphviz::output(@graph, path: path, format: format)
     end
 
     def path
@@ -29,43 +40,43 @@ module Gush
     end
 
     private
-    def add_job(graph, job)
-      name = job.class.to_s
-      graph.add_nodes(job.name, label: name)
+
+    def add_node(name, **specific_options)
+      @graph.add_node(name, **node_options.merge(specific_options))
+    end
+
+    def add_job_node(job)
+      @job_name_to_node_map[job.name] = add_node(job.name, label: node_label_for_job(job))
+    end
+
+    def link_job_edges(job)
+      job_node = @job_name_to_node_map[job.name]
 
       if job.incoming.empty?
-        graph.add_edges(start, job.name)
+        @start_node.connect(job_node, **edge_options)
       end
 
       if job.outgoing.empty?
-        graph.add_edges(job.name, end_node)
+        job_node.connect(@end_node, **edge_options)
       else
         job.outgoing.each do |id|
           outgoing_job = workflow.find_job(id)
-          graph.add_edges(job.name, outgoing_job.name)
+          job_node.connect(@job_name_to_node_map[outgoing_job.name], **edge_options)
         end
       end
     end
 
-    def set_node_options!(graph)
-      node_options.each do |key, value|
-        graph.node[key] = value
-      end
-    end
-
-    def set_edge_options!(graph)
-      edge_options.each do |key, value|
-        graph.edge[key] = value
-      end
+    def node_label_for_job(job)
+      job.class.to_s
     end
 
     def graph_options
       {
-        type: :digraph,
-        dpi: 200,
-        compound: true,
-        rankdir: "LR",
-        center: true
+          dpi: 200,
+          compound: true,
+          rankdir: "LR",
+          center: true,
+          format: 'png'
       }
     end
 
