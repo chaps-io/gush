@@ -72,7 +72,11 @@ module Gush
       id = nil
       loop do
         id = SecureRandom.uuid
-        available = !redis.exists("gush.workflow.#{id}")
+        available = if redis.respond_to?(:exists?)
+                      !redis.exists?("gush.workflow.#{id}")
+                    else
+                      !redis.exists("gush.workflow.#{id}")
+                    end
 
         break if available
       end

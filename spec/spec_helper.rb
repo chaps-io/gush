@@ -1,5 +1,4 @@
 require 'gush'
-require 'fakeredis'
 require 'json'
 require 'pry'
 
