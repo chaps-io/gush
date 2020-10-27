@@ -6,6 +6,9 @@ require 'pry'
 ActiveJob::Base.queue_adapter = :test
 ActiveJob::Base.logger = nil
 
+# NOTE: This is a workaround for avoiding spec failures until the commit will be released: https://github.com/guilleiguaran/fakeredis/commit/f68bd4f8d2b87c6445b9166447c1752c6236d63b
+Redis.exists_returns_integer = true
+
 class Prepare < Gush::Job; end
 class FetchFirstJob < Gush::Job; end
 class FetchSecondJob < Gush::Job; end
