@@ -31,6 +31,33 @@ describe Gush::Worker do
       end
     end
 
+    context "when job is skipped" do
+      it "should skip the rest of the code" do
+        class SkippedJob < Gush::Job
+          def perform
+            self.skip!
+            output = "Hello"
+          end
+        end
+
+        class NormalWorkflow < Gush::Workflow
+          def configure
+            run SkippedJob
+          end
+        end
+
+        workflow = NormalWorkflow.create
+
+        subject.perform(workflow.id, "SkippedJob")
+        job = client.find_job(workflow.id, "SkippedJob")
+
+        expect(job).to be_skipped
+        expect(job).to be_finished
+        expect(job.output_payload).not_to eq "Hello"
+        expect(job.output_payload).to be_nil
+      end
+    end
+
     context "when job completes successfully" do
       it "should mark it as succedeed" do
         expect(subject).to receive(:mark_as_finished)
