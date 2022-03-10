@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
+        rails_version: [4.2.7, 5.1.0, 5.2.0, 6.0.0, 6.1.0]
         ruby-version: ['2.6', '2.7', '3.0']
 
     steps:
@@ -36,6 +37,8 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+      env:
+        RAILS_VERSION: "${{ matrix.rails_version }}"
     - name: Install Graphviz
       run: sudo apt-get install graphviz
     - name: Run tests
