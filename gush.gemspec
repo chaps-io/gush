@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
   spec.name          = "gush"
-  spec.version       = "2.0.1"
+  spec.version       = "2.0.2"
   spec.authors       = ["Piotrek Okoński"]
   spec.email         = ["piotrek@okonski.org"]
   spec.summary       = "Fast and distributed workflow runner based on ActiveJob and Redis"
