@@ -44,4 +44,4 @@ jobs:
     - name: Run tests
       run: bundle exec rspec
       env:
-        REDIS_URL: redis://redis:6379/1
+        REDIS_URL: redis://localhost:6379/1
