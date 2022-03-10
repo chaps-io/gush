@@ -8,7 +8,7 @@ Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing
 
 ## **WARNING - version notice**
 
-This README is about the `1.0.0` version, which has breaking changes compared to < 1.0.0 versions. [See here for 0.4.1 documentation](https://github.com/chaps-io/gush/blob/349c5aff0332fd14b1cb517115c26d415aa24841/README.md).
+This README is about the latest `master` code, which might differ from what is released on RubyGems. See tags to browse previous READMEs.
 
 ## Installation
 
