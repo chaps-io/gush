@@ -14,11 +14,13 @@ module Gush
     def initialize(*)
       super
       Gush.configure do |config|
-        config.gushfile    = options.fetch("gushfile",    config.gushfile)
-        config.concurrency = options.fetch("concurrency", config.concurrency)
-        config.redis_url   = options.fetch("redis",       config.redis_url)
-        config.namespace   = options.fetch("namespace",   config.namespace)
-        config.ttl         = options.fetch("ttl",         config.ttl)
+        config.gushfile           = options.fetch("gushfile",    config.gushfile)
+        config.concurrency        = options.fetch("concurrency", config.concurrency)
+        config.redis_url          = options.fetch("redis",       config.redis_url)
+        config.namespace          = options.fetch("namespace",   config.namespace)
+        config.ttl                = options.fetch("ttl",         config.ttl)
+        config.locking_duration   = options.fetch("locking_duration", config.locking_duration)
+        config.polling_interval   = options.fetch("polling_interval", config.polling_interval)
       end
       load_gushfile
     end

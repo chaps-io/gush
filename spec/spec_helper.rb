@@ -99,8 +99,10 @@ RSpec.configure do |config|
     clear_performed_jobs
 
     Gush.configure do |config|
-      config.redis_url = REDIS_URL
-      config.gushfile = GUSHFILE
+      config.redis_url        = REDIS_URL
+      config.gushfile         = GUSHFILE
+      config.locking_duration = defined?(locking_duration) ? locking_duration : 2
+      config.polling_interval = defined?(polling_interval) ? polling_interval : 0.3
     end
   end
 

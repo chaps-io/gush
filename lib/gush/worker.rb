@@ -30,10 +30,14 @@ module Gush
 
     private
 
-    attr_reader :client, :workflow_id, :job
+    attr_reader :client, :workflow_id, :job, :configuration
 
     def client
       @client ||= Gush::Client.new(Gush.configuration)
+    end
+
+    def configuration
+      @configuration ||= client.configuration
     end
 
     def setup_job(workflow_id, job_id)
@@ -73,7 +77,11 @@ module Gush
 
     def enqueue_outgoing_jobs
       job.outgoing.each do |job_name|
-        RedisMutex.with_lock("gush_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}", sleep: 0.3, block: 2) do
+        RedisMutex.with_lock(
+          "gush_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}",
+          sleep: configuration.polling_interval,
+          block: configuration.locking_duration
+        ) do
           out = client.find_job(workflow_id, job_name)
 
           if out.ready_to_start?

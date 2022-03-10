@@ -363,6 +363,20 @@ This requires that you have imagemagick installed on your computer:
 bundle exec gush viz <NameOfTheWorkflow>
 ```
 
+### Customizing locking options
+
+In order to prevent getting the RedisMutex::LockError error when having a large number of jobs, you can customize these 2 fields `locking_duration` and `polling_interval` as below
+
+```ruby
+# config/initializers/gush.rb
+Gush.configure do |config|
+  config.redis_url = "redis://localhost:6379"
+  config.concurrency = 5
+  config.locking_duration = 2 # how long you want to wait for the lock to be released, in seconds
+  config.polling_interval = 0.3 # how long the polling interval should be, in seconds
+end
+```
+
 ### Cleaning up afterwards
 
 Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is ran.  This data might be useful for analysis but at a certain point it can be purged via Redis TTL.  By default gush and Redis will keep keys forever.  To configure expiration you need to 2 things.  Create initializer (specify config.ttl in seconds, be different per environment).
