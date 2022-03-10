@@ -17,11 +17,11 @@ module Gush
         elsif workflow.running?
           running_status
         elsif workflow.finished?
-          "done".green
+          Paint["done", :green]
         elsif workflow.stopped?
-          "stopped".red
+          Paint["stopped", :red]
         else
-          "ready to start".blue
+          Paint["ready to start", :blue]
         end
       end
 
@@ -48,10 +48,10 @@ module Gush
           "ID" => workflow.id,
           "Name" => workflow.class.to_s,
           "Jobs" => workflow.jobs.count,
-          "Failed jobs" => failed_jobs_count.red,
-          "Succeeded jobs" => succeeded_jobs_count.green,
-          "Enqueued jobs" => enqueued_jobs_count.yellow,
-          "Running jobs" => running_jobs_count.blue,
+          "Failed jobs" => Paint[failed_jobs_count, :red],
+          "Succeeded jobs" => Paint[succeeded_jobs_count, :green],
+          "Enqueued jobs" => Paint[enqueued_jobs_count, :yellow],
+          "Running jobs" => Paint[running_jobs_count, :blue],
           "Remaining jobs" => remaining_jobs_count,
           "Started at" => started_at,
           "Status" => status
@@ -60,7 +60,7 @@ module Gush
 
       def running_status
         finished = succeeded_jobs_count.to_i
-        status = "running".yellow
+        status = Paint["running", :yellow]
         status += "\n#{finished}/#{total_jobs_count} [#{(finished*100)/total_jobs_count}%]"
       end
 
@@ -69,7 +69,7 @@ module Gush
       end
 
       def failed_status
-        status = "failed".light_red
+        status = Paint["failed", :red]
         status += "\n#{failed_job} failed"
       end
 
@@ -77,13 +77,13 @@ module Gush
         name = job.name
         case
         when job.failed?
-          "[✗] #{name.red} \n"
+          "[✗] #{Paint[name, :red]} \n"
         when job.finished?
-          "[✓] #{name.green} \n"
+          "[✓] #{Paint[name, :green]} \n"
         when job.enqueued?
-          "[•] #{name.yellow} \n"
+          "[•] #{Paint[name, :yellow]} \n"
         when job.running?
-          "[•] #{name.blue} \n"
+          "[•] #{Paint[name, :blue]} \n"
         else
           "[ ] #{name} \n"
         end
