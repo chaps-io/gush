@@ -1,6 +1,4 @@
-# Gush [![Build Status](https://travis-ci.org/chaps-io/gush.svg?branch=master)](https://travis-ci.org/chaps-io/gush)
-
-## [![](http://i.imgur.com/ya8Wnyl.png)](https://chaps.io) proudly made by [Chaps](https://chaps.io)
+# Gush
 
 Gush is a parallel workflow runner using only Redis as storage and [ActiveJob](http://guides.rubyonrails.org/v4.2/active_job_basics.html#introduction) for scheduling and executing jobs.
 
@@ -10,14 +8,14 @@ Gush relies on directed acyclic graphs to store dependencies, see [Parallelizing
 
 ## **WARNING - version notice**
 
-This README is about the `1.0.0` version, which has breaking changes compared to < 1.0.0 versions. [See here for 0.4.1 documentation](https://github.com/chaps-io/gush/blob/349c5aff0332fd14b1cb517115c26d415aa24841/README.md).
+This README is about the latest `master` code, which might differ from what is released on RubyGems. See tags to browse previous READMEs.
 
 ## Installation
 
 ### 1. Add `gush` to Gemfile
 
 ```ruby
-gem 'gush', '~> 1.0.0'
+gem 'gush', '~> 2.0'
 ```
 
 ### 2. Create `Gushfile`
@@ -276,7 +274,7 @@ class EncodeVideo < Gush::Job
 end
 ```
 
-`payloads` is an array containing outputs from all ancestor jobs. So for our `EncodeVide` job from above, the array will look like:
+`payloads` is an array containing outputs from all ancestor jobs. So for our `EncodeVideo` job from above, the array will look like:
 
 
 ```ruby
@@ -323,6 +321,23 @@ it will generate a workflow with 5 `NotificationJob`s and one `AdminNotification
 
 ![DynamicWorkflow](https://i.imgur.com/HOI3fjc.png)
 
+### Dynamic queue for jobs
+
+There might be a case you want to configure different jobs in the workflow using different queues. Based on the above the example, we want to config `AdminNotificationJob` to use queue `admin` and `NotificationJob` use queue `user`.
+
+```ruby
+
+class NotifyWorkflow < Gush::Workflow
+  def configure(user_ids)
+    notification_jobs = user_ids.map do |user_id|
+      run NotificationJob, params: {user_id: user_id}, queue: 'user'
+    end
+
+    run AdminNotificationJob, after: notification_jobs, queue: 'admin'
+  end
+end
+```
+
 ## Command line interface (CLI)
 
 ### Checking status
@@ -348,9 +363,23 @@ This requires that you have imagemagick installed on your computer:
 bundle exec gush viz <NameOfTheWorkflow>
 ```
 
+### Customizing locking options
+
+In order to prevent getting the RedisMutex::LockError error when having a large number of jobs, you can customize these 2 fields `locking_duration` and `polling_interval` as below
+
+```ruby
+# config/initializers/gush.rb
+Gush.configure do |config|
+  config.redis_url = "redis://localhost:6379"
+  config.concurrency = 5
+  config.locking_duration = 2 # how long you want to wait for the lock to be released, in seconds
+  config.polling_interval = 0.3 # how long the polling interval should be, in seconds
+end
+```
+
 ### Cleaning up afterwards
 
-Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is ran.  This data might be useful for analysis but at a certain point it can be purged via Redis TTL.  By default gush and Redis will keep keys forever.  To configure expiration you need to 2 things.  Create initializer (specify config.ttl in seconds, be different per environment).  
+Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is ran.  This data might be useful for analysis but at a certain point it can be purged via Redis TTL.  By default gush and Redis will keep keys forever.  To configure expiration you need to 2 things.  Create initializer (specify config.ttl in seconds, be different per environment).
 
 ```ruby
 # config/initializers/gush.rb
@@ -361,7 +390,7 @@ Gush.configure do |config|
 end
 ```
 
-And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.  
+And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.
 
 ### Avoid overlapping workflows
 

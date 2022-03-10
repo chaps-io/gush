@@ -1,5 +1,7 @@
+# frozen_string_literal: true
+
 require 'terminal-table'
-require 'colorize'
+require 'paint'
 require 'thor'
 require 'launchy'
 
@@ -12,43 +14,45 @@ module Gush
     def initialize(*)
       super
       Gush.configure do |config|
-        config.gushfile    = options.fetch("gushfile",    config.gushfile)
-        config.concurrency = options.fetch("concurrency", config.concurrency)
-        config.redis_url   = options.fetch("redis",       config.redis_url)
-        config.namespace   = options.fetch("namespace",   config.namespace)
-        config.ttl         = options.fetch("ttl",         config.ttl)
+        config.gushfile           = options.fetch("gushfile",    config.gushfile)
+        config.concurrency        = options.fetch("concurrency", config.concurrency)
+        config.redis_url          = options.fetch("redis",       config.redis_url)
+        config.namespace          = options.fetch("namespace",   config.namespace)
+        config.ttl                = options.fetch("ttl",         config.ttl)
+        config.locking_duration   = options.fetch("locking_duration", config.locking_duration)
+        config.polling_interval   = options.fetch("polling_interval", config.polling_interval)
       end
       load_gushfile
     end
 
-    desc "create [WorkflowClass]", "Registers new workflow"
+    desc "create WORKFLOW_CLASS", "Registers new workflow"
     def create(name)
       workflow = client.create_workflow(name)
       puts "Workflow created with id: #{workflow.id}"
       puts "Start it with command: gush start #{workflow.id}"
     end
 
-    desc "start [workflow_id]", "Starts Workflow with given ID"
+    desc "start WORKFLOW_ID [ARG ...]", "Starts Workflow with given ID"
     def start(*args)
       id = args.shift
       workflow = client.find_workflow(id)
       client.start_workflow(workflow, args)
     end
 
-    desc "create_and_start [WorkflowClass]", "Create and instantly start the new workflow"
+    desc "create_and_start WORKFLOW_CLASS [ARG ...]", "Create and instantly start the new workflow"
     def create_and_start(name, *args)
       workflow = client.create_workflow(name)
       client.start_workflow(workflow.id, args)
       puts "Created and started workflow with id: #{workflow.id}"
     end
 
-    desc "stop [workflow_id]", "Stops Workflow with given ID"
+    desc "stop WORKFLOW_ID", "Stops Workflow with given ID"
     def stop(*args)
       id = args.shift
       client.stop_workflow(id)
     end
 
-    desc "show [workflow_id]", "Shows details about workflow with given ID"
+    desc "show WORKFLOW_ID", "Shows details about workflow with given ID"
     option :skip_overview, type: :boolean
     option :skip_jobs, type: :boolean
     option :jobs, default: :all
@@ -60,7 +64,7 @@ module Gush
       display_jobs_list_for(workflow, options[:jobs]) unless options[:skip_jobs]
     end
 
-    desc "rm [workflow_id]", "Delete workflow with given ID"
+    desc "rm WORKFLOW_ID", "Delete workflow with given ID"
     def rm(workflow_id)
       workflow = client.find_workflow(workflow_id)
       client.destroy_workflow(workflow)
@@ -81,13 +85,39 @@ module Gush
       puts Terminal::Table.new(headings: headers, rows: rows)
     end
 
-    desc "viz [WorkflowClass]", "Displays graph, visualising job dependencies"
-    def viz(name)
+    desc "viz {WORKFLOW_CLASS|WORKFLOW_ID}", "Displays graph, visualising job dependencies"
+    option :filename, type: :string, default: nil
+    option :open, type: :boolean, default: nil
+    def viz(class_or_id)
       client
-      workflow = name.constantize.new
-      graph = Graph.new(workflow)
+
+      begin
+        workflow = client.find_workflow(class_or_id)
+      rescue WorkflowNotFound
+        workflow = nil
+      end
+
+      unless workflow
+        begin
+          workflow = class_or_id.constantize.new
+        rescue NameError => e
+          STDERR.puts Paint["'#{class_or_id}' is not a valid workflow class or id", :red]
+          exit 1
+        end
+      end
+
+      opts = {}
+
+      if options[:filename]
+        opts[:filename], opts[:path] = File.split(options[:filename])
+      end
+
+      graph = Graph.new(workflow, **opts)
       graph.viz
-      Launchy.open graph.path
+
+      if (options[:open].nil? && !options[:filename]) || options[:open]
+        Launchy.open Pathname.new(graph.path).realpath.to_s
+      end
     end
 
     private
@@ -118,13 +148,14 @@ module Gush
 
     def load_gushfile
       file = client.configuration.gushfile
-      if !gushfile.exist?
-        raise Thor::Error, "#{file} not found, please add it to your project".colorize(:red)
+
+      unless gushfile.exist?
+        raise Thor::Error, Paint["#{file} not found, please add it to your project", :red]
       end
 
       load file.to_s
     rescue LoadError
-      raise Thor::Error, "failed to require #{file}".colorize(:red)
+      raise Thor::Error, Paint["failed to require #{file}", :red]
     end
   end
 end
