@@ -15,7 +15,7 @@ This README is about the latest `master` code, which might differ from what is r
 ### 1. Add `gush` to Gemfile
 
 ```ruby
-gem 'gush', '~> 1.0.0'
+gem 'gush', '~> 2.0'
 ```
 
 ### 2. Create `Gushfile`
