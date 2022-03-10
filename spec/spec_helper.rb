@@ -1,5 +1,4 @@
 require 'gush'
-require 'fakeredis'
 require 'json'
 require 'pry'
 
@@ -35,12 +34,8 @@ class ParameterTestWorkflow < Gush::Workflow
   end
 end
 
-class Redis
-  def publish(*)
-  end
-end
 
-REDIS_URL = "redis://localhost:6379/12"
+REDIS_URL = ENV["REDIS_URL"] || "redis://localhost:6379/12"
 
 module GushHelpers
   def redis
@@ -108,7 +103,6 @@ RSpec.configure do |config|
       config.gushfile = GUSHFILE
     end
   end
-
 
   config.after(:each) do
     clear_enqueued_jobs

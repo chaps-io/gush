@@ -152,17 +152,15 @@ describe "Workflows" do
     flow = PayloadWorkflow.create
     flow.start!
 
-    perform_one
-    expect(flow.reload.find_job(flow.jobs[0].name).output_payload).to eq('first')
+    3.times { perform_one }
+
+    outputs = flow.reload.jobs.select { |j| j.klass == 'RepetitiveJob' }.map { |j| j.output_payload }
+    expect(outputs).to match_array(['first', 'second', 'third'])
 
     perform_one
-    expect(flow.reload.find_job(flow.jobs[1].name).output_payload).to eq('second')
 
-    perform_one
-    expect(flow.reload.find_job(flow.jobs[2].name).output_payload).to eq('third')
-
-    perform_one
-    expect(flow.reload.find_job(flow.jobs[3].name).output_payload).to eq(%w(first second third))
+    summary_job = flow.reload.jobs.find { |j| j.klass == 'SummaryJob' }
+    expect(summary_job.output_payload).to eq(%w(first second third))
   end
 
   it "does not execute `configure` on each job for huge workflows" do

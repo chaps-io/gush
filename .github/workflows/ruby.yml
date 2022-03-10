@@ -15,6 +15,14 @@ on:
 
 jobs:
   test:
+    services:
+      redis:
+        image: redis:5.0
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     runs-on: ubuntu-latest
     strategy:
@@ -35,3 +43,5 @@ jobs:
       run: sudo apt-get install graphviz
     - name: Run tests
       run: bundle exec rspec
+      env:
+        REDIS_URL: redis://redis:6379/1
