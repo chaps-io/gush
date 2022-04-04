@@ -41,6 +41,23 @@ module Gush
     def output(data)
       @output_payload = data
     end
+    
+    def status
+      case
+        when running?
+          :running
+        when finished?
+          :finished
+        when failed?
+          :failed
+        when succeeded?
+          :succeeded
+        when enqueued?
+          :enqueued
+        else
+          :pending
+      end
+    end
 
     def perform
     end
