@@ -28,6 +28,10 @@ jobs:
         ruby-version: ['2.6', '2.7', '3.0', '3.1']
         exclude:
           - ruby-version: '3.0'
+            rails_version: '4.2.7'
+          - ruby-version: '3.1'
+            rails_version: '4.2.7'
+          - ruby-version: '3.0'
             rails_version: '5.0'
           - ruby-version: '3.1'
             rails_version: '5.0'
