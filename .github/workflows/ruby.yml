@@ -8,10 +8,12 @@
 name: Ruby
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
-    branches: [ master ]
+    paths-ignore:
+      - 'README.md'
+  push:
+    paths-ignore:
+      - 'README.md'
 
 jobs:
   test:
@@ -66,3 +68,4 @@ jobs:
       run: bundle exec rspec
       env:
         REDIS_URL: redis://localhost:6379/1
+        RAILS_VERSION: "${{ matrix.rails_version }}"
