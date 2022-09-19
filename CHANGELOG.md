@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 2.1.0
+
+### Added
+
+- Allow RedisMutex’s locking duration and polling interval to be customizable, thanks to @thukim! [See pull request](https://github.com/chaps-io/gush/pull/74)
+- Support for Rails 7.0 and Ruby 3.0-3.1, thanks to @joshRpowell and @kzkn!
+
 ## 2.0.1
 
 ### Fixed
@@ -13,31 +20,31 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## 2.0.0
 
-## Changed
+### Changed
 
 - *[BREAKING]* Store gush jobs on redis hash instead of plain keys - this improves performance when retrieving keys (Thanks to @Saicheg! [See pull request](https://github.com/chaps-io/gush/pull/56))
 
 
-## Added
+### Added
 
 - Allow setting queue for each job via `:queue` option in `run` method (Thanks to @devilankur18! [See pull request](https://github.com/chaps-io/gush/pull/58))
 
 
 ## 1.1.1 - 2018-06-09
 
-## Changed
+### Changed
 
 - Relax dependency on ActiveSupport to work with 4.2 up to 5.X (Thanks to @iacobus! [See pull request](https://github.com/chaps-io/gush/pull/54))
 
 
 ## 1.1.0 - 2018-02-05
 
-## Added
+### Added
 
 - Added ability to specify TTL for Redis keys and manually expire whole workflows (Thanks to @dmitrypol! [See pull request](https://github.com/chaps-io/gush/pull/48))
 - Loosened dependency on redis-rb library to >= 3.2 and < 5.0 (Thanks to @mofumofu3n! [See pull request](https://github.com/chaps-io/gush/pull/52))
 
-## Fixed
+### Fixed
 
 - Improved performance of (de)serializing workflows by not storing job array inside workflow JSON and other smaller improvements ([See pull request](https://github.com/chaps-io/gush/pull/53))
 
