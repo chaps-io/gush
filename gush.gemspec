@@ -18,16 +18,15 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_dependency "activejob", ">= 4.2.7", "< 7.1"
-  spec.add_dependency "concurrent-ruby", "~> 1.0"
-  spec.add_dependency "multi_json", "~> 1.11"
-  spec.add_dependency "redis", ">= 3.2", "< 5"
-  spec.add_dependency "redis-mutex", "~> 4.0.1"
-  spec.add_dependency "hiredis", "~> 0.6"
-  spec.add_dependency "graphviz", "~> 1.2"
+  spec.add_dependency "oj", "~> 3.13.21"
+  spec.add_dependency "redis", "~> 5.0.5"
+  spec.add_dependency "redlock", "~> 1.3.0"
+  spec.add_dependency "graphviz", "~> 1.2.1"
   spec.add_dependency "terminal-table", ">= 1.4", "< 3.1"
-  spec.add_dependency "paint", "~> 2.2"
+  spec.add_dependency "paint", "~> 2.3.0"
   spec.add_dependency "thor", ">= 0.19", "< 1.3"
   spec.add_dependency "launchy", "~> 2.4"
+  spec.add_dependency "connection_pool", "~> 2.3.0"
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake", "~> 10.4"
   spec.add_development_dependency "rspec", '~> 3.0'

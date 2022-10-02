@@ -1,11 +1,10 @@
 require "bundler/setup"
 
 require "graphviz"
-require "hiredis"
 require "pathname"
 require "redis"
 require "securerandom"
-require "multi_json"
+require "oj"
 
 require "gush/json"
 require "gush/cli"

@@ -1,5 +1,5 @@
 require 'active_job'
-require 'redis-mutex'
+require 'redlock'
 
 module Gush
   class Worker < ::ActiveJob::Base
@@ -75,21 +75,21 @@ module Gush
       (Time.now - start).to_f.round(3)
     end
 
+     # Expose locking mechanism in gush client as public API
     def enqueue_outgoing_jobs
-      job.outgoing.each do |job_name|
-        RedisMutex.with_lock(
-          "gush_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}",
-          sleep: configuration.polling_interval,
-          block: configuration.locking_duration
-        ) do
-          out = client.find_job(workflow_id, job_name)
+      client.redis.with do |conn|
+        redlock = Redlock::Client.new([conn], retry_delay: configuration.polling_interval)
+        job.outgoing.each do |job_name|
+          redlock.lock!("gush_job_lock_#{workflow_id}-#{job_name}", configuration.locking_duration) do
+            out = client.find_job(workflow_id, job_name)
 
-          if out.ready_to_start?
-            client.enqueue_job(workflow_id, out)
+            if out.ready_to_start?
+              client.enqueue_job(workflow_id, out)
+            end
           end
         end
       end
-    rescue RedisMutex::LockError
+    rescue Redlock::LockError
       Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
     end
   end

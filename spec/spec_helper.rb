@@ -101,8 +101,8 @@ RSpec.configure do |config|
     Gush.configure do |config|
       config.redis_url        = REDIS_URL
       config.gushfile         = GUSHFILE
-      config.locking_duration = defined?(locking_duration) ? locking_duration : 2
-      config.polling_interval = defined?(polling_interval) ? polling_interval : 0.3
+      config.locking_duration = defined?(locking_duration) ? locking_duration : 50
+      config.polling_interval = defined?(polling_interval) ? polling_interval : 10
     end
   end
 
