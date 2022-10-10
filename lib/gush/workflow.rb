@@ -2,12 +2,13 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments
+    attr_accessor :id, :jobs, :stopped, :connections, :persisted, :arguments
 
     def initialize(*args)
       @id = id
       @jobs = []
       @dependencies = []
+      @connections = Set.new
       @persisted = false
       @stopped = false
       @arguments = args
@@ -70,8 +71,7 @@ module Gush
         from = find_job(dependency[:from])
         to   = find_job(dependency[:to])
 
-        to.incoming << dependency[:from]
-        from.outgoing << dependency[:to]
+        connections.add([from.id, to.id])
       end
     end
 
@@ -110,7 +110,7 @@ module Gush
     def run(klass, opts = {})
       node = klass.new({
         workflow_id: id,
-        id: client.next_free_job_id(id, klass.to_s),
+        id: SecureRandom.uuid,
         params: opts.fetch(:params, {}),
         queue: opts[:queue]
       })
@@ -139,10 +139,6 @@ module Gush
       self.stopped = flow.stopped
 
       self
-    end
-
-    def initial_jobs
-      jobs.select(&:has_no_dependencies?)
     end
 
     def status
@@ -193,7 +189,7 @@ module Gush
     end
 
     def id
-      @id ||= client.next_free_workflow_id
+      @id ||= SecureRandom.uuid
     end
 
     private

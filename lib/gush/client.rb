@@ -49,29 +49,14 @@ module Gush
       persist_workflow(workflow)
     end
 
-    def next_free_job_id(workflow_id, job_klass)
-      job_id = nil
-
-      loop do
-        job_id = SecureRandom.uuid
-        available = !redis.with { |conn| conn.hexists("gush.jobs.#{workflow_id}.#{job_klass}", job_id) }
-
-        break if available
-      end
-
-      job_id
-    end
-
-    def next_free_workflow_id
-      id = nil
-      loop do
-        id = SecureRandom.uuid
-        available = !redis.with { |conn| conn.exists?("gush.workflow.#{id}") }
-
-        break if available
-      end
-
-      id
+    def initial_job_ids(workflow_id)
+      redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          "workflow-#{workflow_id}",
+          "MATCH (j:Job) WHERE NOT ()-[:OUTGOING]->(j) RETURN j.id"
+        )
+      end[1].flatten
     end
 
     def all_workflows
@@ -101,16 +86,41 @@ module Gush
     end
 
     def persist_workflow(workflow)
-      redis.with {|conn| conn.set("gush.workflows.#{workflow.id}", workflow.to_json) }
-
-      workflow.jobs.each {|job| persist_job(workflow.id, job) }
-      workflow.mark_as_persisted
+      persist_jobs(workflow)
+      persist_job_dependencies(workflow)
 
       true
     end
 
-    def persist_job(workflow_id, job)
-      redis.with {|conn| conn.hset("gush.jobs.#{workflow_id}.#{job.klass}", job.id, job.to_json) }
+    def persist_jobs(workflow)
+      redis.with do |conn|
+        conn.multi do |multi|
+          workflow.jobs.each do |job|
+            multi.call(
+              "GRAPH.QUERY",
+              "workflow-#{workflow.id}",
+              "CREATE (n:Job {id: '#{job.id}', name: '#{job.klass}'})"
+            )
+          end
+        end
+      end
+    end
+
+    def persist_job_dependencies(workflow)
+      redis.with do |conn|
+        conn.multi do |multi|
+          workflow.connections.each do |incoming, outgoing|
+            multi.call(
+              "GRAPH.QUERY",
+              "workflow-#{workflow.id}",
+              %{
+                MATCH (j:Job {id: '#{incoming}'}), (o:Job {id: '#{outgoing}'})
+                CREATE (j)-[:OUTGOING]->(o)
+              }
+            )
+          end
+        end
+      end
     end
 
     def find_job(workflow_id, job_name)

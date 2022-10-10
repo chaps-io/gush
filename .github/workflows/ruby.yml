@@ -19,7 +19,7 @@ jobs:
   test:
     services:
       redis:
-        image: redis:alpine
+        image: redis/redis-stack-server:alpine
         ports: ["6379:6379"]
         options: --entrypoint redis-server
 

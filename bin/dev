@@ -1,0 +1,39 @@
+#!/usr/bin/env ruby
+require "pathname"
+require "bundler"
+require "pry"
+Bundler.require
+
+bin_file = Pathname.new(__FILE__).realpath
+# add self to libpath
+$:.unshift File.expand_path("../../lib", bin_file)
+
+require 'gush'
+
+
+class Prepare < Gush::Job; end
+class FetchFirstJob < Gush::Job; end
+class FetchSecondJob < Gush::Job; end
+class PersistFirstJob < Gush::Job; end
+class PersistSecondJob < Gush::Job; end
+class NormalizeJob < Gush::Job; end
+
+class TestWorkflow < Gush::Workflow
+  def configure
+    run Prepare
+
+    run NormalizeJob, after: PersistSecondJob
+
+    run FetchFirstJob,   after: Prepare
+    run FetchSecondJob,  after: Prepare
+
+    run PersistFirstJob, after: FetchFirstJob, before: NormalizeJob
+    run PersistSecondJob, after: FetchSecondJob
+  end
+end
+
+flow = TestWorkflow.create
+
+
+
+binding.pry
