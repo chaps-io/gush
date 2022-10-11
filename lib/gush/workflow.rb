@@ -76,12 +76,10 @@ module Gush
     end
 
     def find_job(name)
-      match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(name.to_s)
-
-      if match_data.nil?
-        job = jobs.find { |node| node.klass.to_s == name.to_s }
+      if name =~ Gush::Client::UUID_REGEXP
+        job = jobs.find { |node| node.id == name.to_s }
       else
-        job = jobs.find { |node| node.name.to_s == name.to_s }
+        job = jobs.find { |node| node.klass.to_s == name.to_s }
       end
 
       job
@@ -120,16 +118,16 @@ module Gush
       deps_after = [*opts[:after]]
 
       deps_after.each do |dep|
-        @dependencies << {from: dep.to_s, to: node.name.to_s }
+        @dependencies << {from: dep.to_s, to: node.id }
       end
 
       deps_before = [*opts[:before]]
 
       deps_before.each do |dep|
-        @dependencies << {from: node.name.to_s, to: dep.to_s }
+        @dependencies << {from: node.id, to: dep.to_s }
       end
 
-      node.name
+      node.id
     end
 
     def reload

@@ -3,6 +3,7 @@ require 'concurrent-ruby'
 
 module Gush
   class Client
+    UUID_REGEXP = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i.freeze
     attr_reader :configuration
 
     def self.connection_pool(config)
@@ -29,11 +30,11 @@ module Gush
     end
 
     def start_workflow(workflow, job_names = [])
-      workflow.mark_as_started
-      persist_workflow(workflow)
+      # workflow.mark_as_started
+      # persist_workflow(workflow)
 
       jobs = if job_names.empty?
-               workflow.initial_jobs
+               initial_jobs(workflow.id)
              else
                job_names.map {|name| workflow.find_job(name) }
              end
@@ -49,14 +50,59 @@ module Gush
       persist_workflow(workflow)
     end
 
-    def initial_job_ids(workflow_id)
-      redis.with do |conn|
+    def initial_jobs(workflow_id)
+      nodes = redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
           "workflow-#{workflow_id}",
-          "MATCH (j:Job) WHERE NOT ()-[:OUTGOING]->(j) RETURN j.id"
+          "MATCH (j:Job) WHERE NOT ()-[:OUTGOING]->(j) RETURN j"
         )
-      end[1].flatten
+      end
+
+      map_nodes_to_jobs(nodes[1])
+    end
+
+    def incoming_jobs(workflow_id, job_id)
+      nodes = redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          "workflow-#{workflow_id}",
+          "MATCH (i:Job)-[:OUTGOING]->(j:Job {id: '#{job_id}'}) RETURN i"
+        )
+      end
+
+      map_nodes_to_jobs(nodes[1])
+    end
+
+    def outgoing_jobs(workflow_id, job_id)
+      nodes = redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          "workflow-#{workflow_id}",
+          "MATCH (j:Job {id: '#{job_id}'})-[:OUTGOING]->(o:Job) RETURN o"
+        )
+      end
+
+      map_nodes_to_jobs(nodes[1])
+    end
+
+    def all_jobs(workflow_id)
+      nodes = redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          "workflow-#{workflow_id}",
+          "MATCH (j:Job) RETURN j"
+        )
+      end
+
+      map_nodes_to_jobs(nodes[1])
+    end
+
+    def map_nodes_to_jobs(nodes)
+      nodes.map do |node|
+        data = node.first.to_h
+        Gush::Job.from_properties(data["properties"].to_h)
+      end
     end
 
     def all_workflows
@@ -99,23 +145,42 @@ module Gush
             multi.call(
               "GRAPH.QUERY",
               "workflow-#{workflow.id}",
-              "CREATE (n:Job {id: '#{job.id}', name: '#{job.klass}'})"
+              "MERGE (n:Job #{job_properties(job)})"
             )
           end
         end
       end
     end
 
+    def update_job(workflow_id, job)
+      redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          "workflow-#{workflow_id}",
+          "MATCH (n:Job {id: '#{job.id}'}) SET n += #{job_properties(job)}"
+        )
+      end
+    end
+
+    def job_properties(job)
+      props = job.as_properties.map do |key, value|
+        "#{key}: '#{value}'"
+      end.join(',')
+
+      "{#{props}}"
+    end
+
     def persist_job_dependencies(workflow)
       redis.with do |conn|
         conn.multi do |multi|
           workflow.connections.each do |incoming, outgoing|
-            multi.call(
+            res = multi.call(
               "GRAPH.QUERY",
               "workflow-#{workflow.id}",
               %{
-                MATCH (j:Job {id: '#{incoming}'}), (o:Job {id: '#{outgoing}'})
-                CREATE (j)-[:OUTGOING]->(o)
+                MATCH (j:Job {id: '#{incoming}'})
+                MATCH (o:Job {id: '#{outgoing}'})
+                MERGE (j)-[:OUTGOING]->(o)
               }
             )
           end
@@ -123,28 +188,18 @@ module Gush
       end
     end
 
-    def find_job(workflow_id, job_name)
-      job_name_match = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(job_name)
-
-      data = if job_name_match
-               find_job_by_klass_and_id(workflow_id, job_name)
-             else
-               find_job_by_klass(workflow_id, job_name)
-             end
-
-      return nil if data.nil?
-
-      data = Gush::JSON.decode(data)
-      Gush::Job.from_hash(data)
+    def find_job(workflow_id, id_or_name)
+      if id_or_name =~ UUID_REGEXP
+        find_job_by_id(workflow_id, id_or_name)
+      else
+        find_job_by_class(workflow_id, id_or_name)
+      end
     end
 
+    # TODO use redis graph removal
     def destroy_workflow(workflow)
       redis.with { |conn| conn.del("gush.workflows.#{workflow.id}") }
       workflow.jobs.each {|job| destroy_job(workflow.id, job) }
-    end
-
-    def destroy_job(workflow_id, job)
-      redis.with { |conn| conn.del("gush.jobs.#{workflow_id}.#{job.klass}") }
     end
 
     def expire_workflow(workflow, ttl=nil)
@@ -160,10 +215,10 @@ module Gush
 
     def enqueue_job(workflow_id, job)
       job.enqueue!
-      persist_job(workflow_id, job)
+      update_job(workflow_id, job)
       queue = job.queue || configuration.namespace
 
-      Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.name])
+      Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.id])
     end
 
     # Make it private end expose locking mechanism here as public API
@@ -173,19 +228,28 @@ module Gush
 
     private
 
-    def find_job_by_klass_and_id(workflow_id, job_name)
-      job_klass, job_id = job_name.split('|')
+    def find_job_by_id(workflow_id, id)
+      nodes = redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          "workflow-#{workflow_id}",
+          "MATCH (j:Job {id: '#{id}'}) RETURN j LIMIT 1"
+        )
+      end
 
-      redis.with { |conn| conn.hget("gush.jobs.#{workflow_id}.#{job_klass}", job_id) }
+      map_nodes_to_jobs(nodes[1]).first
     end
 
-    def find_job_by_klass(workflow_id, job_name)
-      new_cursor, result = redis.with { |conn| conn.hscan("gush.jobs.#{workflow_id}.#{job_name}", 0, count: 1) }
-      return nil if result.empty?
+    def find_job_by_class(workflow_id, klass)
+      nodes = redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          "workflow-#{workflow_id}",
+          "MATCH (j:Job {klass: '#{klass}'}) RETURN j LIMIT 1"
+        )
+      end
 
-      job_id, job = *result[0]
-
-      job
+      map_nodes_to_jobs(nodes[1]).first
     end
 
     def workflow_from_hash(hash, nodes = [])

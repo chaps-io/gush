@@ -113,17 +113,18 @@ describe "Workflows" do
       end
     end
 
+    client = Gush::Client.new
     flow = PayloadWorkflow.create
     flow.start!
 
     perform_one
-    expect(flow.reload.find_job("UpcaseJob").output_payload).to eq("SOME TEXT")
+    expect(client.find_job(flow.id, "UpcaseJob").output_payload).to eq("SOME TEXT")
 
     perform_one
-    expect(flow.reload.find_job("PrefixJob").output_payload).to eq("A prefix")
+    expect(client.find_job(flow.id, "PrefixJob").output_payload).to eq("A prefix")
 
     perform_one
-    expect(flow.reload.find_job("PrependJob").output_payload).to eq("A prefix: SOME TEXT")
+    expect(client.find_job(flow.id, "PrependJob").output_payload).to eq("A prefix: SOME TEXT")
   end
 
   it "passes payloads from workflow that runs multiple same class jobs with nameized payloads" do
