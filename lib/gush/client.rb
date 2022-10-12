@@ -30,8 +30,8 @@ module Gush
     end
 
     def start_workflow(workflow, job_names = [])
-      # workflow.mark_as_started
-      # persist_workflow(workflow)
+      workflow.mark_as_started
+      persist_workflow(workflow)
 
       jobs = if job_names.empty?
                initial_jobs(workflow.id)
@@ -145,6 +145,7 @@ module Gush
     end
 
     def persist_workflow(workflow)
+      workflow.mark_as_persisted
       persist_workflow_settings(workflow)
       persist_jobs(workflow.id, workflow.jobs)
       persist_job_dependencies(workflow)
