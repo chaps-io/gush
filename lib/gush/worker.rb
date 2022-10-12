@@ -72,15 +72,16 @@ module Gush
 
      # Expose locking mechanism in gush client as public API
     def enqueue_outgoing_jobs
-      # redlock = Redlock::Client.new([conn], retry_delay: configuration.polling_interval)
-      a = client.outgoing_jobs(workflow_id, job.id)
-      a.each do |outgoing|
-        # redlock.lock!("gush_job_lock_#{workflow_id}-#{job_name}", configuration.locking_duration) do
-          client.enqueue_job(workflow_id, outgoing)
-        # end
+      client.redis.with do |conn|
+        redlock = Redlock::Client.new([conn], retry_delay: configuration.polling_interval)
+        client.outgoing_jobs(workflow_id, job.id).each do |outgoing|
+          redlock.lock!("gush_job_lock_#{workflow_id}-#{outgoing.id}", configuration.locking_duration) do
+            client.enqueue_job(workflow_id, outgoing)
+          end
+        end
       end
     rescue Redlock::LockError
-      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
+      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.id)
     end
   end
 end
