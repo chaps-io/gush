@@ -54,7 +54,7 @@ module Gush
       nodes = redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
-          "workflow-#{workflow_id}",
+          workflow_namespace(workflow_id),
           "MATCH (j:Job) WHERE NOT ()-[:OUTGOING]->(j) RETURN j"
         )
       end
@@ -66,7 +66,7 @@ module Gush
       nodes = redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
-          "workflow-#{workflow_id}",
+          workflow_namespace(workflow_id),
           "MATCH (i:Job)-[:OUTGOING]->(j:Job {id: '#{job_id}'}) RETURN i"
         )
       end
@@ -78,7 +78,7 @@ module Gush
       nodes = redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
-          "workflow-#{workflow_id}",
+          workflow_namespace(workflow_id),
           "MATCH (j:Job {id: '#{job_id}'})-[:OUTGOING]->(o:Job) RETURN o"
         )
       end
@@ -90,7 +90,7 @@ module Gush
       nodes = redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
-          "workflow-#{workflow_id}",
+          workflow_namespace(workflow_id),
           "MATCH (j:Job) RETURN j"
         )
       end
@@ -115,57 +115,64 @@ module Gush
     end
 
     def find_workflow(id)
-      data = redis.with { |conn| conn.get("gush.workflows.#{id}") }
+      redis.with do |conn|
 
-      unless data.nil?
-        hash = Gush::JSON.decode(data)
-        keys = redis.with { |conn| conn.scan_each(match: "gush.jobs.#{id}.*") }
-
-        nodes = keys.each_with_object([]) do |key, array|
-          array.concat redis.with { |conn| conn.hvals(key).map { |json| Gush::JSON.decode(json) } }
+        unless conn.exists(workflow_namespace(id))
+          raise WorkflowNotFound.new("Workflow with given id doesn't exist")
         end
 
-        workflow_from_hash(hash, nodes)
-      else
-        raise WorkflowNotFound.new("Workflow with given id doesn't exist")
+        properties = conn.call(
+          "GRAPH.QUERY",
+          workflow_namespace(id),
+          "MATCH (s:Settings) RETURN s LIMIT 1"
+        )[1][0][0][2].last.to_h
+
+        Gush::Workflow.from_properties(properties)
       end
     end
 
     def persist_workflow(workflow)
-      persist_jobs(workflow)
+      persist_workflow_settings(workflow)
+      persist_jobs(workflow.id, workflow.jobs)
       persist_job_dependencies(workflow)
 
       true
     end
 
-    def persist_jobs(workflow)
+    def persist_workflow_settings(workflow)
+      redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          workflow_namespace(workflow.id),
+          "MERGE (s:Settings #{node_properties(workflow)})"
+        )
+      end
+    end
+
+    def persist_jobs(workflow_id, jobs = workflow.jobs)
       redis.with do |conn|
         conn.multi do |multi|
-          workflow.jobs.each do |job|
+          jobs.each do |job|
             multi.call(
               "GRAPH.QUERY",
-              "workflow-#{workflow.id}",
-              "MERGE (n:Job #{job_properties(job)})"
+              workflow_namespace(workflow_id),
+              "MERGE (j:Job {id: '#{job.id}'}) ON CREATE SET j = #{node_properties(job)} ON MATCH SET j += #{node_properties(job)}"
             )
           end
         end
       end
     end
 
-    def update_job(workflow_id, job)
-      redis.with do |conn|
-        conn.call(
-          "GRAPH.QUERY",
-          "workflow-#{workflow_id}",
-          "MATCH (n:Job {id: '#{job.id}'}) SET n += #{job_properties(job)}"
-        )
-      end
+    def persist_job(workflow_id, job)
+      persist_jobs(workflow_id, [job])
     end
 
-    def job_properties(job)
-      props = job.as_properties.map do |key, value|
-        "#{key}: '#{value}'"
-      end.join(',')
+    def node_properties(node)
+      props = node.as_properties.map do |key, value|
+        next unless value.present?
+        serialized_value = value.present? ? "'#{value}'" : "NULL"
+        "#{key}: #{serialized_value}"
+      end.compact.join(', ')
 
       "{#{props}}"
     end
@@ -215,7 +222,7 @@ module Gush
 
     def enqueue_job(workflow_id, job)
       job.enqueue!
-      update_job(workflow_id, job)
+      persist_job(workflow_id, job)
       queue = job.queue || configuration.namespace
 
       Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.id])
@@ -228,11 +235,15 @@ module Gush
 
     private
 
+    def workflow_namespace(workflow_id)
+      "workflow-#{workflow_id}"
+    end
+
     def find_job_by_id(workflow_id, id)
       nodes = redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
-          "workflow-#{workflow_id}",
+          workflow_namespace(workflow_id),
           "MATCH (j:Job {id: '#{id}'}) RETURN j LIMIT 1"
         )
       end
@@ -244,25 +255,12 @@ module Gush
       nodes = redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
-          "workflow-#{workflow_id}",
+          workflow_namespace(workflow_id),
           "MATCH (j:Job {klass: '#{klass}'}) RETURN j LIMIT 1"
         )
       end
 
       map_nodes_to_jobs(nodes[1]).first
-    end
-
-    def workflow_from_hash(hash, nodes = [])
-      flow = hash[:klass].constantize.new(*hash[:arguments])
-      flow.jobs = []
-      flow.stopped = hash.fetch(:stopped, false)
-      flow.id = hash[:id]
-
-      flow.jobs = nodes.map do |node|
-        Gush::Job.from_hash(node)
-      end
-
-      flow
     end
   end
 end

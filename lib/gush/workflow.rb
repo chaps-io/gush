@@ -178,6 +178,25 @@ module Gush
       }
     end
 
+    def as_properties
+      {
+        id: id,
+        arguments: @arguments.present? ? Gush::JSON.encode(@arguments) : nil,
+        klass: self.class.to_s,
+        stopped: stopped,
+        started_at: started_at&.iso8601,
+        finished_at: finished_at&.iso8601
+      }
+    end
+
+    def self.from_properties(props)
+      props["klass"].constantize.new.tap do |flow|
+        flow.id = props["id"]
+        flow.arguments = Gush::JSON.decode(props["arguments"]) if props["arguments"].present?
+        flow.stopped = props["stopped"] == "true"
+      end
+    end
+
     def to_json(options = {})
       Gush::JSON.encode(to_hash)
     end

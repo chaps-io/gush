@@ -34,8 +34,8 @@ module Gush
         enqueued_at: enqueued_at&.iso8601,
         started_at: started_at&.iso8601,
         failed_at: failed_at&.iso8601,
-        params: Gush::JSON.encode(params),
-        output_payload: Gush::JSON.encode(output_payload)
+        params: params.present? ? Gush::JSON.encode(params) : nil,
+        output_payload: output_payload.present? ? Gush::JSON.encode(output_payload) : nil
       }
     end
 
@@ -47,10 +47,6 @@ module Gush
       Gush::JSON.encode(as_json)
     end
 
-    def self.from_hash(hash)
-      hash[:klass].constantize.new(hash)
-    end
-
     def self.from_properties(props)
       props["klass"].constantize.new.tap do |job|
         job.id = props["id"]
@@ -58,8 +54,8 @@ module Gush
         job.finished_at = Time.parse(props["finished_at"]) rescue nil
         job.started_at = Time.parse(props["started_at"]) rescue nil
         job.enqueued_at = Time.parse(props["enqueued_at"]) rescue nil
-        job.params = Gush::JSON.decode(props["params"])
-        job.output_payload = Gush::JSON.decode(props["output_payload"])
+        job.params = Gush::JSON.decode(props["params"]) rescue nil
+        job.output_payload = Gush::JSON.decode(props["output_payload"]) rescue nil
         job.queue = props["queue"].presence
       end
     end

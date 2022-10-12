@@ -57,17 +57,17 @@ module Gush
 
     def mark_as_finished
       job.finish!
-      client.update_job(workflow_id, job)
+      client.persist_job(workflow_id, job)
     end
 
     def mark_as_failed
       job.fail!
-      client.update_job(workflow_id, job)
+      client.persist_job(workflow_id, job)
     end
 
     def mark_as_started
       job.start!
-      client.update_job(workflow_id, job)
+      client.persist_job(workflow_id, job)
     end
 
      # Expose locking mechanism in gush client as public API
