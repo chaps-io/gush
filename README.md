@@ -391,7 +391,7 @@ end
 
 ### Avoid overlapping workflows
 
-Since we do not know how long our workflow execution will take we might want to avoid starting the next scheduled workflow iteration while the current one with same class is still running.  Long term this could be moved into core library, perhaps `Workflow.find_by_class(klass)`
+Since we do not know how long our workflow execution will take we might want to avoid starting the next scheduled workflow iteration while the current one with same class is still running. Long term this could be moved into core library, perhaps `Workflow.find_by_class(klass)`
 
 ```ruby
 # config/initializers/gush.rb
