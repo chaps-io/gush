@@ -386,11 +386,8 @@ Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it i
 Gush.configure do |config|
   config.redis_url = "redis://localhost:6379"
   config.concurrency = 5
-  config.ttl = 3600*24*7
 end
 ```
-
-And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.
 
 ### Avoid overlapping workflows
 

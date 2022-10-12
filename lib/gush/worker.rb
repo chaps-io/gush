@@ -46,11 +46,11 @@ module Gush
     end
 
     def incoming_payloads
-      client.incoming_jobs(workflow_id, job.id).map do |job|
+      client.incoming_jobs(workflow_id, job.id).map do |incoming|
         {
-          id: job.name,
-          class: job.klass.to_s,
-          output: job.output_payload
+          id: incoming.id,
+          class: incoming.class.to_s,
+          output: incoming.output_payload
         }
       end
     end
@@ -73,13 +73,10 @@ module Gush
      # Expose locking mechanism in gush client as public API
     def enqueue_outgoing_jobs
       # redlock = Redlock::Client.new([conn], retry_delay: configuration.polling_interval)
-      client.outgoing_jobs(workflow_id, job.id).each do |outgoing|
+      a = client.outgoing_jobs(workflow_id, job.id)
+      a.each do |outgoing|
         # redlock.lock!("gush_job_lock_#{workflow_id}-#{job_name}", configuration.locking_duration) do
-        #   out = client.find_job(workflow_id, job_name)
-
-          if outgoing.ready_to_start?
-            client.enqueue_job(workflow_id, outgoing)
-          end
+          client.enqueue_job(workflow_id, outgoing)
         # end
       end
     rescue Redlock::LockError

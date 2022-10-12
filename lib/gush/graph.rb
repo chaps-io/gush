@@ -24,9 +24,7 @@ module Gush
       end
 
       # Next, link up the jobs with edges
-      workflow.jobs.each do |job|
-        link_job_edges(job)
-      end
+      link_job_edges
 
       format = 'png'
       file_format = path.split('.')[-1]
@@ -46,11 +44,11 @@ module Gush
     end
 
     def add_job_node(job)
-      @job_name_to_node_map[job.name] = add_node(job.name, label: node_label_for_job(job))
+      @job_name_to_node_map[job.id] = add_node(job.id, label: node_label_for_job(job))
     end
 
-    def link_job_edges(job)
-      job_node = @job_name_to_node_map[job.name]
+    def link_job_edges(workflow)
+      job_node = @job_name_to_node_map[job.id]
 
       if job.incoming.empty?
         @start_node.connect(job_node, **edge_options)
@@ -61,7 +59,7 @@ module Gush
       else
         job.outgoing.each do |id|
           outgoing_job = workflow.find_job(id)
-          job_node.connect(@job_name_to_node_map[outgoing_job.name], **edge_options)
+          job_node.connect(@job_name_to_node_map[outgoing_job.id], **edge_options)
         end
       end
     end

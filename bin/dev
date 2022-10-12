@@ -32,8 +32,36 @@ class TestWorkflow < Gush::Workflow
   end
 end
 
-flow = TestWorkflow.create
+class UpcaseJob < Gush::Job
+  def perform
+    output params[:input].upcase
+  end
+end
 
+class PrefixJob < Gush::Job
+  def perform
+    output params[:prefix].capitalize
+  end
+end
+
+class PrependJob < Gush::Job
+  def perform
+    string = "#{payloads.find { |j| j[:class] == 'PrefixJob'}[:output]}: #{payloads.find { |j| j[:class] == 'UpcaseJob'}[:output]}"
+    output string
+  end
+end
+
+class PayloadWorkflow < Gush::Workflow
+  def configure
+    run UpcaseJob, params: {input: "some text"}
+    run PrefixJob, params: {prefix: "a prefix"}
+    run PrependJob, after: [UpcaseJob, PrefixJob]
+  end
+end
+
+# flow = TestWorkflow.create
+
+flow2 = PayloadWorkflow.create
 
 
 binding.pry

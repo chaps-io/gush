@@ -8,8 +8,8 @@ describe Gush::Configuration do
     expect(subject.concurrency).to eq(5)
     expect(subject.namespace).to eq('gush')
     expect(subject.gushfile).to eq(GUSHFILE.realpath)
-    expect(subject.locking_duration).to eq(2)
-    expect(subject.polling_interval).to eq(0.3)
+    expect(subject.locking_duration).to eq(2000)
+    expect(subject.polling_interval).to eq(300)
   end
 
   describe "#configure" do

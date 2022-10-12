@@ -79,7 +79,7 @@ module Gush
       if name =~ Gush::Client::UUID_REGEXP
         job = jobs.find { |node| node.id == name.to_s }
       else
-        job = jobs.find { |node| node.klass.to_s == name.to_s }
+        job = jobs.find { |node| node.class.to_s == name.to_s }
       end
 
       job
@@ -106,12 +106,11 @@ module Gush
     end
 
     def run(klass, opts = {})
-      node = klass.new({
-        workflow_id: id,
+      node = klass.new(
         id: SecureRandom.uuid,
         params: opts.fetch(:params, {}),
         queue: opts[:queue]
-      })
+      )
 
       jobs << node
 
@@ -162,30 +161,12 @@ module Gush
       last_job ? last_job.finished_at : nil
     end
 
-    def to_hash
-      name = self.class.to_s
-      {
-        name: name,
-        id: id,
-        arguments: @arguments,
-        total: jobs.count,
-        finished: jobs.count(&:finished?),
-        klass: name,
-        status: status,
-        stopped: stopped,
-        started_at: started_at,
-        finished_at: finished_at
-      }
-    end
-
     def as_properties
       {
         id: id,
-        arguments: @arguments.present? ? Gush::JSON.encode(@arguments) : nil,
+        arguments: @arguments.present? ? Gush::JSON.encode(@arguments) : {},
         klass: self.class.to_s,
         stopped: stopped,
-        started_at: started_at&.iso8601,
-        finished_at: finished_at&.iso8601
       }
     end
 
@@ -195,10 +176,6 @@ module Gush
         flow.arguments = Gush::JSON.decode(props["arguments"]) if props["arguments"].present?
         flow.stopped = props["stopped"] == "true"
       end
-    end
-
-    def to_json(options = {})
-      Gush::JSON.encode(to_hash)
     end
 
     def self.descendants
@@ -218,14 +195,6 @@ module Gush
 
     def client
       @client ||= Client.new
-    end
-
-    def first_job
-      jobs.min_by{ |n| n.started_at || Time.now.to_i }
-    end
-
-    def last_job
-      jobs.max_by{ |n| n.finished_at || 0 } if finished?
     end
   end
 end

@@ -45,20 +45,21 @@ describe Gush::Worker do
       it 'enqeues another job to handling enqueue_outgoing_jobs' do
         redlock = Redlock::Client.new([Redis.new(url: REDIS_URL)])
         # allow(Redlock::Client).to receive(:new).and_return(redlock)
+        prepare = client.find_job(workflow.id, "Prepare")
         fetch1 = client.find_job(workflow.id, "FetchFirstJob")
         fetch2 = client.find_job(workflow.id, "FetchSecondJob")
 
-        lock1 = redlock.lock("gush_job_lock_#{workflow.id}-#{fetch1.name}", 2000)
-        lock2 = redlock.lock("gush_job_lock_#{workflow.id}-#{fetch2.name}", 2000)
+        lock1 = redlock.lock("gush_job_lock_#{workflow.id}-#{fetch1.id}", 2000)
+        lock2 = redlock.lock("gush_job_lock_#{workflow.id}-#{fetch2.id}", 2000)
 
-        subject.perform(workflow.id, 'Prepare')
-        expect(Gush::Worker).to have_no_jobs(workflow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
+        subject.perform(workflow.id, prepare.id)
+        expect(Gush::Worker).to have_no_jobs(workflow, ["FetchFirstJob", "FetchSecondJob"])
 
         redlock.unlock(lock1)
         redlock.unlock(lock2)
 
         perform_one
-        expect(Gush::Worker).to have_jobs(workflow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
+        expect(Gush::Worker).to have_jobs(workflow, ["FetchFirstJob", "FetchSecondJob"])
       end
     end
 

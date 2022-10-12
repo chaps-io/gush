@@ -39,21 +39,21 @@ describe "Workflows" do
       flow = SecondChanceWorkflow.create
       flow.start!
 
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
+      expect(Gush::Worker).to have_jobs(flow, ['Prepare'])
       perform_one
 
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
+      expect(Gush::Worker).to have_jobs(flow, ['FailsThenSucceeds'])
       expect do
         perform_one
       end.to raise_error(NameError)
 
       expect(flow.reload).to be_failed
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['FailsThenSucceeds']))
+      expect(Gush::Worker).to have_jobs(flow, ['FailsThenSucceeds'])
 
       # Retry the same job again, but this time succeeds
       perform_one
 
-      expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['NormalizeJob']))
+      expect(Gush::Worker).to have_jobs(flow, ['NormalizeJob'])
       perform_one
 
       flow = flow.reload
@@ -66,19 +66,19 @@ describe "Workflows" do
     flow = TestWorkflow.create
     flow.start!
 
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(['Prepare']))
+    expect(Gush::Worker).to have_jobs(flow, ['Prepare'])
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchFirstJob", "FetchSecondJob"]))
+    expect(Gush::Worker).to have_jobs(flow, ['FetchFirstJob', 'FetchSecondJob'])
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["FetchSecondJob", "PersistFirstJob"]))
+    expect(Gush::Worker).to have_jobs(flow, ['FetchSecondJob', 'PersistFirstJob'])
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["PersistFirstJob"]))
+    expect(Gush::Worker).to have_jobs(flow, ['PersistFirstJob'])
 
     perform_one
-    expect(Gush::Worker).to have_jobs(flow.id, jobs_with_id(["NormalizeJob"]))
+    expect(Gush::Worker).to have_jobs(flow, ['NormalizeJob'])
 
     perform_one
 
@@ -155,12 +155,12 @@ describe "Workflows" do
 
     3.times { perform_one }
 
-    outputs = flow.reload.jobs.select { |j| j.klass == 'RepetitiveJob' }.map { |j| j.output_payload }
+    outputs = flow.reload.jobs.select { |j| j.is_a?(RepetitiveJob) }.map { |j| j.output_payload }
     expect(outputs).to match_array(['first', 'second', 'third'])
 
     perform_one
 
-    summary_job = flow.reload.jobs.find { |j| j.klass == 'SummaryJob' }
+    summary_job = flow.reload.jobs.find { |j| j.is_a?(SummaryJob) }
     expect(summary_job.output_payload).to eq(%w(first second third))
   end
 

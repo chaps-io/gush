@@ -4,7 +4,6 @@ require "graphviz"
 require "pathname"
 require "redis"
 require "securerandom"
-require "oj"
 
 require "gush/json"
 require "gush/cli"

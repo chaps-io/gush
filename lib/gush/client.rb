@@ -79,11 +79,22 @@ module Gush
         conn.call(
           "GRAPH.QUERY",
           workflow_namespace(workflow_id),
-          "MATCH (j:Job {id: '#{job_id}'})-[:OUTGOING]->(o:Job) RETURN o"
+          %{
+            MATCH (current:Job)-[:OUTGOING]->(o:Job)<-[:OUTGOING]-(parent:Job)
+            WHERE
+              current.id = '#{job_id}'
+              AND o.started_at = ''
+              AND o.enqueued_at = ''
+              AND o.finished_at = ''
+              AND o.failed_at = ''
+            RETURN
+              o,
+              reduce(result = true, n IN collect(parent.finished_at <> '' AND parent.failed_at = '') | n AND result)
+          }
         )
       end
 
-      map_nodes_to_jobs(nodes[1])
+      map_nodes_to_jobs(nodes[1].select { |node, done| done == "true" })
     end
 
     def all_jobs(workflow_id)
@@ -127,7 +138,9 @@ module Gush
           "MATCH (s:Settings) RETURN s LIMIT 1"
         )[1][0][0][2].last.to_h
 
-        Gush::Workflow.from_properties(properties)
+        Gush::Workflow.from_properties(properties).tap do |flow|
+          flow.jobs = all_jobs(id)
+        end
       end
     end
 
@@ -153,7 +166,7 @@ module Gush
       redis.with do |conn|
         conn.multi do |multi|
           jobs.each do |job|
-            multi.call(
+            conn.call(
               "GRAPH.QUERY",
               workflow_namespace(workflow_id),
               "MERGE (j:Job {id: '#{job.id}'}) ON CREATE SET j = #{node_properties(job)} ON MATCH SET j += #{node_properties(job)}"
@@ -169,12 +182,23 @@ module Gush
 
     def node_properties(node)
       props = node.as_properties.map do |key, value|
-        next unless value.present?
-        serialized_value = value.present? ? "'#{value}'" : "NULL"
-        "#{key}: #{serialized_value}"
+        "#{key}: #{value_to_property(value)}"
       end.compact.join(', ')
 
       "{#{props}}"
+    end
+
+    def value_to_property(value)
+      case
+      when value.nil?
+        "''"
+      when value.is_a?(TrueClass)
+        "true"
+      when value.is_a?(FalseClass)
+        "false"
+      else
+        "'#{value}'"
+      end
     end
 
     def persist_job_dependencies(workflow)
@@ -207,17 +231,6 @@ module Gush
     def destroy_workflow(workflow)
       redis.with { |conn| conn.del("gush.workflows.#{workflow.id}") }
       workflow.jobs.each {|job| destroy_job(workflow.id, job) }
-    end
-
-    def expire_workflow(workflow, ttl=nil)
-      ttl = ttl || configuration.ttl
-      redis.with { |conn| conn.expire("gush.workflows.#{workflow.id}", ttl) }
-      workflow.jobs.each {|job| expire_job(workflow.id, job, ttl) }
-    end
-
-    def expire_job(workflow_id, job, ttl=nil)
-      ttl = ttl || configuration.ttl
-      redis.with { |conn| conn.expire("gush.jobs.#{workflow_id}.#{job.klass}", ttl) }
     end
 
     def enqueue_job(workflow_id, job)

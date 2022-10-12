@@ -60,29 +60,35 @@ module GushHelpers
   end
 end
 
-RSpec::Matchers.define :have_jobs do |flow, jobs|
+RSpec::Matchers.define :have_jobs do |flow, expected_job_names|
   match do |actual|
+    jobs = expected_job_names.map {|name| flow.find_job(name) }
+
     expected = jobs.map do |job|
-      hash_including(args: include(flow, job))
+      hash_including(args: [flow.id, job.id])
     end
     expect(ActiveJob::Base.queue_adapter.enqueued_jobs).to match_array(expected)
   end
 
   failure_message do |actual|
-    "expected queue to have #{jobs}, but instead has: #{ActiveJob::Base.queue_adapter.enqueued_jobs.map{ |j| j[:args][1]}}"
+    job_names = ActiveJob::Base.queue_adapter.enqueued_jobs.map{ |j| flow.find_job(j[:args][1]).class.name }
+    "expected queue to have #{expected_job_names.join(', ')}, but instead has: #{job_names.join(', ')}"
   end
 end
 
-RSpec::Matchers.define :have_no_jobs do |flow, jobs|
+RSpec::Matchers.define :have_no_jobs do |flow, expected_job_names|
   match do |actual|
+    jobs = expected_job_names.map {|name| flow.find_job(name) }
+
     expected = jobs.map do |job|
-      hash_including(args: include(flow, job))
+      hash_including(args: include(flow.id, job.id))
     end
     expect(ActiveJob::Base.queue_adapter.enqueued_jobs).not_to match_array(expected)
   end
 
   failure_message do |actual|
-    "expected queue to have no #{jobs}, but instead has: #{ActiveJob::Base.queue_adapter.enqueued_jobs.map{ |j| j[:args][1]}}"
+    job_names = ActiveJob::Base.queue_adapter.enqueued_jobs.map{ |j| flow.find_job(j[:args][1]).class.name }
+    "expected queue to have no #{expected_job_names.join(', ')}, but instead has: #{job_names.join(', ')}"
   end
 end
 

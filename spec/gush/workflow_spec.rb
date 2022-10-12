@@ -136,13 +136,14 @@ describe Gush::Workflow do
       klass2 = Class.new(Gush::Job)
       klass3 = Class.new(Gush::Job)
 
-      tree.run(klass1)
-      tree.run(klass2, after: [klass1, klass3])
-      tree.run(klass3)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, after: [klass1, klass3])
+      job3 = tree.run(klass3)
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.outgoing).to match_array(jobs_with_id([klass2.to_s]))
+      expect(tree.connections).to include([job1, job2])
+      expect(tree.connections).to include([job3, job2])
     end
 
     it "allows `before` to accept an array of jobs" do
@@ -150,35 +151,38 @@ describe Gush::Workflow do
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
       klass3 = Class.new(Gush::Job)
-      tree.run(klass1)
-      tree.run(klass2, before: [klass1, klass3])
-      tree.run(klass3)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, before: [klass1, klass3])
+      job3 = tree.run(klass3)
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.incoming).to match_array(jobs_with_id([klass2.to_s]))
+      expect(tree.connections).to include([job2, job1])
+      expect(tree.connections).to include([job2, job3])
     end
 
     it "attaches job as a child of the job in `after` key" do
       tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
-      tree.run(klass1)
-      tree.run(klass2, after: klass1)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, after: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.outgoing).to match_array(jobs_with_id([klass2.to_s]))
+
+      expect(tree.connections).to include([job1, job2])
     end
 
     it "attaches job as a parent of the job in `before` key" do
       tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
-      tree.run(klass1)
-      tree.run(klass2, before: klass1)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, before: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.incoming).to match_array(jobs_with_id([klass2.to_s]))
+
+      expect(tree.connections).to include([job2, job1])
     end
   end
 
