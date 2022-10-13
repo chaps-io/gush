@@ -119,8 +119,12 @@ module Gush
     def all_workflows
       redis.with do |conn|
         prefix = workflow_namespace("")
-        conn.call("GRAPH.LIST").filter {|name| name.start_with?(prefix) }.map do |key|
-          find_workflow(key.gsub(prefix, ""))
+        conn.call("GRAPH.LIST").reject {|name| !name.start_with?(prefix) }.filter_map do |key|
+          begin
+            find_workflow(key.gsub(prefix, ""))
+          rescue WorkflowNotFound
+            nil
+          end
         end
       end
     end
@@ -210,7 +214,7 @@ module Gush
       redis.with do |conn|
         conn.multi do |multi|
           workflow.connections.each do |incoming, outgoing|
-            res = multi.call(
+            multi.call(
               "GRAPH.QUERY",
               "workflow-#{workflow.id}",
               %{

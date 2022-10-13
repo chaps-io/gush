@@ -12,7 +12,6 @@ module Gush
       @persisted = false
       @stopped = false
       @arguments = args
-
       setup
     end
 
@@ -22,7 +21,7 @@ module Gush
 
     def self.create(*args)
       flow = new(*args)
-      flow.save
+      flow.persist!
       flow
     end
 
@@ -162,16 +161,17 @@ module Gush
     def as_properties
       {
         id: id,
-        arguments: @arguments.present? ? Gush::JSON.encode(@arguments) : {},
+        arguments: arguments.present? ? Gush::JSON.encode(arguments) : [],
         klass: self.class.to_s,
         stopped: stopped,
       }
     end
 
     def self.from_properties(props)
-      props["klass"].constantize.new.tap do |flow|
+      args = Gush::JSON.decode(props["arguments"]) if props["arguments"].present?
+
+      props["klass"].constantize.new(*args).tap do |flow|
         flow.id = props["id"]
-        flow.arguments = Gush::JSON.decode(props["arguments"]) if props["arguments"].present?
         flow.stopped = props["stopped"] == "true"
       end
     end
