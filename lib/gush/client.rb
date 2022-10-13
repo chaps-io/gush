@@ -216,7 +216,7 @@ module Gush
           workflow.connections.each do |incoming, outgoing|
             multi.call(
               "GRAPH.QUERY",
-              "workflow-#{workflow.id}",
+              workflow_namespace(workflow.id),
               %{
                 MATCH (j:Job {id: '#{incoming}'})
                 MATCH (o:Job {id: '#{outgoing}'})

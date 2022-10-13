@@ -42,7 +42,7 @@ describe Gush::Worker do
     end
 
     context 'when job failed to enqueue outgoing jobs' do
-      it 'enqeues another job to handling enqueue_outgoing_jobs' do
+      it 'suceeds on retry' do
         redlock = Redlock::Client.new([Redis.new(url: REDIS_URL)])
         # allow(Redlock::Client).to receive(:new).and_return(redlock)
         prepare = client.find_job(workflow.id, "Prepare")
