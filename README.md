@@ -74,7 +74,17 @@ end
 
 and this is how the graph will look like:
 
-![SampleWorkflow](https://i.imgur.com/DFh6j51.png)
+```mermaid
+graph TD
+    A{Start} --> B[FetchJob1]
+    A --> C[FetchJob2]
+    B --> D[PersistJob1]
+    C --> E[PersistJob2]
+    D --> F[NormalizeJob]
+    E --> F
+    F --> G[IndexJob]
+    G --> H{Finish}
+```    
 
 
 ## Defining workflows
