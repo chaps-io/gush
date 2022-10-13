@@ -118,9 +118,9 @@ module Gush
 
     def all_workflows
       redis.with do |conn|
-        conn.scan_each(match: "gush.workflows.*").map do |key|
-          id = key.sub("gush.workflows.", "")
-          find_workflow(id)
+        prefix = workflow_namespace("")
+        conn.call("GRAPH.LIST").filter {|name| name.start_with?(prefix) }.map do |key|
+          find_workflow(key.gsub(prefix, ""))
         end
       end
     end
@@ -136,9 +136,13 @@ module Gush
           "GRAPH.QUERY",
           workflow_namespace(id),
           "MATCH (s:Settings) RETURN s LIMIT 1"
-        )[1][0][0][2].last.to_h
+        )[1]
 
-        Gush::Workflow.from_properties(properties).tap do |flow|
+        if properties.none?
+          raise WorkflowNotFound.new("Workflow with given id doesn't exist")
+        end
+
+        Gush::Workflow.from_properties(properties[0][0][2].last.to_h).tap do |flow|
           flow.jobs = all_jobs(id)
         end
       end
@@ -158,7 +162,7 @@ module Gush
         conn.call(
           "GRAPH.QUERY",
           workflow_namespace(workflow.id),
-          "MERGE (s:Settings #{node_properties(workflow)})"
+          "MERGE (s:Settings) ON CREATE SET s = #{node_properties(workflow)} ON MATCH SET s += #{node_properties(workflow)}"
         )
       end
     end
@@ -230,8 +234,7 @@ module Gush
 
     # TODO use redis graph removal
     def destroy_workflow(workflow)
-      redis.with { |conn| conn.del("gush.workflows.#{workflow.id}") }
-      workflow.jobs.each {|job| destroy_job(workflow.id, job) }
+      redis.with { |conn| conn.call("GRAPH.DELETE", workflow_namespace(workflow.id)) }
     end
 
     def enqueue_job(workflow_id, job)
@@ -250,7 +253,7 @@ module Gush
     private
 
     def workflow_namespace(workflow_id)
-      "workflow-#{workflow_id}"
+      "#{configuration.namespace}-workflow-#{workflow_id}"
     end
 
     def find_job_by_id(workflow_id, id)

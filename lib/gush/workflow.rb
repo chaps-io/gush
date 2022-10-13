@@ -69,6 +69,8 @@ module Gush
 
         connections.add([from.id, to.id])
       end
+
+      @dependencies = []
     end
 
     def find_job(name)

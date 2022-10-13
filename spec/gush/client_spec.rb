@@ -15,7 +15,6 @@ describe Gush::Client do
     end
 
     context "when given workflow exists" do
-
       it "returns Workflow object" do
         expected_workflow = TestWorkflow.create
         workflow = client.find_workflow(expected_workflow.id)
@@ -66,6 +65,7 @@ describe Gush::Client do
       workflow = TestWorkflow.create
       expect {
         client.stop_workflow(workflow.id)
+
       }.to change{client.find_workflow(workflow.id).stopped?}.from(false).to(true)
     end
   end
@@ -84,20 +84,20 @@ describe Gush::Client do
   describe "#destroy_workflow" do
     it "removes all Redis keys related to the workflow" do
       workflow = TestWorkflow.create
-      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(1)
-      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(5)
+      expect(client.find_workflow(workflow.id)).to be_present
 
       client.destroy_workflow(workflow)
 
-      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(0)
-      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(0)
+      expect do
+        client.find_workflow(workflow.id)
+      end.to raise_error(Gush::WorkflowNotFound)
     end
   end
 
   describe "#persist_job" do
     it "persists JSON dump of the job in Redis" do
 
-      job = BobJob.new(name: 'bob')
+      job = BobJob.new
 
       client.persist_job('deadbeef', job)
       expect(redis.keys("gush.jobs.deadbeef.*").length).to eq(1)
