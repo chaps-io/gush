@@ -26,7 +26,6 @@ module Gush
     end
 
     def continue
-      client = Gush::Client.new
       failed_jobs = jobs.select(&:failed?)
 
       failed_jobs.each do |job|
@@ -82,6 +81,7 @@ module Gush
       job
     end
 
+    # Todo change to cypher
     def finished?
       jobs.all?(&:finished?)
     end
@@ -94,6 +94,7 @@ module Gush
       started? && !finished?
     end
 
+    # Todo change to cypher
     def failed?
       jobs.any?(&:failed?)
     end

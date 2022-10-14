@@ -169,39 +169,38 @@ module Gush
 
     def persist_workflow(workflow)
       workflow.mark_as_persisted
-      persist_workflow_settings(workflow)
-      persist_jobs(workflow.id, workflow.jobs)
-      persist_job_dependencies(workflow)
-
+      redis.with do |conn|
+        conn.multi do |multi|
+          persist_workflow_settings(multi, workflow)
+          persist_jobs(multi, workflow.id, workflow.jobs)
+          persist_job_dependencies(multi, workflow)
+        end
+      end
       true
     end
 
-    def persist_workflow_settings(workflow)
-      redis.with do |conn|
+    def persist_workflow_settings(conn, workflow)
+      conn.call(
+        "GRAPH.QUERY",
+        workflow_namespace(workflow.id),
+        "MERGE (s:Settings) ON CREATE SET s = #{node_properties(workflow)} ON MATCH SET s += #{node_properties(workflow)}"
+      )
+    end
+
+    def persist_jobs(conn, workflow_id, jobs = workflow.jobs)
+      jobs.each do |job|
         conn.call(
           "GRAPH.QUERY",
-          workflow_namespace(workflow.id),
-          "MERGE (s:Settings) ON CREATE SET s = #{node_properties(workflow)} ON MATCH SET s += #{node_properties(workflow)}"
+          workflow_namespace(workflow_id),
+          "MERGE (j:Job {id: '#{job.id}'}) ON CREATE SET j = #{node_properties(job)} ON MATCH SET j += #{node_properties(job)}"
         )
       end
     end
 
-    def persist_jobs(workflow_id, jobs = workflow.jobs)
-      redis.with do |conn|
-        conn.multi do |multi|
-          jobs.each do |job|
-            conn.call(
-              "GRAPH.QUERY",
-              workflow_namespace(workflow_id),
-              "MERGE (j:Job {id: '#{job.id}'}) ON CREATE SET j = #{node_properties(job)} ON MATCH SET j += #{node_properties(job)}"
-            )
-          end
-        end
-      end
-    end
-
     def persist_job(workflow_id, job)
-      persist_jobs(workflow_id, [job])
+      redis.with do |conn|
+        persist_jobs(conn, workflow_id, [job])
+      end
     end
 
     def node_properties(node)
@@ -225,21 +224,17 @@ module Gush
       end
     end
 
-    def persist_job_dependencies(workflow)
-      redis.with do |conn|
-        conn.multi do |multi|
-          workflow.connections.each do |incoming, outgoing|
-            multi.call(
-              "GRAPH.QUERY",
-              workflow_namespace(workflow.id),
-              %{
-                MATCH (j:Job {id: '#{incoming}'})
-                MATCH (o:Job {id: '#{outgoing}'})
-                MERGE (j)-[:OUTGOING]->(o)
-              }
-            )
-          end
-        end
+    def persist_job_dependencies(conn, workflow)
+      workflow.connections.each do |incoming, outgoing|
+        conn.call(
+          "GRAPH.QUERY",
+          workflow_namespace(workflow.id),
+          %{
+            MATCH (j:Job {id: '#{incoming}'})
+            MATCH (o:Job {id: '#{outgoing}'})
+            MERGE (j)-[:OUTGOING]->(o)
+          }
+        )
       end
     end
 
