@@ -52,7 +52,7 @@ Benchmark.ips do |x|
     TestWorkflow.create
   end
 
-  x.report "initial jobs" do
+  # x.report "initial jobs" do
 
-  end
+  # end
 end
