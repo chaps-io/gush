@@ -134,13 +134,13 @@ module Gush
     def all_workflows
       redis.with do |conn|
         prefix = workflow_namespace("")
-        conn.call("GRAPH.LIST").reject {|name| !name.start_with?(prefix) }.filter_map do |key|
+        conn.call("GRAPH.LIST").reject {|name| !name.start_with?(prefix) }.map do |key|
           begin
             find_workflow(key.gsub(prefix, ""))
           rescue WorkflowNotFound
             nil
           end
-        end
+        end.compact
       end
     end
 
