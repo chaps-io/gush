@@ -61,6 +61,8 @@ jobs:
         bundler-cache: true # runs 'bundle install' and caches installed gems automatically
       env:
         RAILS_VERSION: "${{ matrix.rails_version }}"
+    - name: Install Graphviz
+      run: sudo apt-get install graphviz
     - name: Run tests
       run: bundle exec rspec
       env:
