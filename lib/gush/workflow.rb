@@ -87,7 +87,7 @@ module Gush
     end
 
     def started?
-      !!started_at
+      started_at.present?
     end
 
     def running?
@@ -151,11 +151,11 @@ module Gush
     end
 
     def started_at
-      first_job ? first_job.started_at : nil
+      client.get_timestamp(id, "started_at", "ASC")
     end
 
     def finished_at
-      last_job ? last_job.finished_at : nil
+      client.get_timestamp(id, "finished_at", "DESC")
     end
 
     def as_properties

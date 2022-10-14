@@ -62,6 +62,21 @@ module Gush
       map_nodes_to_jobs(nodes[1])
     end
 
+    def get_timestamp(workflow_id, property, order = "")
+      time = redis.with do |conn|
+        conn.call(
+          "GRAPH.QUERY",
+          workflow_namespace(workflow_id),
+          "MATCH (j:Job) WHERE j.#{property} <> '' RETURN j.#{property} ORDER BY j.#{property} #{order} LIMIT 1"
+        )
+      end[1][0]&.first
+
+      return if time.nil?
+
+      Time.parse(time)
+    end
+
+
     def incoming_jobs(workflow_id, job_id)
       nodes = redis.with do |conn|
         conn.call(

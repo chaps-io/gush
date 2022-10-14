@@ -81,7 +81,7 @@ describe Gush::Workflow do
     end
   end
 
-  describe "#to_json" do
+  describe "#as_properties" do
     it "returns correct hash" do
       klass = Class.new(Gush::Workflow) do
         def configure(*args)
@@ -90,20 +90,17 @@ describe Gush::Workflow do
         end
       end
 
-      result = JSON.parse(klass.create("arg1", "arg2").to_json)
+      flow = klass.create("arg1", "arg2")
+      props = flow.as_properties
+
       expected = {
-          "id" => an_instance_of(String),
-          "name" => klass.to_s,
-          "klass" => klass.to_s,
-          "status" => "running",
-          "total" => 2,
-          "finished" => 0,
-          "started_at" => nil,
-          "finished_at" => nil,
-          "stopped" => false,
-          "arguments" => ["arg1", "arg2"]
+        id: flow.id,
+        klass: klass.to_s,
+        stopped: false,
+        arguments: Oj.dump(["arg1", "arg2"], mode: :compat),
       }
-      expect(result).to match(expected)
+
+      expect(props).to match(expected)
     end
   end
 
@@ -210,7 +207,10 @@ describe Gush::Workflow do
 
     context "when some jobs are running" do
       it "returns true" do
-        subject.find_job('Prepare').start!
+        job = subject.find_job('Prepare')
+        job.start!
+        Gush::Client.new.persist_job(subject.id, job)
+
         expect(subject.running?).to be_truthy
       end
     end
