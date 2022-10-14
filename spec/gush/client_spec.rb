@@ -93,12 +93,12 @@ describe Gush::Client do
     end
   end
 
-  describe "#persist_job" do
+  describe "#update_job" do
     it "persists JSON dump of the job in Redis" do
 
       job = BobJob.new(id: SecureRandom.uuid)
 
-      client.persist_job('deadbeef', job)
+      client.update_job('deadbeef', job)
       expect(client.find_job('deadbeef', job.id)).to be_present
     end
   end

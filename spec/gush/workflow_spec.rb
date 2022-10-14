@@ -209,7 +209,7 @@ describe Gush::Workflow do
       it "returns true" do
         job = subject.find_job('Prepare')
         job.start!
-        Gush::Client.new.persist_job(subject.id, job)
+        Gush::Client.new.update_job(subject.id, job)
 
         expect(subject.running?).to be_truthy
       end

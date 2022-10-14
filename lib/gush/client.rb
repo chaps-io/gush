@@ -31,7 +31,9 @@ module Gush
 
     def start_workflow(workflow, job_names = [])
       workflow.mark_as_started
-      persist_workflow(workflow)
+      redis.with do |conn|
+        persist_workflow_settings(conn, workflow)
+      end
 
       jobs = if job_names.empty?
                initial_jobs(workflow.id)
@@ -47,7 +49,9 @@ module Gush
     def stop_workflow(id)
       workflow = find_workflow(id)
       workflow.mark_as_stopped
-      persist_workflow(workflow)
+      redis.with do |conn|
+        persist_workflow_settings(conn, workflow)
+      end
     end
 
     def initial_jobs(workflow_id)
@@ -172,8 +176,8 @@ module Gush
       redis.with do |conn|
         conn.multi do |multi|
           persist_workflow_settings(multi, workflow)
-          persist_jobs(multi, workflow.id, workflow.jobs)
-          persist_job_dependencies(multi, workflow)
+          create_jobs(multi, workflow.id, workflow.jobs)
+          create_job_dependencies(multi, workflow)
         end
       end
       true
@@ -186,20 +190,25 @@ module Gush
         "MERGE (s:Settings) ON CREATE SET s = #{node_properties(workflow)} ON MATCH SET s += #{node_properties(workflow)}"
       )
     end
+    #
 
-    def persist_jobs(conn, workflow_id, jobs = workflow.jobs)
+    def create_jobs(conn, workflow_id, jobs = workflow.jobs)
       jobs.each do |job|
+        conn.call(
+          "GRAPH.QUERY",
+          workflow_namespace(workflow_id),
+          "CREATE (j:Job #{node_properties(job)})"
+        )
+      end
+    end
+
+    def update_job(workflow_id, job)
+      redis.with do |conn|
         conn.call(
           "GRAPH.QUERY",
           workflow_namespace(workflow_id),
           "MERGE (j:Job {id: '#{job.id}'}) ON CREATE SET j = #{node_properties(job)} ON MATCH SET j += #{node_properties(job)}"
         )
-      end
-    end
-
-    def persist_job(workflow_id, job)
-      redis.with do |conn|
-        persist_jobs(conn, workflow_id, [job])
       end
     end
 
@@ -224,7 +233,7 @@ module Gush
       end
     end
 
-    def persist_job_dependencies(conn, workflow)
+    def create_job_dependencies(conn, workflow)
       workflow.connections.each do |incoming, outgoing|
         conn.call(
           "GRAPH.QUERY",
@@ -252,7 +261,7 @@ module Gush
 
     def enqueue_job(workflow_id, job)
       job.enqueue!
-      persist_job(workflow_id, job)
+      update_job(workflow_id, job)
       queue = job.queue || configuration.namespace
 
       Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.id])
