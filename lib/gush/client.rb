@@ -251,7 +251,6 @@ module Gush
       end
     end
 
-    # TODO use redis graph removal
     def destroy_workflow(workflow)
       redis.with { |conn| conn.call("GRAPH.DELETE", workflow_namespace(workflow.id)) }
     end
