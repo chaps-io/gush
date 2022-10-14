@@ -31,6 +31,9 @@ class TestWorkflow < Gush::Workflow
   end
 end
 
+flow = TestWorkflow.create
+client = Gush::Client.new
+
 Benchmark.ips do |x|
   # Configure the number of seconds used during
   # the warmup phase (default 2) and calculation phase (default 5)
@@ -41,7 +44,15 @@ Benchmark.ips do |x|
   x.warmup = 2
 
 
+  x.report("init") do
+    TestWorkflow.new
+  end
+
   x.report("creation") do
     TestWorkflow.create
+  end
+
+  x.report "initial jobs" do
+
   end
 end
