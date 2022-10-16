@@ -329,7 +329,21 @@ flow = NotifyWorkflow.create([54, 21, 24, 154, 65]) # 5 user ids as an argument
 
 it will generate a workflow with 5 `NotificationJob`s and one `AdminNotificationJob` which will depend on all of them:
 
-![DynamicWorkflow](https://i.imgur.com/HOI3fjc.png)
+
+```mermaid
+graph TD
+    A{Start} --> B[NotificationJob]
+    A --> C[NotificationJob]
+    A --> D[NotificationJob]
+    A --> E[NotificationJob]
+    A --> F[NotificationJob]
+    B --> G[AdminNotificationJob]
+    C --> G
+    D --> G
+    E --> G
+    F --> G
+    G --> H{Finish}
+```
 
 ### Dynamic queue for jobs
 
