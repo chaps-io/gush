@@ -1,5 +1,5 @@
 require 'active_job'
-require 'redis-mutex'
+require 'redlock'
 
 module Gush
   class Worker < ::ActiveJob::Base
@@ -46,51 +46,42 @@ module Gush
     end
 
     def incoming_payloads
-      job.incoming.map do |job_name|
-        job = client.find_job(workflow_id, job_name)
+      client.incoming_jobs(workflow_id, job.id).map do |incoming|
         {
-          id: job.name,
-          class: job.klass.to_s,
-          output: job.output_payload
+          id: incoming.id,
+          class: incoming.class.to_s,
+          output: incoming.output_payload
         }
       end
     end
 
     def mark_as_finished
       job.finish!
-      client.persist_job(workflow_id, job)
+      client.update_job(workflow_id, job)
     end
 
     def mark_as_failed
       job.fail!
-      client.persist_job(workflow_id, job)
+      client.update_job(workflow_id, job)
     end
 
     def mark_as_started
       job.start!
-      client.persist_job(workflow_id, job)
+      client.update_job(workflow_id, job)
     end
 
-    def elapsed(start)
-      (Time.now - start).to_f.round(3)
-    end
-
+     # Expose locking mechanism in gush client as public API
     def enqueue_outgoing_jobs
-      job.outgoing.each do |job_name|
-        RedisMutex.with_lock(
-          "gush_enqueue_outgoing_jobs_#{workflow_id}-#{job_name}",
-          sleep: configuration.polling_interval,
-          block: configuration.locking_duration
-        ) do
-          out = client.find_job(workflow_id, job_name)
-
-          if out.ready_to_start?
-            client.enqueue_job(workflow_id, out)
+      client.redis.with do |conn|
+        redlock = Redlock::Client.new([conn], retry_delay: configuration.polling_interval)
+        client.outgoing_jobs(workflow_id, job.id).each do |outgoing|
+          redlock.lock!("gush_job_lock_#{workflow_id}-#{outgoing.id}", configuration.locking_duration) do
+            client.enqueue_job(workflow_id, outgoing)
           end
         end
       end
-    rescue RedisMutex::LockError
-      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.name)
+    rescue Redlock::LockError
+      Worker.set(wait: 2.seconds).perform_later(workflow_id, job.id)
     end
   end
 end

@@ -15,13 +15,12 @@ describe Gush::Client do
     end
 
     context "when given workflow exists" do
-
       it "returns Workflow object" do
         expected_workflow = TestWorkflow.create
         workflow = client.find_workflow(expected_workflow.id)
 
         expect(workflow.id).to eq(expected_workflow.id)
-        expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+        expect(workflow.jobs.map(&:id)).to match_array(expected_workflow.jobs.map(&:id))
       end
 
       context "when workflow has parameters" do
@@ -30,7 +29,7 @@ describe Gush::Client do
           workflow = client.find_workflow(expected_workflow.id)
 
           expect(workflow.id).to eq(expected_workflow.id)
-          expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+          expect(workflow.jobs.map(&:id)).to match_array(expected_workflow.jobs.map(&:id))
         end
       end
     end
@@ -66,57 +65,41 @@ describe Gush::Client do
       workflow = TestWorkflow.create
       expect {
         client.stop_workflow(workflow.id)
+
       }.to change{client.find_workflow(workflow.id).stopped?}.from(false).to(true)
     end
   end
 
   describe "#persist_workflow" do
-    it "persists JSON dump of the Workflow and its jobs" do
-      job = double("job", to_json: 'json')
-      workflow = double("workflow", id: 'abcd', jobs: [job, job, job], to_json: '"json"')
-      expect(client).to receive(:persist_job).exactly(3).times.with(workflow.id, job)
-      expect(workflow).to receive(:mark_as_persisted)
+    it "persists Workflow and its jobs with relationships" do
+      workflow = TestWorkflow.new
       client.persist_workflow(workflow)
-      expect(redis.keys("gush.workflows.abcd").length).to eq(1)
+
+      persisted_workflow = client.find_workflow(workflow.id)
+      expect(persisted_workflow).to be_present
     end
   end
 
   describe "#destroy_workflow" do
     it "removes all Redis keys related to the workflow" do
       workflow = TestWorkflow.create
-      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(1)
-      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(5)
+      expect(client.find_workflow(workflow.id)).to be_present
 
       client.destroy_workflow(workflow)
 
-      expect(redis.keys("gush.workflows.#{workflow.id}").length).to eq(0)
-      expect(redis.keys("gush.jobs.#{workflow.id}.*").length).to eq(0)
+      expect do
+        client.find_workflow(workflow.id)
+      end.to raise_error(Gush::WorkflowNotFound)
     end
   end
 
-  describe "#expire_workflow" do
-    let(:ttl) { 2000 }
-
-    it "sets TTL for all Redis keys related to the workflow" do
-      workflow = TestWorkflow.create
-
-      client.expire_workflow(workflow, ttl)
-
-      expect(redis.ttl("gush.workflows.#{workflow.id}")).to eq(ttl)
-
-      workflow.jobs.each do |job|
-        expect(redis.ttl("gush.jobs.#{workflow.id}.#{job.klass}")).to eq(ttl)
-      end
-    end
-  end
-
-  describe "#persist_job" do
+  describe "#update_job" do
     it "persists JSON dump of the job in Redis" do
 
-      job = BobJob.new(name: 'bob')
+      job = BobJob.new(id: SecureRandom.uuid)
 
-      client.persist_job('deadbeef', job)
-      expect(redis.keys("gush.jobs.deadbeef.*").length).to eq(1)
+      client.update_job('deadbeef', job)
+      expect(client.find_job('deadbeef', job.id)).to be_present
     end
   end
 
@@ -126,19 +109,5 @@ describe Gush::Client do
       workflows = client.all_workflows
       expect(workflows.map(&:id)).to eq([workflow.id])
     end
-  end
-
-  it "should be able to handle outdated data format" do
-    workflow = TestWorkflow.create
-
-    # malform the data
-    hash = Gush::JSON.decode(redis.get("gush.workflows.#{workflow.id}"), symbolize_keys: true)
-    hash.delete(:stopped)
-    redis.set("gush.workflows.#{workflow.id}", Gush::JSON.encode(hash))
-
-    expect {
-      workflow = client.find_workflow(workflow.id)
-      expect(workflow.stopped?).to be false
-    }.not_to raise_error
   end
 end

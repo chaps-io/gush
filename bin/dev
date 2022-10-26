@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+require "pathname"
+require "bundler"
+require "pry"
+Bundler.require
+
+bin_file = Pathname.new(__FILE__).realpath
+# add self to libpath
+$:.unshift File.expand_path("../../lib", bin_file)
+
+require 'gush'
+
+
+class Prepare < Gush::Job; end
+class FetchFirstJob < Gush::Job; end
+class FetchSecondJob < Gush::Job; end
+class PersistFirstJob < Gush::Job; end
+class PersistSecondJob < Gush::Job; end
+class NormalizeJob < Gush::Job; end
+
+class TestWorkflow < Gush::Workflow
+  def configure
+    run Prepare
+
+    run NormalizeJob, after: PersistSecondJob
+
+    run FetchFirstJob,   after: Prepare
+    run FetchSecondJob,  after: Prepare
+
+    run PersistFirstJob, after: FetchFirstJob, before: NormalizeJob
+    run PersistSecondJob, after: FetchSecondJob
+  end
+end
+
+class UpcaseJob < Gush::Job
+  def perform
+    output params[:input].upcase
+  end
+end
+
+class PrefixJob < Gush::Job
+  def perform
+    output params[:prefix].capitalize
+  end
+end
+
+class PrependJob < Gush::Job
+  def perform
+    string = "#{payloads.find { |j| j[:class] == 'PrefixJob'}[:output]}: #{payloads.find { |j| j[:class] == 'UpcaseJob'}[:output]}"
+    output string
+  end
+end
+
+class PayloadWorkflow < Gush::Workflow
+  def configure
+    run UpcaseJob, params: {input: "some text"}
+    run PrefixJob, params: {prefix: "a prefix"}
+    run PrependJob, after: [UpcaseJob, PrefixJob]
+  end
+end
+
+# flow = TestWorkflow.create
+
+flow2 = PayloadWorkflow.create
+
+
+binding.pry

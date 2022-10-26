@@ -26,11 +26,12 @@ describe Gush::Graph do
 
       standard_options = {:color=>"#555555", :fillcolor=>"white", :label=>"Prepare", :shape=>"ellipse", :style=>"filled"}
 
-      expect(graph).to receive(:add_node).with(/Prepare/, standard_options.merge(label: "Prepare")).and_return(node_prepare)
-      expect(graph).to receive(:add_node).with(/FetchFirstJob/, standard_options.merge(label: "FetchFirstJob")).and_return(node_fetch_first_job)
-      expect(graph).to receive(:add_node).with(/FetchSecondJob/, standard_options.merge(label: "FetchSecondJob")).and_return(node_fetch_second_job)
-      expect(graph).to receive(:add_node).with(/NormalizeJob/, standard_options.merge(label: "NormalizeJob")).and_return(node_normalize_job)
-      expect(graph).to receive(:add_node).with(/PersistFirstJob/, standard_options.merge(label: "PersistFirstJob")).and_return(node_persist_first_job)
+      uuid = Gush::Client::UUID_REGEXP
+      expect(graph).to receive(:add_node).with(uuid, standard_options.merge(label: "Prepare")).and_return(node_prepare)
+      expect(graph).to receive(:add_node).with(uuid, standard_options.merge(label: "FetchFirstJob")).and_return(node_fetch_first_job)
+      expect(graph).to receive(:add_node).with(uuid, standard_options.merge(label: "FetchSecondJob")).and_return(node_fetch_second_job)
+      expect(graph).to receive(:add_node).with(uuid, standard_options.merge(label: "NormalizeJob")).and_return(node_normalize_job)
+      expect(graph).to receive(:add_node).with(uuid, standard_options.merge(label: "PersistFirstJob")).and_return(node_persist_first_job)
 
       edge_options = {
           dir: "forward",

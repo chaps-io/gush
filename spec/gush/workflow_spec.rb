@@ -81,7 +81,7 @@ describe Gush::Workflow do
     end
   end
 
-  describe "#to_json" do
+  describe "#as_properties" do
     it "returns correct hash" do
       klass = Class.new(Gush::Workflow) do
         def configure(*args)
@@ -90,20 +90,17 @@ describe Gush::Workflow do
         end
       end
 
-      result = JSON.parse(klass.create("arg1", "arg2").to_json)
+      flow = klass.create("arg1", "arg2")
+      props = flow.as_properties
+
       expected = {
-          "id" => an_instance_of(String),
-          "name" => klass.to_s,
-          "klass" => klass.to_s,
-          "status" => "running",
-          "total" => 2,
-          "finished" => 0,
-          "started_at" => nil,
-          "finished_at" => nil,
-          "stopped" => false,
-          "arguments" => ["arg1", "arg2"]
+        id: flow.id,
+        klass: klass.to_s,
+        stopped: false,
+        arguments: Oj.dump(["arg1", "arg2"], mode: :compat),
       }
-      expect(result).to match(expected)
+
+      expect(props).to match(expected)
     end
   end
 
@@ -136,13 +133,14 @@ describe Gush::Workflow do
       klass2 = Class.new(Gush::Job)
       klass3 = Class.new(Gush::Job)
 
-      tree.run(klass1)
-      tree.run(klass2, after: [klass1, klass3])
-      tree.run(klass3)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, after: [klass1, klass3])
+      job3 = tree.run(klass3)
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.outgoing).to match_array(jobs_with_id([klass2.to_s]))
+      expect(tree.connections).to include([job1, job2])
+      expect(tree.connections).to include([job3, job2])
     end
 
     it "allows `before` to accept an array of jobs" do
@@ -150,35 +148,38 @@ describe Gush::Workflow do
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
       klass3 = Class.new(Gush::Job)
-      tree.run(klass1)
-      tree.run(klass2, before: [klass1, klass3])
-      tree.run(klass3)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, before: [klass1, klass3])
+      job3 = tree.run(klass3)
 
       tree.resolve_dependencies
 
-      expect(tree.jobs.first.incoming).to match_array(jobs_with_id([klass2.to_s]))
+      expect(tree.connections).to include([job2, job1])
+      expect(tree.connections).to include([job2, job3])
     end
 
     it "attaches job as a child of the job in `after` key" do
       tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
-      tree.run(klass1)
-      tree.run(klass2, after: klass1)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, after: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.outgoing).to match_array(jobs_with_id([klass2.to_s]))
+
+      expect(tree.connections).to include([job1, job2])
     end
 
     it "attaches job as a parent of the job in `before` key" do
       tree = Gush::Workflow.new
       klass1 = Class.new(Gush::Job)
       klass2 = Class.new(Gush::Job)
-      tree.run(klass1)
-      tree.run(klass2, before: klass1)
+      job1 = tree.run(klass1)
+      job2 = tree.run(klass2, before: klass1)
       tree.resolve_dependencies
       job = tree.jobs.first
-      expect(job.incoming).to match_array(jobs_with_id([klass2.to_s]))
+
+      expect(tree.connections).to include([job2, job1])
     end
   end
 
@@ -206,7 +207,10 @@ describe Gush::Workflow do
 
     context "when some jobs are running" do
       it "returns true" do
-        subject.find_job('Prepare').start!
+        job = subject.find_job('Prepare')
+        job.start!
+        Gush::Client.new.update_job(subject.id, job)
+
         expect(subject.running?).to be_truthy
       end
     end
