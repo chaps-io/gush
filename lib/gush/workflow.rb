@@ -112,7 +112,8 @@ module Gush
         workflow_id: id,
         id: client.next_free_job_id(id, klass.to_s),
         params: opts.fetch(:params, {}),
-        queue: opts[:queue]
+        queue: opts[:queue],
+        wait: opts[:wait]
       })
 
       jobs << node
