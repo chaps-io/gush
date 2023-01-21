@@ -1,3 +1,4 @@
+require 'active_support/testing/time_helpers'
 require 'gush'
 require 'json'
 require 'pry'
@@ -34,6 +35,11 @@ class ParameterTestWorkflow < Gush::Workflow
   end
 end
 
+class WaitableTestWorkflow < Gush::Workflow
+  def configure
+    run Prepare, wait: 5.minutes
+  end
+end
 
 REDIS_URL = ENV["REDIS_URL"] || "redis://localhost:6379/12"
 
@@ -86,7 +92,22 @@ RSpec::Matchers.define :have_no_jobs do |flow, jobs|
   end
 end
 
+RSpec::Matchers.define :have_a_job_enqueued_at do |flow, job, at|
+  expected_execution_timestamp = (Time.current.utc + at).to_i
+
+  match do |actual|
+    expected = hash_including(args: include(flow, job), at: expected_execution_timestamp)
+
+    expect(ActiveJob::Base.queue_adapter.enqueued_jobs).to match_array(expected)
+  end
+
+  failure_message do |actual|
+    "expected to have enqueued job #{job} to be executed at #{Time.current.utc + at}, but instead has: #{Time.at(enqueued_jobs.first[:at]).to_datetime.utc}"
+  end
+end
+
 RSpec.configure do |config|
+  config.include ActiveSupport::Testing::TimeHelpers
   config.include ActiveJob::TestHelper
   config.include GushHelpers
 
