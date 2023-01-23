@@ -362,6 +362,23 @@ class NotifyWorkflow < Gush::Workflow
 end
 ```
 
+### Dynamic waitable time for jobs
+
+There might be a case you want to configure a job to be executed after a time. Based on above example, we want to configure `AdminNotificationJob` to be executed after 5 seconds.
+
+```ruby
+
+class NotifyWorkflow < Gush::Workflow
+  def configure(user_ids)
+    notification_jobs = user_ids.map do |user_id|
+      run NotificationJob, params: {user_id: user_id}, queue: 'user'
+    end
+
+    run AdminNotificationJob, after: notification_jobs, queue: 'admin', wait: 5.seconds
+  end
+end
+```
+
 ## Command line interface (CLI)
 
 ### Checking status

@@ -37,6 +37,18 @@ describe Gush::Client do
   end
 
   describe "#start_workflow" do
+    context "when there is wait parameter configured" do
+      let(:freeze_time) { Time.utc(2023, 01, 21, 14, 36, 0) }
+
+      it "schedules job execution" do
+        travel_to freeze_time do
+          workflow = WaitableTestWorkflow.create
+          client.start_workflow(workflow)
+          expect(Gush::Worker).to have_a_job_enqueued_at(workflow.id, job_with_id("Prepare"), 5.minutes)
+        end
+      end
+    end
+
     it "enqueues next jobs from the workflow" do
       workflow = TestWorkflow.create
       expect {

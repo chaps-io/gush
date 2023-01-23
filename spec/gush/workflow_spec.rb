@@ -121,6 +121,13 @@ describe Gush::Workflow do
       expect(flow.jobs.first.params).to eq ({ something: 1 })
     end
 
+    it "allows passing wait param to the job" do
+      flow = Gush::Workflow.new
+      flow.run(Gush::Job, wait: 5.seconds)
+      flow.save
+      expect(flow.jobs.first.wait).to eq (5.seconds)
+    end
+
     context "when graph is empty" do
       it "adds new job with the given class as a node" do
         flow = Gush::Workflow.new
