@@ -449,6 +449,17 @@ def find_by_class klass
 end
 ```
 
+## Running Gush on Heroku with Redis 6+
+
+Redis 6+ requires SSL to connect. Heroku does not use SSL, they use HTTP routing instead. You can setup Redis with these options to run on Heroku with Redis 6+:
+
+```ruby
+# config/initializers/gush.rb
+Gush.configure do |config|
+  config.redis = { url: "redis://localhost:6379", ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE }}
+end
+```
+
 ## Contributors
 
 - [Mateusz Lenik](https://github.com/mlen)

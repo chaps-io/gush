@@ -1,6 +1,6 @@
 module Gush
   class Configuration
-    attr_accessor :concurrency, :namespace, :redis_url, :ttl, :locking_duration, :polling_interval
+    attr_accessor :concurrency, :namespace, :redis_url, :redis, :ttl, :locking_duration, :polling_interval
 
     def self.from_json(json)
       new(Gush::JSON.decode(json, symbolize_keys: true))
@@ -10,6 +10,7 @@ module Gush
       self.concurrency      = hash.fetch(:concurrency, 5)
       self.namespace        = hash.fetch(:namespace, 'gush')
       self.redis_url        = hash.fetch(:redis_url, 'redis://localhost:6379')
+      self.redis            = hash.fetch(:redis, nil)
       self.gushfile         = hash.fetch(:gushfile, 'Gushfile')
       self.ttl              = hash.fetch(:ttl, -1)
       self.locking_duration = hash.fetch(:locking_duration, 2) # how long you want to wait for the lock to be released, in seconds
@@ -29,6 +30,7 @@ module Gush
         concurrency:      concurrency,
         namespace:        namespace,
         redis_url:        redis_url,
+        redis:            redis,
         ttl:              ttl,
         locking_duration: locking_duration,
         polling_interval: polling_interval
