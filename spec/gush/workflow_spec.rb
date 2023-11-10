@@ -90,7 +90,7 @@ describe Gush::Workflow do
         end
       end
 
-      result = JSON.parse(klass.create("arg1", "arg2").to_json)
+      result = JSON.parse(klass.create("arg1", "arg2", kwarg1: 'kwarg1', kwarg2: 'kwarg2').to_json)
       expected = {
           "id" => an_instance_of(String),
           "name" => klass.to_s,
@@ -101,7 +101,8 @@ describe Gush::Workflow do
           "started_at" => nil,
           "finished_at" => nil,
           "stopped" => false,
-          "arguments" => ["arg1", "arg2"]
+          "arguments" => ["arg1", "arg2"],
+          "keyword_args" => {"kwarg1"=>"kwarg1", "kwarg2"=>"kwarg2"}
       }
       expect(result).to match(expected)
     end

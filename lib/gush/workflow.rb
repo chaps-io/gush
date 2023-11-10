@@ -4,13 +4,14 @@ module Gush
   class Workflow
     attr_accessor :id, :jobs, :stopped, :persisted, :arguments
 
-    def initialize(*args)
+    def initialize(*args, **kwargs)
       @id = id
       @jobs = []
       @dependencies = []
       @persisted = false
       @stopped = false
       @arguments = args
+      @keyword_args = kwargs
 
       setup
     end
@@ -19,8 +20,8 @@ module Gush
       Gush::Client.new.find_workflow(id)
     end
 
-    def self.create(*args)
-      flow = new(*args)
+    def self.create(*args, **kwargs)
+      flow = new(*args, **kwargs)
       flow.save
       flow
     end
@@ -38,7 +39,7 @@ module Gush
       persist!
     end
 
-    def configure(*args)
+    def configure(*args, **kwargs)
     end
 
     def mark_as_stopped
@@ -175,6 +176,7 @@ module Gush
         name: name,
         id: id,
         arguments: @arguments,
+        keyword_args: @keyword_args,
         total: jobs.count,
         finished: jobs.count(&:finished?),
         klass: name,
@@ -200,7 +202,7 @@ module Gush
     private
 
     def setup
-      configure(*@arguments)
+      configure(*@arguments, **@keyword_args)
       resolve_dependencies
     end
 

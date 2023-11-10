@@ -33,6 +33,16 @@ describe Gush::Client do
           expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
         end
       end
+
+      context "when workflow has keyword parameters" do
+        it "returns Workflow object" do
+          expected_workflow = ParameterKwargTestWorkflow.create(true, my_param: true)
+          workflow = client.find_workflow(expected_workflow.id)
+
+          expect(workflow.id).to eq(expected_workflow.id)
+          expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+        end
+      end
     end
   end
 
