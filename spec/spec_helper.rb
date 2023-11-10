@@ -35,6 +35,18 @@ class ParameterTestWorkflow < Gush::Workflow
   end
 end
 
+class ParameterHashTestWorkflow < Gush::Workflow
+  def configure(param, options)
+    run Prepare if param && options[:my_param]
+  end
+end
+
+class ParameterKwargTestWorkflow < Gush::Workflow
+  def configure(param, my_param:)
+    run Prepare if param && my_param
+  end
+end
+
 class WaitableTestWorkflow < Gush::Workflow
   def configure
     run Prepare, wait: 5.minutes
