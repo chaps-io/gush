@@ -34,9 +34,32 @@ describe Gush::Client do
         end
       end
 
+      context "when workflow has hash positional parameters" do
+        it "returns Workflow object" do
+          expected_workflow = ParameterHashTestWorkflow.create(true, {my_param: true})
+          workflow = client.find_workflow(expected_workflow.id)
+
+          expect(workflow.id).to eq(expected_workflow.id)
+          expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+        end
+      end
+
       context "when workflow has keyword parameters" do
         it "returns Workflow object" do
           expected_workflow = ParameterKwargTestWorkflow.create(true, my_param: true)
+          workflow = client.find_workflow(expected_workflow.id)
+
+          expect(workflow.id).to eq(expected_workflow.id)
+          expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+        end
+
+        it 'will properly serialize params if the workflow was previously created without keyword args' do
+          expected_workflow = ParameterKwargTestWorkflow.create(true, my_param: true)
+          # manually changing the workflow to how it would be if it was created without keyword args
+          modified_workflow_data = JSON.parse(client.send(:redis).get("gush.workflows.#{expected_workflow.id}")).tap do |data|
+            data['arguments'] << data.delete('keyword_args')
+          end
+          client.send(:redis).set("gush.workflows.#{expected_workflow.id}", JSON.dump(modified_workflow_data))
           workflow = client.find_workflow(expected_workflow.id)
 
           expect(workflow.id).to eq(expected_workflow.id)

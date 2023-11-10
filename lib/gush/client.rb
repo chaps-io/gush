@@ -183,7 +183,12 @@ module Gush
     end
 
     def workflow_from_hash(hash, nodes = [])
-      flow = hash[:klass].constantize.new(*hash[:arguments], **hash[:keyword_args])
+      keyword_args = hash[:keyword_args]
+      if keyword_args.nil?
+        keyword_args = {}
+        keyword_args.merge!(hash[:arguments].pop) while hash[:arguments].last.is_a?(Hash)
+      end
+      flow = hash[:klass].constantize.new(*hash[:arguments], **keyword_args)
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
