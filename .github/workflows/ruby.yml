@@ -20,14 +20,14 @@ jobs:
     services:
       redis:
         image: redis:alpine
-        ports: ["6379:6379"]
+        ports: [ "6379:6379" ]
         options: --entrypoint redis-server
 
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        rails_version: ['4.2.7', '5.1.0', '5.2.0', '6.0.0', '6.1.0', '7.0']
-        ruby-version: ['2.6', '2.7', '3.0', '3.1']
+        rails_version: [ '4.2.7', '5.1.0', '5.2.0', '6.0.0', '6.1.0', '7.0', '7.1', '7.1.2' ]
+        ruby-version: [ '2.6', '2.7', '3.0', '3.1' ]
         exclude:
           - ruby-version: '3.0'
             rails_version: '4.2.7'
@@ -53,19 +53,23 @@ jobs:
             rails_version: '6.1'
           - ruby-version: '2.6'
             rails_version: '7.0'
+          - ruby-version: '2.6'
+            rails_version: '7.1'
+          - ruby-version: '2.6'
+            rails_version: '7.1.2'
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Ruby
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: ${{ matrix.ruby-version }}
-        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-      env:
-        RAILS_VERSION: "${{ matrix.rails_version }}"
-    - name: Install Graphviz
-      run: sudo apt-get install graphviz
-    - name: Run tests
-      run: bundle exec rspec
-      env:
-        REDIS_URL: redis://localhost:6379/1
-        RAILS_VERSION: "${{ matrix.rails_version }}"
+      - uses: actions/checkout@v2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+        env:
+          RAILS_VERSION: "${{ matrix.rails_version }}"
+      - name: Install Graphviz
+        run: sudo apt-get install graphviz
+      - name: Run tests
+        run: bundle exec rspec
+        env:
+          REDIS_URL: redis://localhost:6379/1
+          RAILS_VERSION: "${{ matrix.rails_version }}"
