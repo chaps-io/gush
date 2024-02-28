@@ -8,12 +8,12 @@ module Gush
     @@redis_connection = Concurrent::ThreadLocalVar.new(nil)
 
     def self.redis_connection(config)
-      cached = (@@redis_connection.value ||= { url: config.redis_url, connection: nil })
-      return cached[:connection] if !cached[:connection].nil? && config.redis_url == cached[:url]
+      cached = (@@redis_connection.value ||= config.redis.merge(connection: nil))
+      return cached[:connection] if !cached[:connection].nil? && config.redis == cached.except(:connection)
 
-      Redis.new(url: config.redis_url).tap do |instance|
+      Redis.new(config.redis).tap do |instance|
         RedisClassy.redis = instance
-        @@redis_connection.value = { url: config.redis_url, connection: instance }
+        @@redis_connection.value = config.redis.merge(connection: instance)
       end
     end
 
@@ -157,7 +157,7 @@ module Gush
       persist_job(workflow_id, job)
       queue = job.queue || configuration.namespace
       wait = job.wait
-      
+
       if wait.present?
         Gush::Worker.set(queue: queue, wait: wait).perform_later(*[workflow_id, job.name])
       else
