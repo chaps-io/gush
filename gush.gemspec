@@ -2,9 +2,11 @@
 lib = File.expand_path('../lib', __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
+require_relative 'lib/gush/version'
+
 Gem::Specification.new do |spec|
   spec.name          = "gush"
-  spec.version       = "2.1.0"
+  spec.version       = Gush::VERSION
   spec.authors       = ["Piotrek Okoński"]
   spec.email         = ["piotrek@okonski.org"]
   spec.summary       = "Fast and distributed workflow runner based on ActiveJob and Redis"
