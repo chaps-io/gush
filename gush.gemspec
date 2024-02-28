@@ -7,8 +7,8 @@ require_relative 'lib/gush/version'
 Gem::Specification.new do |spec|
   spec.name          = "gush"
   spec.version       = Gush::VERSION
-  spec.authors       = ["Piotrek Okoński"]
-  spec.email         = ["piotrek@okonski.org"]
+  spec.authors       = ["Piotrek Okoński", "Michał Krzyżanowski"]
+  spec.email         = ["piotrek@okonski.org", "michal.krzyzanowski+github@gmail.com"]
   spec.summary       = "Fast and distributed workflow runner based on ActiveJob and Redis"
   spec.description   = "Gush is a parallel workflow runner using Redis as storage and ActiveJob for executing jobs."
   spec.homepage      = "https://github.com/chaps-io/gush"
