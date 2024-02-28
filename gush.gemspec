@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "activejob", ">= 4.2.7", "< 7.1"
+  spec.add_dependency "activejob", ">= 6.1.0", "<= 7.1"
   spec.add_dependency "concurrent-ruby", "~> 1.0"
   spec.add_dependency "multi_json", "~> 1.11"
   spec.add_dependency "redis", ">= 3.2", "< 6"
