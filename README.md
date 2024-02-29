@@ -1,5 +1,9 @@
 # Gush
 
+![Gem Version](https://img.shields.io/gem/v/gush)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/chaps-io/gush/ruby.yml)
+
+
 Gush is a parallel workflow runner using only Redis as storage and [ActiveJob](http://guides.rubyonrails.org/v4.2/active_job_basics.html#introduction) for scheduling and executing jobs.
 
 ## Theory
@@ -15,7 +19,7 @@ This README is about the latest `master` code, which might differ from what is r
 ### 1. Add `gush` to Gemfile
 
 ```ruby
-gem 'gush', '~> 2.1'
+gem 'gush', '~> 3.0'
 ```
 
 ### 2. Create `Gushfile`
