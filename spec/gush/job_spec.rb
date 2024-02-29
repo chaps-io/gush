@@ -91,33 +91,66 @@ describe Gush::Job do
   end
 
   describe ".from_hash" do
-    it "properly restores state of the job from hash" do
-      job = described_class.from_hash(
-        {
-          klass: 'Gush::Job',
-          id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
-          incoming: ['a', 'b'],
-          outgoing: ['c'],
-          failed_at: 123,
-          finished_at: 122,
-          started_at: 55,
-          enqueued_at: 444
-        }
-      )
+    context 'when the job is existed' do
+      it "properly restores state of the job from hash" do
+        job = described_class.from_hash(
+          {
+            klass: 'Gush::Job',
+            id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
+            incoming: ['a', 'b'],
+            outgoing: ['c'],
+            failed_at: 123,
+            finished_at: 122,
+            started_at: 55,
+            enqueued_at: 444
+          }
+        )
 
-      expect(job.id).to eq('702bced5-bb72-4bba-8f6f-15a3afa358bd')
-      expect(job.name).to eq('Gush::Job|702bced5-bb72-4bba-8f6f-15a3afa358bd')
-      expect(job.class).to eq(Gush::Job)
-      expect(job.klass).to eq("Gush::Job")
-      expect(job.finished?).to eq(true)
-      expect(job.failed?).to eq(true)
-      expect(job.enqueued?).to eq(true)
-      expect(job.incoming).to eq(['a', 'b'])
-      expect(job.outgoing).to eq(['c'])
-      expect(job.failed_at).to eq(123)
-      expect(job.finished_at).to eq(122)
-      expect(job.started_at).to eq(55)
-      expect(job.enqueued_at).to eq(444)
+        expect(job.id).to eq('702bced5-bb72-4bba-8f6f-15a3afa358bd')
+        expect(job.name).to eq('Gush::Job|702bced5-bb72-4bba-8f6f-15a3afa358bd')
+        expect(job.class).to eq(Gush::Job)
+        expect(job.klass).to eq("Gush::Job")
+        expect(job.finished?).to eq(true)
+        expect(job.failed?).to eq(true)
+        expect(job.enqueued?).to eq(true)
+        expect(job.incoming).to eq(['a', 'b'])
+        expect(job.outgoing).to eq(['c'])
+        expect(job.failed_at).to eq(123)
+        expect(job.finished_at).to eq(122)
+        expect(job.started_at).to eq(55)
+        expect(job.enqueued_at).to eq(444)
+      end
+    end
+
+    context 'when the job is removed' do
+      it "properly restores state of the job from hash" do
+        job = described_class.from_hash(
+          {
+            klass: 'Gush::RemovedJob',
+            id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
+            incoming: ['a', 'b'],
+            outgoing: ['c'],
+            failed_at: 123,
+            finished_at: 122,
+            started_at: 55,
+            enqueued_at: 444
+          }
+        )
+
+        expect(job.id).to eq('702bced5-bb72-4bba-8f6f-15a3afa358bd')
+        expect(job.name).to eq('Removed - Gush::RemovedJob|702bced5-bb72-4bba-8f6f-15a3afa358bd')
+        expect(job.class).to eq(Gush::NilJob)
+        expect(job.klass).to eq("Gush::RemovedJob")
+        expect(job.finished?).to eq(true)
+        expect(job.failed?).to eq(true)
+        expect(job.enqueued?).to eq(true)
+        expect(job.incoming).to eq(['a', 'b'])
+        expect(job.outgoing).to eq(['c'])
+        expect(job.failed_at).to eq(123)
+        expect(job.finished_at).to eq(122)
+        expect(job.started_at).to eq(55)
+        expect(job.enqueued_at).to eq(444)
+      end
     end
   end
 end
