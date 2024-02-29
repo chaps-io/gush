@@ -5,9 +5,10 @@ describe "Workflows" do
   context "when all jobs finish successfuly" do
     it "marks workflow as completed" do
       flow = TestWorkflow.create
-      perform_enqueued_jobs do
-        flow.start!
-      end
+
+      ActiveJob::Base.queue_adapter.perform_enqueued_jobs = true
+      flow.start!
+      ActiveJob::Base.queue_adapter.perform_enqueued_jobs = false
 
       flow = flow.reload
       expect(flow).to be_finished
