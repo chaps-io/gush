@@ -157,7 +157,7 @@ module Gush
         when stopped?
           :stopped
         else
-          :running
+          :pending
       end
     end
 
