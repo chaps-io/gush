@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## Unreleased
 
 ### Added
-- Add `Gush::Job#skip!` that marks a job as `#skipped?` and skips the remaining code. [See pull request](https://github.com/chaps-io/gush/pull/66).
+- Add `Gush::Job#skip!` that marks a job as `#skipped?` and skips the remaining code. [See pull request](https://github.com/chaps-io/gush/pull/109).
 
 ## 2.1.0
 
