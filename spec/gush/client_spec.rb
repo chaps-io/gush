@@ -153,4 +153,19 @@ describe Gush::Client do
       expect(workflow.stopped?).to be false
     }.not_to raise_error
   end
+
+  describe "with redis options" do
+    let(:client) do
+      Gush::Client.new(Gush::Configuration.new(gushfile: GUSHFILE, redis: { url: REDIS_URL, ssl_params: { verify_mode: OpenSSL::SSL::VERIFY_NONE }}))
+    end
+
+    it "still be able to persist workflows" do
+      job = double("job", to_json: 'json')
+      workflow = double("workflow", id: 'abcd', jobs: [job, job, job], to_json: '"json"')
+      expect(client).to receive(:persist_job).exactly(3).times.with(workflow.id, job)
+      expect(workflow).to receive(:mark_as_persisted)
+      client.persist_workflow(workflow)
+      expect(redis.keys("gush.workflows.abcd").length).to eq(1)
+    end
+  end
 end
