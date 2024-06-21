@@ -2,15 +2,16 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments
+    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :globals
 
-    def initialize(*args)
+    def initialize(*args, globals: nil)
       @id = id
       @jobs = []
       @dependencies = []
       @persisted = false
       @stopped = false
       @arguments = args
+      @globals = globals || {}
 
       setup
     end
@@ -19,8 +20,8 @@ module Gush
       Gush::Client.new.find_workflow(id)
     end
 
-    def self.create(*args)
-      flow = new(*args)
+    def self.create(*args, **kwargs)
+      flow = new(*args, **kwargs)
       flow.save
       flow
     end
@@ -111,7 +112,7 @@ module Gush
       node = klass.new({
         workflow_id: id,
         id: client.next_free_job_id(id, klass.to_s),
-        params: opts.fetch(:params, {}),
+        params: (@globals || {}).merge(opts.fetch(:params, {})),
         queue: opts[:queue],
         wait: opts[:wait]
       })
@@ -175,6 +176,7 @@ module Gush
         name: name,
         id: id,
         arguments: @arguments,
+        globals: @globals,
         total: jobs.count,
         finished: jobs.count(&:finished?),
         klass: name,

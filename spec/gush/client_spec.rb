@@ -33,6 +33,16 @@ describe Gush::Client do
           expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
         end
       end
+
+      context "when workflow has globals" do
+        it "returns Workflow object" do
+          expected_workflow = TestWorkflow.create(globals: { global1: 'foo' })
+          workflow = client.find_workflow(expected_workflow.id)
+
+          expect(workflow.id).to eq(expected_workflow.id)
+          expect(workflow.globals[:global1]).to eq('foo')
+        end
+      end
     end
   end
 

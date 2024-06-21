@@ -256,6 +256,29 @@ flow.status
 
 ## Advanced features
 
+### Global parameters for jobs
+
+Workflows can accept a hash of `globals` that are automatically forwarded as parameters to all jobs.
+
+This is useful to have common functionality across workflow and job classes, such as tracking the creator id for all instances:
+
+```ruby
+class SimpleWorkflow < Gush::Workflow
+  def configure(url_to_fetch_from)
+    run DownloadJob, params: { url: url_to_fetch_from }
+  end
+end
+
+flow = SimpleWorkflow.create('http://foo.com', globals: { creator_id: 123 })
+flow.globals
+=> {:creator_id=>123}
+flow.jobs.first.params
+=> {:creator_id=>123, :url=>"http://foo.com"}
+```
+
+**Note:** job params with the same key as globals will overwrite the globals.
+
+
 ### Pipelining
 
 Gush offers a useful tool to pass results of a job to its dependencies, so they can act differently.
