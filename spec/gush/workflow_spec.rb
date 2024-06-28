@@ -16,6 +16,18 @@ describe Gush::Workflow do
       klass.new("arg1", "arg2")
     end
 
+    it "passes constructor keyword arguments to the method" do
+      klass = Class.new(Gush::Workflow) do
+        def configure(*args, **kwargs)
+          run FetchFirstJob
+          run PersistFirstJob, after: FetchFirstJob
+        end
+      end
+
+      expect_any_instance_of(klass).to receive(:configure).with("arg1", "arg2", arg3: 123)
+      klass.new("arg1", "arg2", arg3: 123)
+    end
+
     it "accepts globals" do
       flow = TestWorkflow.new(globals: { global1: 'foo' })
       expect(flow.globals[:global1]).to eq('foo')
@@ -95,7 +107,7 @@ describe Gush::Workflow do
         end
       end
 
-      result = JSON.parse(klass.create("arg1", "arg2").to_json)
+      result = JSON.parse(klass.create("arg1", "arg2", arg3: 123).to_json)
       expected = {
           "id" => an_instance_of(String),
           "name" => klass.to_s,
@@ -107,6 +119,7 @@ describe Gush::Workflow do
           "finished_at" => nil,
           "stopped" => false,
           "arguments" => ["arg1", "arg2"],
+          "kwargs" => {"arg3" => 123},
           "globals" => {}
       }
       expect(result).to match(expected)
@@ -127,7 +140,7 @@ describe Gush::Workflow do
       expect(flow.jobs.first.params).to eq ({ something: 1 })
     end
 
-    it "merges globals with params and passes them to the job" do
+    it "merges globals with params and passes them to the job, with job param taking precedence" do
       flow = Gush::Workflow.new(globals: { something: 2, global1: 123 })
       flow.run(Gush::Job, params: { something: 1 })
       flow.save

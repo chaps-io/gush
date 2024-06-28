@@ -2,15 +2,16 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :globals
+    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :kwargs, :globals
 
-    def initialize(*args, globals: nil)
+    def initialize(*args, globals: nil, **kwargs)
       @id = id
       @jobs = []
       @dependencies = []
       @persisted = false
       @stopped = false
       @arguments = args
+      @kwargs = kwargs
       @globals = globals || {}
 
       setup
@@ -39,7 +40,7 @@ module Gush
       persist!
     end
 
-    def configure(*args)
+    def configure(*args, **kwargs)
     end
 
     def mark_as_stopped
@@ -176,6 +177,7 @@ module Gush
         name: name,
         id: id,
         arguments: @arguments,
+        kwargs: @kwargs,
         globals: @globals,
         total: jobs.count,
         finished: jobs.count(&:finished?),
@@ -202,7 +204,7 @@ module Gush
     private
 
     def setup
-      configure(*@arguments)
+      configure(*@arguments, **@kwargs)
       resolve_dependencies
     end
 
