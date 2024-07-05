@@ -157,8 +157,11 @@ module Gush
       persist_job(workflow_id, job)
       queue = job.queue || configuration.namespace
       wait = job.wait
-      
-      if wait.present?
+      sync = job.sync
+
+      if sync
+        Gush::Worker.perform_now(*[workflow_id, job.name])
+      elsif wait.present?
         Gush::Worker.set(queue: queue, wait: wait).perform_later(*[workflow_id, job.name])
       else
         Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.name])

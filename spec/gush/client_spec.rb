@@ -37,6 +37,17 @@ describe Gush::Client do
   end
 
   describe "#start_workflow" do
+    context "when the job is configured as synchronous" do
+      it "performs the job immediately" do
+        workflow = SyncTestWorkflow.create
+
+        expect(Gush::Worker).to receive(:perform_now).with(workflow.id, job_with_id("Prepare"))
+        expect_any_instance_of(ActiveJob::ConfiguredJob).to receive(:perform_later).with(workflow.id, job_with_id('FetchFirstJob'))
+
+        client.start_workflow(workflow)
+      end
+    end
+
     context "when there is wait parameter configured" do
       let(:freeze_time) { Time.utc(2023, 01, 21, 14, 36, 0) }
 

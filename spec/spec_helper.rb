@@ -42,6 +42,13 @@ class WaitableTestWorkflow < Gush::Workflow
   end
 end
 
+class SyncTestWorkflow < Gush::Workflow
+  def configure
+    run Prepare, sync: true
+    run FetchFirstJob
+  end
+end
+
 REDIS_URL = ENV["REDIS_URL"] || "redis://localhost:6379/12"
 
 module GushHelpers

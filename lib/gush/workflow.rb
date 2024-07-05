@@ -113,6 +113,7 @@ module Gush
         id: client.next_free_job_id(id, klass.to_s),
         params: opts.fetch(:params, {}),
         queue: opts[:queue],
+        sync: opts[:sync],
         wait: opts[:wait]
       })
 

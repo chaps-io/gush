@@ -81,6 +81,7 @@ describe Gush::Job do
           finished_at: 123,
           enqueued_at: 120,
           params: {},
+          sync: false,
           queue: nil,
           output_payload: nil,
           workflow_id: 123
@@ -101,7 +102,8 @@ describe Gush::Job do
           failed_at: 123,
           finished_at: 122,
           started_at: 55,
-          enqueued_at: 444
+          enqueued_at: 444,
+          sync: true
         }
       )
 
@@ -118,6 +120,7 @@ describe Gush::Job do
       expect(job.finished_at).to eq(122)
       expect(job.started_at).to eq(55)
       expect(job.enqueued_at).to eq(444)
+      expect(job.sync).to eq(true)
     end
   end
 end

@@ -383,6 +383,20 @@ class NotifyWorkflow < Gush::Workflow
 end
 ```
 
+### Synchronous jobs
+
+There might be a case when you want some jobs to complete synchronously, immediately after the call to `Workflow#start!`. For example, some jobs might complete very quickly and it can be helpful to show the results of those jobs in the response to some web request that started the workflow. Any job with the `sync: true` option is not sent to the queuing adapter but directly executed by blocking the execution of others until it’s finished.
+
+```ruby
+class SimpleWorkflow < Gush::Workflow
+  def configure
+    run PrepareJob, sync: true
+    run DownloadJob
+  end
+end
+```
+
+
 ## Command line interface (CLI)
 
 ### Checking status
