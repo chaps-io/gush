@@ -31,8 +31,8 @@ class TestWorkflow < Gush::Workflow
 end
 
 class ParameterTestWorkflow < Gush::Workflow
-  def configure(param)
-    run Prepare if param
+  def configure(param, kwarg: false)
+    run Prepare if param || kwarg
   end
 end
 
