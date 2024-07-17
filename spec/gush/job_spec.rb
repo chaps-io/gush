@@ -70,7 +70,13 @@ describe Gush::Job do
   describe "#as_json" do
     context "finished and enqueued set to true" do
       it "returns correct hash" do
-        job = described_class.new(workflow_id: 123, id: "702bced5-bb72-4bba-8f6f-15a3afa358bd", finished_at: 123, enqueued_at: 120)
+        job = described_class.new(
+          workflow_id: 123,
+          id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
+          finished_at: 123,
+          enqueued_at: 120,
+          wait: 300
+        )
         expected = {
           id: '702bced5-bb72-4bba-8f6f-15a3afa358bd',
           klass: "Gush::Job",
@@ -83,7 +89,8 @@ describe Gush::Job do
           params: {},
           queue: nil,
           output_payload: nil,
-          workflow_id: 123
+          workflow_id: 123,
+          wait: 300
         }
         expect(job.as_json).to eq(expected)
       end
