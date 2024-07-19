@@ -14,15 +14,6 @@ Layout/ArgumentAlignment:
 Layout/CaseIndentation:
   Enabled: false
 
-Layout/EmptyLineAfterGuardClause:
-  Enabled: false
-
-Layout/EmptyLineAfterMagicComment:
-  Enabled: false
-
-Layout/EmptyLinesAroundAccessModifier:
-  Enabled: false
-
 Layout/EmptyLinesAroundBlockBody:
   Enabled: false
 
@@ -33,9 +24,6 @@ Layout/FirstHashElementIndentation:
   Enabled: false
 
 Layout/HashAlignment:
-  Enabled: false
-
-Layout/SpaceAfterMethodName:
   Enabled: false
 
 Layout/SpaceAroundEqualsInParameterDefault:
@@ -53,25 +41,11 @@ Layout/SpaceInsideBlockBraces:
 Layout/SpaceInsideHashLiteralBraces:
   Enabled: false
 
-Layout/TrailingWhitespace:
-  Enabled: false
-
-Lint/AmbiguousBlockAssociation:
-  Enabled: false
-
 Lint/ConstantDefinitionInBlock:
-  Enabled: false
-
-Lint/DuplicateMethods:
-  Enabled: false
-
-Lint/ParenthesesAsGroupedExpression:
-  Enabled: false
+  Exclude:
+    - spec/**/*
 
 Lint/RedundantSplatExpansion:
-  Enabled: false
-
-Lint/ShadowingOuterLocalVariable:
   Enabled: false
 
 Lint/ToJSON:
@@ -116,9 +90,6 @@ Style/BlockDelimiters:
 Style/ClassVars:
   Enabled: false
 
-Style/ColonMethodCall:
-  Enabled: false
-
 Style/CombinableLoops:
   Enabled: false
 
@@ -134,16 +105,7 @@ Style/EmptyCaseCondition:
 Style/EmptyMethod:
   Enabled: false
 
-Style/Encoding:
-  Enabled: false
-
-Style/ExpandPathArguments:
-  Enabled: false
-
 Style/FrozenStringLiteralComment:
-  Enabled: false
-
-Style/GlobalStdStream:
   Enabled: false
 
 Style/GuardClause:
@@ -161,9 +123,6 @@ Style/InverseMethods:
 Style/MethodCallWithoutArgsParentheses:
   Enabled: false
 
-Style/MutableConstant:
-  Enabled: false
-
 Style/NumericLiteralPrefix:
   Enabled: false
 
@@ -176,13 +135,7 @@ Style/RaiseArgs:
 Style/SafeNavigation:
   Enabled: false
 
-Style/SelfAssignment:
-  Enabled: false
-
 Style/SpecialGlobalVars:
-  Enabled: false
-
-Style/StderrPuts:
   Enabled: false
 
 Style/StringLiterals:

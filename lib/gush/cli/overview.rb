@@ -34,6 +34,7 @@ module Gush
       end
 
       private
+
       def rows
         [].tap do |rows|
           columns.each_pair do |name, value|
@@ -91,6 +92,7 @@ module Gush
 
       def jobs_by_type(type)
         return sorted_jobs if type == :all
+
         jobs.select{|j| j.public_send("#{type}?") }
       end
 
