@@ -39,6 +39,10 @@ jobs:
         RAILS_VERSION: "${{ matrix.rails_version }}"
     - name: Install Graphviz
       run: sudo apt-get install graphviz
+    - name: Run code lint
+      run: bundle exec rubocop
+      env:
+        RAILS_VERSION: "${{ matrix.rails_version }}"
     - name: Run tests
       run: bundle exec rspec
       env:

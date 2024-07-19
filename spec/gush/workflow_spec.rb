@@ -137,21 +137,21 @@ describe Gush::Workflow do
       flow = Gush::Workflow.new
       flow.run(Gush::Job, params: { something: 1 })
       flow.save
-      expect(flow.jobs.first.params).to eq ({ something: 1 })
+      expect(flow.jobs.first.params).to eq({ something: 1 })
     end
 
     it "merges globals with params and passes them to the job, with job param taking precedence" do
       flow = Gush::Workflow.new(globals: { something: 2, global1: 123 })
       flow.run(Gush::Job, params: { something: 1 })
       flow.save
-      expect(flow.jobs.first.params).to eq ({ something: 1, global1: 123 })
+      expect(flow.jobs.first.params).to eq({ something: 1, global1: 123 })
     end
 
     it "allows passing wait param to the job" do
       flow = Gush::Workflow.new
       flow.run(Gush::Job, wait: 5.seconds)
       flow.save
-      expect(flow.jobs.first.wait).to eq (5.seconds)
+      expect(flow.jobs.first.wait).to eq(5.seconds)
     end
 
     context "when graph is empty" do

@@ -136,7 +136,7 @@ describe "Workflows" do
 
     class SummaryJob < Gush::Job
       def perform
-        output payloads.map { |payload| payload[:output] }
+        output(payloads.map { |payload| payload[:output] })
       end
     end
 
