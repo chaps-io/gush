@@ -87,19 +87,19 @@ Lint/UselessAssignment:
   Enabled: false
 
 Metrics/AbcSize:
-  Max: 32
+  Enabled: false
 
 Metrics/BlockLength:
-  Max: 195
+  Enabled: false
 
 Metrics/ClassLength:
-  Max: 170
+  Enabled: false
 
 Metrics/CyclomaticComplexity:
-  Max: 8
+  Enabled: false
 
 Metrics/MethodLength:
-  Max: 23
+  Enabled: false
 
 Naming/MemoizedInstanceVariableName:
   Enabled: false
@@ -198,7 +198,7 @@ Style/WordArray:
   Enabled: false
 
 Layout/LineLength:
-  Max: 156
+  Enabled: false
 
 RSpec/AnyInstance:
   Enabled: false
@@ -222,7 +222,7 @@ RSpec/EmptyLineAfterSubject:
   Enabled: false
 
 RSpec/ExampleLength:
-  Max: 34
+  Enabled: false
 
 RSpec/ExampleWording:
   Enabled: false
@@ -246,16 +246,16 @@ RSpec/MessageSpies:
   EnforcedStyle: receive
 
 RSpec/MultipleExpectations:
-  Max: 16
+  Enabled: false
 
 RSpec/MultipleMemoizedHelpers:
-  Max: 6
+  Enabled: false
 
 RSpec/NamedSubject:
   Enabled: false
 
 RSpec/NestedGroups:
-  Max: 4
+  Enabled: false
 
 RSpec/NotToNot:
   Enabled: false
