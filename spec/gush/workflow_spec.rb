@@ -98,6 +98,28 @@ describe Gush::Workflow do
     end
   end
 
+  describe "#status" do
+    it "returns failed" do
+      subject.find_job('Prepare').fail!
+      expect(subject.status).to eq(:failed)
+    end
+    it "returns running" do
+      subject.find_job('Prepare').start!
+      expect(subject.status).to eq(:running)
+    end
+    it "returns finished" do
+      subject.jobs.each {|n| n.finish! }
+      expect(subject.status).to eq(:finished)
+    end
+    it "returns stopped" do
+      subject.stopped = true
+      expect(subject.status).to eq(:stopped)
+    end
+    it "returns pending" do
+      expect(subject.status).to eq(:pending)
+    end
+  end
+
   describe "#to_json" do
     it "returns correct hash" do
       klass = Class.new(Gush::Workflow) do
@@ -112,7 +134,7 @@ describe Gush::Workflow do
           "id" => an_instance_of(String),
           "name" => klass.to_s,
           "klass" => klass.to_s,
-          "status" => "running",
+          "status" => "pending",
           "total" => 2,
           "finished" => 0,
           "started_at" => nil,
