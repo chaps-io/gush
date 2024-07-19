@@ -2,7 +2,8 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :dependencies, :stopped, :persisted, :arguments, :kwargs, :globals
+    attr_accessor :jobs, :dependencies, :stopped, :persisted, :arguments, :kwargs, :globals
+    attr_writer :id
 
     def initialize(*args, globals: nil, internal_state: {}, **kwargs)
       @arguments = args
@@ -56,7 +57,7 @@ module Gush
       client.persist_workflow(self)
     end
 
-    def expire! (ttl=nil)
+    def expire!(ttl=nil)
       client.expire_workflow(self, ttl)
     end
 

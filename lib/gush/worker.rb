@@ -30,7 +30,7 @@ module Gush
 
     private
 
-    attr_reader :client, :workflow_id, :job, :configuration
+    attr_reader :workflow_id, :job
 
     def client
       @client ||= Gush::Client.new(Gush.configuration)
