@@ -59,6 +59,14 @@ module Gush
       @failed_at = nil
     end
 
+    def enqueue_worker!(options = {})
+      Gush::Worker.set(options).perform_later(workflow_id, name)
+    end
+
+    def worker_options
+      { queue: queue, wait: wait }.compact
+    end
+
     def finish!
       @finished_at = current_timestamp
     end

@@ -49,6 +49,45 @@ describe Gush::Job do
     end
   end
 
+  describe "#enqueue_worker!" do
+    it "enqueues the job using Gush::Worker" do
+      job = described_class.new(name: "a-job", workflow_id: 123)
+
+      expect {
+        job.enqueue_worker!
+      }.to change{ActiveJob::Base.queue_adapter.enqueued_jobs.size}.from(0).to(1)
+    end
+
+    it "handles ActiveJob.set options" do
+      freeze_time = Time.utc(2023, 01, 21, 14, 36, 0)
+
+      travel_to freeze_time do
+        job = described_class.new(name: "a-job", workflow_id: 123)
+        job.enqueue_worker!(wait_until: freeze_time + 5.minutes)
+        expect(Gush::Worker).to have_a_job_enqueued_at(123, job_with_id(job.class.name), 5.minutes)
+      end
+    end
+  end
+
+  describe "#worker_options" do
+    it "returns a blank options hash by default" do
+      job = described_class.new
+      expect(job.worker_options).to eq({})
+    end
+
+    it "returns a hash with the queue setting" do
+      job = described_class.new
+      job.queue = 'my-queue'
+      expect(job.worker_options).to eq({ queue: 'my-queue' })
+    end
+
+    it "returns a hash with the wait setting" do
+      job = described_class.new
+      job.wait = 123
+      expect(job.worker_options).to eq({ wait: 123 })
+    end
+  end
+
   describe "#start!" do
     it "resets flags and marks as running" do
       job = described_class.new(name: "a-job")
