@@ -159,9 +159,11 @@ Let's assume we are writing a book publishing workflow which needs to know where
 
 ```ruby
 class PublishBookWorkflow < Gush::Workflow
-  def configure(url, isbn)
+  def configure(url, isbn, publish: false)
     run FetchBook, params: { url: url }
-    run PublishBook, params: { book_isbn: isbn }, after: FetchBook
+    if publish
+      run PublishBook, params: { book_isbn: isbn }, after: FetchBook
+    end
   end
 end
 ```
@@ -169,7 +171,7 @@ end
 and then create your workflow with those arguments:
 
 ```ruby
-PublishBookWorkflow.create("http://url.com/book.pdf", "978-0470081204")
+PublishBookWorkflow.create("http://url.com/book.pdf", "978-0470081204", publish: true)
 ```
 
 and that's basically it for defining workflows, see below on how to define jobs:
@@ -255,6 +257,29 @@ flow.status
 `reload` is needed to see the latest status, since workflows are updated asynchronously.
 
 ## Advanced features
+
+### Global parameters for jobs
+
+Workflows can accept a hash of `globals` that are automatically forwarded as parameters to all jobs.
+
+This is useful to have common functionality across workflow and job classes, such as tracking the creator id for all instances:
+
+```ruby
+class SimpleWorkflow < Gush::Workflow
+  def configure(url_to_fetch_from)
+    run DownloadJob, params: { url: url_to_fetch_from }
+  end
+end
+
+flow = SimpleWorkflow.create('http://foo.com', globals: { creator_id: 123 })
+flow.globals
+=> {:creator_id=>123}
+flow.jobs.first.params
+=> {:creator_id=>123, :url=>"http://foo.com"}
+```
+
+**Note:** job params with the same key as globals will take precedence over the globals.
+
 
 ### Pipelining
 

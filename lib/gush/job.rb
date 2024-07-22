@@ -3,7 +3,6 @@ module Gush
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
       :finished_at, :failed_at, :started_at, :enqueued_at, :payloads,
       :klass, :queue, :wait, :skipped_at
-
     attr_reader :id, :klass, :output_payload, :params
 
     def initialize(opts = {})
@@ -25,7 +24,8 @@ module Gush
         failed_at: failed_at,
         params: params,
         workflow_id: workflow_id,
-        output_payload: output_payload
+        output_payload: output_payload,
+        wait: wait
       }
     end
 

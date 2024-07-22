@@ -183,7 +183,11 @@ module Gush
     end
 
     def workflow_from_hash(hash, nodes = [])
-      flow = hash[:klass].constantize.new(*hash[:arguments])
+      flow = hash[:klass].constantize.new(
+        *hash[:arguments],
+        **hash[:kwargs],
+        globals: hash[:globals]
+      )
       flow.jobs = []
       flow.stopped = hash.fetch(:stopped, false)
       flow.id = hash[:id]
