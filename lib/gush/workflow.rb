@@ -2,19 +2,20 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :kwargs, :globals
+    attr_accessor :id, :jobs, :dependencies, :stopped, :persisted, :arguments, :kwargs, :globals
 
-    def initialize(*args, globals: nil, **kwargs)
-      @id = id
-      @jobs = []
-      @dependencies = []
-      @persisted = false
-      @stopped = false
+    def initialize(*args, globals: nil, internal_state: {}, **kwargs)
       @arguments = args
       @kwargs = kwargs
       @globals = globals || {}
 
-      setup
+      @id = internal_state[:id] || id
+      @jobs = internal_state[:jobs] || []
+      @dependencies = internal_state[:dependencies] || []
+      @persisted = internal_state[:persisted] || false
+      @stopped = internal_state[:stopped] || false
+
+      setup unless internal_state[:skip_setup]
     end
 
     def self.find(id)
@@ -179,6 +180,7 @@ module Gush
         arguments: @arguments,
         kwargs: @kwargs,
         globals: @globals,
+        dependencies: @dependencies,
         total: jobs.count,
         finished: jobs.count(&:finished?),
         klass: name,

@@ -19,9 +19,12 @@ describe Gush::Client do
       it "returns Workflow object" do
         expected_workflow = TestWorkflow.create
         workflow = client.find_workflow(expected_workflow.id)
+        dependencies = workflow.dependencies
 
         expect(workflow.id).to eq(expected_workflow.id)
+        expect(workflow.persisted).to eq(true)
         expect(workflow.jobs.map(&:name)).to match_array(expected_workflow.jobs.map(&:name))
+        expect(workflow.dependencies).to eq(dependencies)
       end
 
       context "when workflow has parameters" do
