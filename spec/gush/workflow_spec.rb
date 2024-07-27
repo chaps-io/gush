@@ -32,6 +32,39 @@ describe Gush::Workflow do
       flow = TestWorkflow.new(globals: { global1: 'foo' })
       expect(flow.globals[:global1]).to eq('foo')
     end
+
+    it "accepts internal_state" do
+      flow = TestWorkflow.new
+
+      internal_state = {
+        id: flow.id,
+        jobs: flow.jobs,
+        dependencies: flow.dependencies,
+        persisted: true,
+        stopped: true,
+      }
+
+      flow_copy = TestWorkflow.new(internal_state: internal_state)
+
+      expect(flow_copy.id).to eq(flow.id)
+      expect(flow_copy.jobs).to eq(flow.jobs)
+      expect(flow_copy.dependencies).to eq(flow.dependencies)
+      expect(flow_copy.persisted).to eq(true)
+      expect(flow_copy.stopped).to eq(true)
+    end
+
+    it "does not call #configure if needs_setup is false" do
+      INTERNAL_SETUP_SPY = double('configure spy')
+      klass = Class.new(Gush::Workflow) do
+        def configure(*args)
+          INTERNAL_SETUP_SPY.some_method
+        end
+      end
+
+      expect(INTERNAL_SETUP_SPY).to receive(:some_method).never
+
+      flow = TestWorkflow.new(internal_state: { needs_setup: false })
+    end
   end
 
   describe "#status" do
@@ -118,6 +151,10 @@ describe Gush::Workflow do
           "started_at" => nil,
           "finished_at" => nil,
           "stopped" => false,
+          "dependencies" => [{
+            "from" => "FetchFirstJob",
+            "to" => job_with_id("PersistFirstJob"),
+          }],
           "arguments" => ["arg1", "arg2"],
           "kwargs" => {"arg3" => 123},
           "globals" => {}

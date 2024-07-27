@@ -183,20 +183,25 @@ module Gush
     end
 
     def workflow_from_hash(hash, nodes = [])
-      flow = hash[:klass].constantize.new(
-        *hash[:arguments],
-        **hash[:kwargs],
-        globals: hash[:globals]
-      )
-      flow.jobs = []
-      flow.stopped = hash.fetch(:stopped, false)
-      flow.id = hash[:id]
-
-      flow.jobs = nodes.map do |node|
+      jobs = nodes.map do |node|
         Gush::Job.from_hash(node)
       end
 
-      flow
+      internal_state = {
+        persisted: true,
+        jobs: jobs,
+        # For backwards compatibility, setup can only be skipped for a persisted
+        # workflow if there is no data missing from the persistence.
+        # 2024-07-23: dependencies added to persistence
+        skip_setup: !hash[:dependencies].nil?
+      }.merge(hash)
+
+      hash[:klass].constantize.new(
+        *hash[:arguments],
+        **hash[:kwargs],
+        globals: hash[:globals],
+        internal_state: internal_state
+      )
     end
 
     def redis
