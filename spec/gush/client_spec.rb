@@ -97,6 +97,37 @@ describe Gush::Client do
     end
   end
 
+  describe "#next_free_job_id" do
+    it "returns an id" do
+      expect(client.next_free_job_id('123', Prepare.to_s)).to match(/^\h{8}-\h{4}-(\h{4})-\h{4}-\h{12}$/)
+    end
+
+    it "returns an id that doesn't match an existing job id" do
+      workflow = TestWorkflow.create
+      job = workflow.jobs.first
+
+      second_try_id = '1234'
+      allow(SecureRandom).to receive(:uuid).and_return(job.id, second_try_id)
+
+      expect(client.next_free_job_id(workflow.id, job.class.to_s)).to eq(second_try_id)
+    end
+  end
+
+  describe "#next_free_workflow_id" do
+    it "returns an id" do
+      expect(client.next_free_workflow_id).to match(/^\h{8}-\h{4}-(\h{4})-\h{4}-\h{12}$/)
+    end
+
+    it "returns an id that doesn't match an existing workflow id" do
+      workflow = TestWorkflow.create
+
+      second_try_id = '1234'
+      allow(SecureRandom).to receive(:uuid).and_return(workflow.id, second_try_id)
+
+      expect(client.next_free_workflow_id).to eq(second_try_id)
+    end
+  end
+
   describe "#persist_workflow" do
     it "persists JSON dump of the Workflow and its jobs" do
       job = double("job", to_json: 'json')
