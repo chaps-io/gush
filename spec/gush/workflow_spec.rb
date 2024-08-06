@@ -67,6 +67,19 @@ describe Gush::Workflow do
     end
   end
 
+  describe "#find" do
+    it "fiends a workflow by id" do
+      expect(Gush::Workflow.find(subject.id).id).to eq(subject.id)
+    end
+  end
+
+  describe "#page" do
+    it "returns a page of registered workflows" do
+      flow = TestWorkflow.create
+      expect(Gush::Workflow.page.map(&:id)).to eq([flow.id])
+    end
+  end
+
   describe "#save" do
     context "workflow not persisted" do
       it "sets persisted to true" do
@@ -169,6 +182,7 @@ describe Gush::Workflow do
           "id" => an_instance_of(String),
           "name" => klass.to_s,
           "klass" => klass.to_s,
+          "job_klasses" => ["FetchFirstJob", "PersistFirstJob"],
           "status" => "pending",
           "total" => 2,
           "finished" => 0,

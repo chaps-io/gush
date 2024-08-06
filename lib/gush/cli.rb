@@ -70,9 +70,14 @@ module Gush
       client.destroy_workflow(workflow)
     end
 
-    desc "list", "Lists all workflows with their statuses"
-    def list
-      workflows = client.all_workflows
+    desc "list START STOP", "Lists workflows from START index through STOP index with their statuses"
+    option :start, type: :numeric, default: nil
+    option :stop, type: :numeric, default: nil
+    def list(start=nil, stop=nil)
+      workflows = client.workflow_ids(start, stop).map do |id|
+        client.find_workflow(id)
+      end
+
       rows = workflows.map do |workflow|
         [workflow.id, (Time.at(workflow.started_at) if workflow.started_at), workflow.class, {alignment: :center, value: status_for(workflow)}]
       end
@@ -118,6 +123,24 @@ module Gush
       if (options[:open].nil? && !options[:filename]) || options[:open]
         Launchy.open Pathname.new(graph.path).realpath.to_s
       end
+    end
+
+    desc "migrate", "Runs all unapplied migrations to Gush storage"
+    def migrate
+      Dir[File.join(__dir__, 'migrate', '*.rb')].each {|file| require file }
+
+      applied = Gush::Migration.subclasses.sort(&:version).count do |klass|
+        migration = klass.new
+        next if migration.migrated?
+
+        puts "Migrating to #{klass.name} (#{migration.version})"
+        migration.migrate
+        puts "== #{migration.version} #{klass.name}: migrated ==="
+
+        true
+      end
+
+      puts "#{applied} #{'migrations'.pluralize(applied)} applied"
     end
 
     private
