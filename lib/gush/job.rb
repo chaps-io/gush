@@ -38,6 +38,8 @@ module Gush
 
     def self.from_hash(hash)
       hash[:klass].constantize.new(hash)
+    rescue NameError
+      Gush::NilJob.new(hash)
     end
 
     def output(data)
