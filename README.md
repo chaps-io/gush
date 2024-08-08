@@ -408,6 +408,37 @@ class NotifyWorkflow < Gush::Workflow
 end
 ```
 
+### Customization of ActiveJob enqueueing
+
+There might be a case when you want to customize enqueing a job with more than just the above two options (`queue` and `wait`).
+
+To pass additional options to `ActiveJob.set`, override `Job#worker_options`, e.g.:
+
+```ruby
+
+class ScheduledJob < Gush::Job
+
+  def worker_options
+    super.merge(wait_until: Time.at(params[:start_at]))
+  end
+
+end
+```
+
+Or to entirely customize the ActiveJob integration, override `Job#enqueue_worker!`, e.g.:
+
+```ruby
+
+class SynchronousJob < Gush::Job
+
+  def enqueue_worker!(options = {})
+    Gush::Worker.perform_now(workflow_id, name)
+  end
+
+end
+```
+
+
 ## Command line interface (CLI)
 
 ### Checking status

@@ -155,14 +155,9 @@ module Gush
     def enqueue_job(workflow_id, job)
       job.enqueue!
       persist_job(workflow_id, job)
-      queue = job.queue || configuration.namespace
-      wait = job.wait
-      
-      if wait.present?
-        Gush::Worker.set(queue: queue, wait: wait).perform_later(*[workflow_id, job.name])
-      else
-        Gush::Worker.set(queue: queue).perform_later(*[workflow_id, job.name])
-      end
+
+      options = { queue: configuration.namespace }.merge(job.worker_options)
+      job.enqueue_worker!(options)
     end
 
     private
