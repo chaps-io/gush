@@ -95,7 +95,7 @@ module Gush
         keys = redis.scan_each(match: "gush.jobs.#{id}.*")
 
         nodes = keys.each_with_object([]) do |key, array|
-          array.concat redis.hvals(key).map { |json| Gush::JSON.decode(json, symbolize_keys: true) }
+          array.concat(redis.hvals(key).map { |json| Gush::JSON.decode(json, symbolize_keys: true) })
         end
 
         workflow_from_hash(hash, nodes)
@@ -142,13 +142,13 @@ module Gush
     end
 
     def expire_workflow(workflow, ttl=nil)
-      ttl = ttl || configuration.ttl
+      ttl ||= configuration.ttl
       redis.expire("gush.workflows.#{workflow.id}", ttl)
       workflow.jobs.each {|job| expire_job(workflow.id, job, ttl) }
     end
 
     def expire_job(workflow_id, job, ttl=nil)
-      ttl = ttl || configuration.ttl
+      ttl ||= configuration.ttl
       redis.expire("gush.jobs.#{workflow_id}.#{job.klass}", ttl)
     end
 

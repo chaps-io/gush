@@ -101,7 +101,7 @@ module Gush
         begin
           workflow = class_or_id.constantize.new
         rescue NameError => e
-          STDERR.puts Paint["'#{class_or_id}' is not a valid workflow class or id", :red]
+          warn Paint["'#{class_or_id}' is not a valid workflow class or id", :red]
           exit 1
         end
       end

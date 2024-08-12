@@ -41,7 +41,7 @@ describe Gush::Workflow do
         jobs: flow.jobs,
         dependencies: flow.dependencies,
         persisted: true,
-        stopped: true,
+        stopped: true
       }
 
       flow_copy = TestWorkflow.new(internal_state: internal_state)
@@ -61,20 +61,9 @@ describe Gush::Workflow do
         end
       end
 
-      expect(INTERNAL_SETUP_SPY).to receive(:some_method).never
+      expect(INTERNAL_SETUP_SPY).not_to receive(:some_method)
 
       flow = TestWorkflow.new(internal_state: { needs_setup: false })
-    end
-  end
-
-  describe "#status" do
-    context "when failed" do
-      it "returns :failed" do
-        flow = TestWorkflow.create
-        flow.find_job("Prepare").fail!
-        flow.persist!
-        expect(flow.reload.status).to eq(:failed)
-      end
     end
   end
 
@@ -132,22 +121,35 @@ describe Gush::Workflow do
   end
 
   describe "#status" do
+    context "when failed" do
+      it "returns :failed" do
+        flow = TestWorkflow.create
+        flow.find_job("Prepare").fail!
+        flow.persist!
+        expect(flow.reload.status).to eq(:failed)
+      end
+    end
+
     it "returns failed" do
       subject.find_job('Prepare').fail!
       expect(subject.status).to eq(:failed)
     end
+
     it "returns running" do
       subject.find_job('Prepare').start!
       expect(subject.status).to eq(:running)
     end
+
     it "returns finished" do
       subject.jobs.each {|n| n.finish! }
       expect(subject.status).to eq(:finished)
     end
+
     it "returns stopped" do
       subject.stopped = true
       expect(subject.status).to eq(:stopped)
     end
+
     it "returns pending" do
       expect(subject.status).to eq(:pending)
     end
@@ -175,7 +177,7 @@ describe Gush::Workflow do
           "stopped" => false,
           "dependencies" => [{
             "from" => "FetchFirstJob",
-            "to" => job_with_id("PersistFirstJob"),
+            "to" => job_with_id("PersistFirstJob")
           }],
           "arguments" => ["arg1", "arg2"],
           "kwargs" => {"arg3" => 123},
@@ -196,21 +198,21 @@ describe Gush::Workflow do
       flow = Gush::Workflow.new
       flow.run(Gush::Job, params: { something: 1 })
       flow.save
-      expect(flow.jobs.first.params).to eq ({ something: 1 })
+      expect(flow.jobs.first.params).to eq({ something: 1 })
     end
 
     it "merges globals with params and passes them to the job, with job param taking precedence" do
       flow = Gush::Workflow.new(globals: { something: 2, global1: 123 })
       flow.run(Gush::Job, params: { something: 1 })
       flow.save
-      expect(flow.jobs.first.params).to eq ({ something: 1, global1: 123 })
+      expect(flow.jobs.first.params).to eq({ something: 1, global1: 123 })
     end
 
     it "allows passing wait param to the job" do
       flow = Gush::Workflow.new
       flow.run(Gush::Job, wait: 5.seconds)
       flow.save
-      expect(flow.jobs.first.wait).to eq (5.seconds)
+      expect(flow.jobs.first.wait).to eq(5.seconds)
     end
 
     context "when graph is empty" do
