@@ -23,6 +23,10 @@ module Gush
       Gush::Client.new.find_workflow(id)
     end
 
+    def self.page(start=0, stop=99, order: :asc)
+      Gush::Client.new.workflows(start, stop, order: order)
+    end
+
     def self.create(*args, **kwargs)
       flow = new(*args, **kwargs)
       flow.save
@@ -185,6 +189,7 @@ module Gush
         total: jobs.count,
         finished: jobs.count(&:finished?),
         klass: name,
+        job_klasses: jobs.map(&:class).map(&:to_s).uniq,
         status: status,
         stopped: stopped,
         started_at: started_at,
