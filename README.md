@@ -256,6 +256,28 @@ flow.status
 
 `reload` is needed to see the latest status, since workflows are updated asynchronously.
 
+## Loading workflows
+
+### Finding a workflow by id
+
+```
+flow = Workflow.find(id)
+```
+
+### Paging through workflows
+
+To get workflows with pagination, use start and stop (inclusive) index values:
+
+```
+flows = Workflow.page(0, 99)
+```
+
+Or in reverse order:
+
+```
+flows = Workflow.page(0, 99, order: :desc)
+```
+
 ## Advanced features
 
 ### Global parameters for jobs
@@ -408,16 +430,46 @@ class NotifyWorkflow < Gush::Workflow
 end
 ```
 
+### Customization of ActiveJob enqueueing
+
+There might be a case when you want to customize enqueing a job with more than just the above two options (`queue` and `wait`).
+
+To pass additional options to `ActiveJob.set`, override `Job#worker_options`, e.g.:
+
+```ruby
+
+class ScheduledJob < Gush::Job
+
+  def worker_options
+    super.merge(wait_until: Time.at(params[:start_at]))
+  end
+
+end
+```
+
+Or to entirely customize the ActiveJob integration, override `Job#enqueue_worker!`, e.g.:
+
+```ruby
+
+class SynchronousJob < Gush::Job
+
+  def enqueue_worker!(options = {})
+    Gush::Worker.perform_now(workflow_id, name)
+  end
+
+end
+```
+
 ### Skipping a Job
 
-Sometimes you'd like to skip a job, which doesn't mean that job/workflow has failed. You can call `self.skip!` inside the job to mark it as a `skipped`:
+Sometimes you'd like to skip a job, which doesn't mean that job/workflow has failed. You can call `skip!` inside the job to mark it as a `skipped`:
 
 ```ruby
 class ProcessUserJob < Gush::Job
   def perform
     user = User.find params[:id]
 
-    self.skip! if user.processed?
+    skip! if user.processed?
 
     # Code beneath here will not be called anymore
     # and the job will be marked as 'skipped'
@@ -437,10 +489,16 @@ end
   bundle exec gush show <workflow_id>
   ```
 
-- of all created workflows:
+- of a page of workflows:
 
   ```
   bundle exec gush list
+  ```
+
+- of the most recent 100 workflows
+
+  ```
+  bundle exec gush list -99 -1
   ```
 
 ### Vizualizing workflows as image
@@ -468,7 +526,9 @@ end
 
 ### Cleaning up afterwards
 
-Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is ran.  This data might be useful for analysis but at a certain point it can be purged via Redis TTL.  By default gush and Redis will keep keys forever.  To configure expiration you need to 2 things.  Create initializer (specify config.ttl in seconds, be different per environment).
+Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it is run.  This data might be useful for analysis but at a certain point it can be purged.  By default gush and Redis will keep keys forever.  To configure expiration you need to do two things.
+
+1. Create an initializer that specifies `config.ttl` in seconds. Best NOT to set TTL to be too short (like minutes) but about a week in length.
 
 ```ruby
 # config/initializers/gush.rb
@@ -479,7 +539,9 @@ Gush.configure do |config|
 end
 ```
 
-And you need to call `flow.expire!` (optionally passing custom TTL value overriding `config.ttl`).  This gives you control whether to expire data for specific workflow.  Best NOT to set TTL to be too short (like minutes) but about a week in length.  And you can run `Client.expire_workflow` and `Client.expire_job` passing appropriate IDs and TTL (pass -1 to NOT expire) values.
+2. Call `Client#expire_workflows` periodically, which will clear all expired stored workflow and job data and indexes. This method can be called at any rate, but ideally should be called at least once for every 1000 workflows created.
+
+If you need more control over individual workflow expiration, you can call `flow.expire!(ttl)` with a TTL different from the Gush configuration, or with -1 to never expire the workflow.
 
 ### Avoid overlapping workflows
 
@@ -496,6 +558,19 @@ def find_by_class klass
   return false
 end
 ```
+
+## Gush 3.0 Migration
+
+Gush 3.0 adds indexing for fast workflow pagination and changes the mechanism for expiring workflow data from Redis.
+
+### Migration
+
+Run `bundle exec gush migrate` after upgrading. This will update internal data structures.
+
+### Expiration API
+
+Periodically run `Gush::Client.new.expire_workflows` to expire data. Workflows will be automatically enrolled in this expiration, so there is no longer a need to call `workflow.expire!`.
+
 
 ## Contributors
 

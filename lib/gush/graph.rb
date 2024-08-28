@@ -4,7 +4,7 @@ require 'tmpdir'
 
 module Gush
   class Graph
-    attr_reader :workflow, :filename, :path, :start_node, :end_node
+    attr_reader :workflow, :filename, :start_node, :end_node
 
     def initialize(workflow, options = {})
       @workflow = workflow
@@ -32,7 +32,7 @@ module Gush
       file_format = path.split('.')[-1]
       format = file_format if file_format.length == 3
 
-      Graphviz::output(@graph, path: path, format: format)
+      Graphviz.output(@graph, path: path, format: format)
     end
 
     def path

@@ -32,16 +32,51 @@ describe Gush::Workflow do
       flow = TestWorkflow.new(globals: { global1: 'foo' })
       expect(flow.globals[:global1]).to eq('foo')
     end
+
+    it "accepts internal_state" do
+      flow = TestWorkflow.new
+
+      internal_state = {
+        id: flow.id,
+        jobs: flow.jobs,
+        dependencies: flow.dependencies,
+        persisted: true,
+        stopped: true
+      }
+
+      flow_copy = TestWorkflow.new(internal_state: internal_state)
+
+      expect(flow_copy.id).to eq(flow.id)
+      expect(flow_copy.jobs).to eq(flow.jobs)
+      expect(flow_copy.dependencies).to eq(flow.dependencies)
+      expect(flow_copy.persisted).to eq(true)
+      expect(flow_copy.stopped).to eq(true)
+    end
+
+    it "does not call #configure if needs_setup is false" do
+      INTERNAL_SETUP_SPY = double('configure spy')
+      klass = Class.new(Gush::Workflow) do
+        def configure(*args)
+          INTERNAL_SETUP_SPY.some_method
+        end
+      end
+
+      expect(INTERNAL_SETUP_SPY).not_to receive(:some_method)
+
+      flow = TestWorkflow.new(internal_state: { needs_setup: false })
+    end
   end
 
-  describe "#status" do
-    context "when failed" do
-      it "returns :failed" do
-        flow = TestWorkflow.create
-        flow.find_job("Prepare").fail!
-        flow.persist!
-        expect(flow.reload.status).to eq(:failed)
-      end
+  describe "#find" do
+    it "fiends a workflow by id" do
+      expect(Gush::Workflow.find(subject.id).id).to eq(subject.id)
+    end
+  end
+
+  describe "#page" do
+    it "returns a page of registered workflows" do
+      flow = TestWorkflow.create
+      expect(Gush::Workflow.page.map(&:id)).to eq([flow.id])
     end
   end
 
@@ -98,6 +133,41 @@ describe Gush::Workflow do
     end
   end
 
+  describe "#status" do
+    context "when failed" do
+      it "returns :failed" do
+        flow = TestWorkflow.create
+        flow.find_job("Prepare").fail!
+        flow.persist!
+        expect(flow.reload.status).to eq(:failed)
+      end
+    end
+
+    it "returns failed" do
+      subject.find_job('Prepare').fail!
+      expect(subject.status).to eq(:failed)
+    end
+
+    it "returns running" do
+      subject.find_job('Prepare').start!
+      expect(subject.status).to eq(:running)
+    end
+
+    it "returns finished" do
+      subject.jobs.each {|n| n.finish! }
+      expect(subject.status).to eq(:finished)
+    end
+
+    it "returns stopped" do
+      subject.stopped = true
+      expect(subject.status).to eq(:stopped)
+    end
+
+    it "returns pending" do
+      expect(subject.status).to eq(:pending)
+    end
+  end
+
   describe "#to_json" do
     it "returns correct hash" do
       klass = Class.new(Gush::Workflow) do
@@ -112,12 +182,17 @@ describe Gush::Workflow do
           "id" => an_instance_of(String),
           "name" => klass.to_s,
           "klass" => klass.to_s,
-          "status" => "running",
+          "job_klasses" => ["FetchFirstJob", "PersistFirstJob"],
+          "status" => "pending",
           "total" => 2,
           "finished" => 0,
           "started_at" => nil,
           "finished_at" => nil,
           "stopped" => false,
+          "dependencies" => [{
+            "from" => "FetchFirstJob",
+            "to" => job_with_id("PersistFirstJob")
+          }],
           "arguments" => ["arg1", "arg2"],
           "kwargs" => {"arg3" => 123},
           "globals" => {}
@@ -137,21 +212,21 @@ describe Gush::Workflow do
       flow = Gush::Workflow.new
       flow.run(Gush::Job, params: { something: 1 })
       flow.save
-      expect(flow.jobs.first.params).to eq ({ something: 1 })
+      expect(flow.jobs.first.params).to eq({ something: 1 })
     end
 
     it "merges globals with params and passes them to the job, with job param taking precedence" do
       flow = Gush::Workflow.new(globals: { something: 2, global1: 123 })
       flow.run(Gush::Job, params: { something: 1 })
       flow.save
-      expect(flow.jobs.first.params).to eq ({ something: 1, global1: 123 })
+      expect(flow.jobs.first.params).to eq({ something: 1, global1: 123 })
     end
 
     it "allows passing wait param to the job" do
       flow = Gush::Workflow.new
       flow.run(Gush::Job, wait: 5.seconds)
       flow.save
-      expect(flow.jobs.first.wait).to eq (5.seconds)
+      expect(flow.jobs.first.wait).to eq(5.seconds)
     end
 
     context "when graph is empty" do

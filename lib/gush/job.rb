@@ -3,7 +3,7 @@ module Gush
     attr_accessor :workflow_id, :incoming, :outgoing, :params,
       :finished_at, :failed_at, :started_at, :enqueued_at, :payloads,
       :klass, :queue, :wait, :skipped_at
-    attr_reader :id, :klass, :output_payload, :params
+    attr_reader :id, :output_payload
 
     def initialize(opts = {})
       options = opts.dup
@@ -58,6 +58,14 @@ module Gush
       @started_at = nil
       @finished_at = nil
       @failed_at = nil
+    end
+
+    def enqueue_worker!(options = {})
+      Gush::Worker.set(options).perform_later(workflow_id, name)
+    end
+
+    def worker_options
+      { queue: queue, wait: wait }.compact
     end
 
     def finish!

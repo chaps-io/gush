@@ -136,7 +136,7 @@ describe "Workflows" do
 
     class SummaryJob < Gush::Job
       def perform
-        output payloads.map { |payload| payload[:output] }
+        output(payloads.map { |payload| payload[:output] })
       end
     end
 
@@ -169,8 +169,8 @@ describe "Workflows" do
     INTERNAL_CONFIGURE_SPY = double('configure spy')
     expect(INTERNAL_SPY).to receive(:some_method).exactly(110).times
 
-    # One time when persisting, second time when reloading in the spec
-    expect(INTERNAL_CONFIGURE_SPY).to receive(:some_method).exactly(2).times
+    # One time when persisting; reloading does not call configure again
+    expect(INTERNAL_CONFIGURE_SPY).to receive(:some_method).exactly(1).time
 
     class SimpleJob < Gush::Job
       def perform
@@ -256,7 +256,7 @@ describe "Workflows" do
 
       class SkippedJob < Gush::Job
         def perform
-          self.skip!
+          skip!
           SKIPPED_SPY.bar
         end
       end

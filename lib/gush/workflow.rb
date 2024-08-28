@@ -2,23 +2,29 @@ require 'securerandom'
 
 module Gush
   class Workflow
-    attr_accessor :id, :jobs, :stopped, :persisted, :arguments, :kwargs, :globals
+    attr_accessor :jobs, :dependencies, :stopped, :persisted, :arguments, :kwargs, :globals
+    attr_writer :id
 
-    def initialize(*args, globals: nil, **kwargs)
-      @id = id
-      @jobs = []
-      @dependencies = []
-      @persisted = false
-      @stopped = false
+    def initialize(*args, globals: nil, internal_state: {}, **kwargs)
       @arguments = args
       @kwargs = kwargs
       @globals = globals || {}
 
-      setup
+      @id = internal_state[:id] || id
+      @jobs = internal_state[:jobs] || []
+      @dependencies = internal_state[:dependencies] || []
+      @persisted = internal_state[:persisted] || false
+      @stopped = internal_state[:stopped] || false
+
+      setup unless internal_state[:skip_setup]
     end
 
     def self.find(id)
       Gush::Client.new.find_workflow(id)
+    end
+
+    def self.page(start=0, stop=99, order: :asc)
+      Gush::Client.new.workflows(start, stop, order: order)
     end
 
     def self.create(*args, **kwargs)
@@ -55,7 +61,7 @@ module Gush
       client.persist_workflow(self)
     end
 
-    def expire! (ttl=nil)
+    def expire!(ttl=nil)
       client.expire_workflow(self, ttl)
     end
 
@@ -159,7 +165,7 @@ module Gush
         when stopped?
           :stopped
         else
-          :running
+          :pending
       end
     end
 
@@ -179,9 +185,11 @@ module Gush
         arguments: @arguments,
         kwargs: @kwargs,
         globals: @globals,
+        dependencies: @dependencies,
         total: jobs.count,
         finished: jobs.count(&:finished?),
         klass: name,
+        job_klasses: jobs.map(&:class).map(&:to_s).uniq,
         status: status,
         stopped: stopped,
         started_at: started_at,
