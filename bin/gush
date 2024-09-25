@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 require "pathname"
-require "bundler"
-Bundler.require
 
 bin_file = Pathname.new(__FILE__).realpath
 # add self to libpath
