@@ -243,4 +243,49 @@ describe "Workflows" do
     expect(flow).to be_finished
     expect(flow).to_not be_failed
   end
+
+  context 'when one of the jobs is skipped' do
+    it 'still runs the rest of the jobs in the workflow' do
+      SKIPPED_SPY = double()
+
+      class FirstJob < Gush::Job
+        def perform
+          SKIPPED_SPY.foo
+        end
+      end
+
+      class SkippedJob < Gush::Job
+        def perform
+          skip!
+          SKIPPED_SPY.bar
+        end
+      end
+
+      class FinalJob < Gush::Job
+        def perform
+          SKIPPED_SPY.baz
+        end
+      end
+
+      class PartiallySkippedWorkflow < Gush::Workflow
+        def configure
+          run FirstJob
+          run SkippedJob, after: FirstJob
+          run FinalJob, after: SkippedJob
+        end
+      end
+
+      flow = PartiallySkippedWorkflow.create
+      flow.start!
+
+      expect(SKIPPED_SPY).to receive(:foo)
+      perform_one
+
+      expect(SKIPPED_SPY).not_to receive(:bar)
+      perform_one
+
+      expect(SKIPPED_SPY).to receive(:baz)
+      perform_one
+    end
+  end
 end
