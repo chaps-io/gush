@@ -74,9 +74,7 @@ module Gush
     option :start, type: :numeric, default: nil
     option :stop, type: :numeric, default: nil
     def list(start=nil, stop=nil)
-      workflows = client.workflow_ids(start, stop).map do |id|
-        client.find_workflow(id)
-      end
+      workflows = client.workflows(start, stop)
 
       rows = workflows.map do |workflow|
         [workflow.id, (Time.at(workflow.started_at) if workflow.started_at), workflow.class, {alignment: :center, value: status_for(workflow)}]

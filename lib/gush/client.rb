@@ -104,7 +104,11 @@ module Gush
     end
 
     def workflows(start=nil, stop=nil, **kwargs)
-      workflow_ids(start, stop, **kwargs).map { |id| find_workflow(id) }
+      workflow_ids(start, stop, **kwargs).map do |id|
+        find_workflow(id)
+        rescue WorkflowClassDoesNotExist, JobClassDoesNotExist
+          nil
+      end.compact
     end
 
     def workflows_count
@@ -285,6 +289,8 @@ module Gush
         globals: hash[:globals],
         internal_state: internal_state
       )
+    rescue NameError
+      raise WorkflowClassDoesNotExist.new("Workflow #{hash[:klass]} doesn't exist")
     end
 
     def redis

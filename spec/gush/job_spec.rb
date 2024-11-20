@@ -165,5 +165,11 @@ describe Gush::Job do
       expect(job.started_at).to eq(55)
       expect(job.enqueued_at).to eq(444)
     end
+
+    it "raises JobClassDoesNotExist if the job class is no longer defined" do
+      expect {
+        described_class.from_hash({klass: 'NonExistentJob'})
+      }.to raise_error(Gush::JobClassDoesNotExist)
+    end
   end
 end

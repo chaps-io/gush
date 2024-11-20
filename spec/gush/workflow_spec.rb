@@ -78,6 +78,40 @@ describe Gush::Workflow do
       flow = TestWorkflow.create
       expect(Gush::Workflow.page.map(&:id)).to eq([flow.id])
     end
+
+    it "does not error if a stored workflow class is no longer defined in the codebase" do
+      flow = TestWorkflow.create
+      called = false
+      allow_any_instance_of(TestWorkflow).to receive(:to_hash).and_wrap_original do |original, *args|
+        called = true
+        original.call(*args).merge({name: 'OldDeletedWorkflow', klass: 'OldDeletedWorkflow'})
+      end
+      expect {
+        flow.save
+        Gush::Workflow.page
+      }.not_to raise_error
+      expect {
+        Gush::Client.new.find_workflow(flow.id)
+      }.to raise_error(Gush::WorkflowClassDoesNotExist)
+      expect(called).to be(true)
+    end
+
+    it "does not error if a workflow's job class is no longer defined" do
+      flow = TestWorkflow.create
+      called = false
+      allow_any_instance_of(Gush::Job).to receive(:as_json).and_wrap_original do |original, *args|
+        called = true
+        original.call(*args).merge({ klass: 'OldDeletedJob'})
+      end
+      flow.save
+      expect {
+        Gush::Workflow.page
+      }.not_to raise_error
+      expect {
+        Gush::Client.new.find_workflow(flow.id)
+      }.to raise_error(Gush::JobClassDoesNotExist)
+      expect(called).to be(true)
+    end
   end
 
   describe "#save" do

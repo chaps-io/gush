@@ -38,6 +38,8 @@ module Gush
 
     def self.from_hash(hash)
       hash[:klass].constantize.new(hash)
+    rescue NameError
+      raise JobClassDoesNotExist.new("Job #{hash[:klass]} doesn't exist")
     end
 
     def output(data)
