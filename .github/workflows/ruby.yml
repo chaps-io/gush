@@ -31,6 +31,8 @@ jobs:
         exclude:
           - ruby_version: '3.4'
             rails_version: '6.1.0'
+          - ruby_version: '3.1',
+            rails_version: '8.0.1'
     steps:
     - uses: actions/checkout@v4
     - name: Set up Ruby
