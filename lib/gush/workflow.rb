@@ -83,16 +83,27 @@ module Gush
       end
     end
 
-    def find_job(name)
-      match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(name.to_s)
+    def build_job_lookup
+      @job_lookup = {
+        klass: jobs.each_with_object({}) { |job, lookup| lookup[job.klass.to_s] = job },
+        name: jobs.each_with_object({}) { |job, lookup| lookup[job.name.to_s] = job }
+      }
+    end
+
+    def find_job(identifier)
+      # Build the lookup table if it doesn't exist
+      build_job_lookup unless @job_lookup
+
+      # Use regex to determine which lookup to use
+      match_data = /(?<klass>\w*[^-])-(?<identifier>.*)/.match(identifier.to_s)
 
       if match_data.nil?
-        job = jobs.find { |node| node.klass.to_s == name.to_s }
+        # Lookup by klass if the pattern doesn't match
+        @job_lookup[:klass][identifier.to_s]
       else
-        job = jobs.find { |node| node.name.to_s == name.to_s }
+        # Lookup by name if the pattern matches
+        @job_lookup[:name][identifier.to_s]
       end
-
-      job
     end
 
     def finished?
