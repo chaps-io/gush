@@ -157,6 +157,7 @@ module Gush
 
       self.jobs = flow.jobs
       self.stopped = flow.stopped
+      @job_lookup = nil
 
       self
     end
