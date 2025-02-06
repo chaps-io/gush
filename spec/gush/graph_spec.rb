@@ -11,7 +11,7 @@ describe Gush::Graph do
       graph = double("graph", node: node, edge: edge)
       path = Pathname.new(Dir.tmpdir).join(filename)
 
-      expect(GraphViz).to receive(:new).and_return(graph)
+      expect(Graphviz::Graph).to receive(:new).and_return(graph)
 
       node_start = double('start')
       node_end = double('end')

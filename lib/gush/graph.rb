@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'tmpdir'
-require 'graphviz'
 
 module Gush
   class Graph
@@ -14,27 +13,26 @@ module Gush
     end
 
     def viz
-      # Initialize the GraphViz graph
-      @graph = GraphViz.new(:G, **graph_options)
+      @graph = Graphviz::Graph.new(**graph_options)
       @start_node = add_node('start', shape: 'diamond', fillcolor: '#CFF09E')
       @end_node = add_node('end', shape: 'diamond', fillcolor: '#F56991')
 
-      # Create nodes for all jobs
+      # First, create nodes for all jobs
       @job_name_to_node_map = {}
       workflow.jobs.each do |job|
         add_job_node(job)
       end
 
-      # Link jobs with edges
+      # Next, link up the jobs with edges
       workflow.jobs.each do |job|
         link_job_edges(job)
       end
 
-      # Determine format based on file extension
-      format = path.split('.').last || 'png'
+      format = 'png'
+      file_format = path.split('.')[-1]
+      format = file_format if file_format.length == 3
 
-      # Output the graph to a file
-      @graph.output(format => path)
+      Graphviz.output(@graph, path: path, format: format)
     end
 
     def path
@@ -44,7 +42,7 @@ module Gush
     private
 
     def add_node(name, **specific_options)
-      @graph.add_nodes(name, **node_options.merge(specific_options))
+      @graph.add_node(name, **node_options.merge(specific_options))
     end
 
     def add_job_node(job)
@@ -55,15 +53,15 @@ module Gush
       job_node = @job_name_to_node_map[job.name]
 
       if job.incoming.empty?
-        @graph.add_edges(@start_node, job_node, **edge_options)
+        @start_node.connect(job_node, **edge_options)
       end
 
       if job.outgoing.empty?
-        @graph.add_edges(job_node, @end_node, **edge_options)
+        job_node.connect(@end_node, **edge_options)
       else
         job.outgoing.each do |id|
           outgoing_job = workflow.find_job(id)
-          @graph.add_edges(job_node, @job_name_to_node_map[outgoing_job.name], **edge_options)
+          job_node.connect(@job_name_to_node_map[outgoing_job.name], **edge_options)
         end
       end
     end
@@ -74,9 +72,11 @@ module Gush
 
     def graph_options
       {
-        dpi: 200,
-        rankdir: "LR",
-        center: true
+          dpi: 200,
+          compound: true,
+          rankdir: "LR",
+          center: true,
+          format: 'png'
       }
     end
 
