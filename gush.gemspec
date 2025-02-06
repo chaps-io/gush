@@ -24,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "multi_json", "~> 1.11"
   spec.add_dependency "redis", ">= 3.2", "< 6"
   spec.add_dependency "redis-mutex", "~> 4.0.1"
-  spec.add_dependency "graphviz", "~> 1.2"
+  spec.add_dependency "graphviz", "~> 1.3"
   spec.add_dependency "terminal-table", ">= 1.4", "< 3.1"
   spec.add_dependency "paint", "~> 2.2"
   spec.add_dependency "thor", ">= 0.19", "< 1.3"
