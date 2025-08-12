@@ -19,7 +19,9 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
   spec.required_ruby_version = '>= 3.0.0'
 
-  spec.add_dependency "activejob", ">= 6.1.0", "< 8.1.0"
+  # ActiveJob 7.0 is required to maintain compatibility concurrent-ruby and ActiveSupport logger gem usage
+  # however, this allows us to upgrade thor to v1.4.0 which fixes security issues
+  spec.add_dependency "activejob", ">= 7.0.0", "< 8.1.0"
   spec.add_dependency "concurrent-ruby", "~> 1.0"
   spec.add_dependency "multi_json", "~> 1.11"
   spec.add_dependency "redis", ">= 3.2", "< 6"
@@ -28,7 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "graphviz", "~> 1.2"
   spec.add_dependency "terminal-table", ">= 1.4", "< 3.1"
   spec.add_dependency "paint", "~> 2.2"
-  spec.add_dependency "thor", ">= 0.19", "< 1.3"
+  spec.add_dependency "thor", ">= 0.19", "< 1.5"
   spec.add_dependency "launchy", "~> 2.4"
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake", "~> 12"
