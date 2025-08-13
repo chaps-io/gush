@@ -22,6 +22,22 @@ describe Gush::Configuration do
       end
 
       expect(Gush.configuration.redis_url).to eq("redis://localhost")
+      expect(Gush.configuration.redis).to eq({ url: "redis://localhost" })
+      expect(Gush.configuration.concurrency).to eq(25)
+      expect(Gush.configuration.locking_duration).to eq(5)
+      expect(Gush.configuration.polling_interval).to eq(0.5)
+    end
+
+    it "allows setting redis opptions" do
+      Gush.configure do |config|
+        config.redis = { host: "localhost", port: 6379, db: 1 }
+        config.concurrency = 25
+        config.locking_duration = 5
+        config.polling_interval = 0.5
+      end
+
+      expect(Gush.configuration.redis).to eq({ host: "localhost", port: 6379, db: 1 })
+      expect(Gush.configuration.redis_url).to eq(nil)
       expect(Gush.configuration.concurrency).to eq(25)
       expect(Gush.configuration.locking_duration).to eq(5)
       expect(Gush.configuration.polling_interval).to eq(0.5)
