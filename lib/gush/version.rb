@@ -1,3 +1,3 @@
 module Gush
-  VERSION = '4.2.1'.freeze
+  VERSION = '4.3.0'.freeze
 end
