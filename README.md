@@ -460,6 +460,24 @@ class SynchronousJob < Gush::Job
 end
 ```
 
+### Skipping a Job
+
+Sometimes you'd like to skip a job, which doesn't mean that job/workflow has failed. You can call `skip!` inside the job to mark it as a `skipped`:
+
+```ruby
+class ProcessUserJob < Gush::Job
+  def perform
+    user = User.find params[:id]
+
+    skip! if user.processed?
+
+    # Code beneath here will not be called anymore
+    # and the job will be marked as 'skipped'
+    # 
+    # The workflow will continue on normally to the other jobs
+  end
+end
+```
 
 ## Command line interface (CLI)
 
