@@ -500,6 +500,8 @@ In order to prevent getting the RedisMutex::LockError error when having a large 
 # config/initializers/gush.rb
 Gush.configure do |config|
   config.redis_url = "redis://localhost:6379"
+  # NB: you can also pass redis options as a hash:
+  # config.redis = { host: "localhost", port: 6379, db: 1 }
   config.concurrency = 5
   config.locking_duration = 2 # how long you want to wait for the lock to be released, in seconds
   config.polling_interval = 0.3 # how long the polling interval should be, in seconds
@@ -516,6 +518,8 @@ Running `NotifyWorkflow.create` inserts multiple keys into Redis every time it i
 # config/initializers/gush.rb
 Gush.configure do |config|
   config.redis_url = "redis://localhost:6379"
+  # NB: you can also pass redis options as a hash:
+  # config.redis = { host: "localhost", port: 6379, db: 1 }
   config.concurrency = 5
   config.ttl = 3600*24*7
 end
